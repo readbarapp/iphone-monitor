@@ -10,7 +10,11 @@ on:
   workflow_dispatch:
     inputs:
       test_notify:
-        description: 發送測試通知（不查真實庫存）
+        description: 只發送 Telegram 連線測試短訊（唔係補貨通知）
+        type: boolean
+        default: false
+      simulate_restock:
+        description: 測試模式模擬無貨→有貨，先發送補貨格式 Telegram
         type: boolean
         default: false
       ignore_enabled:
@@ -35,13 +39,14 @@ jobs:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       TEST_NOTIFY: ${{ github.event.inputs.test_notify }}
+      SIMULATE_RESTOCK: ${{ github.event.inputs.simulate_restock }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           persist-credentials: true
 
-      # 總開關關閉且不是測試通知時，只讀 config 後立刻結束，
+      # 總開關關閉且不是連線測試／模擬補貨時，只讀 config 後立刻結束，
       # 省下 pip / 查詢時間（cron 本身仍會佔用 1 分鐘計費單位）。
       - name: Gate on enabled flag
         id: gate
@@ -50,10 +55,11 @@ jobs:
           import json, os
           cfg = json.load(open("config.json", encoding="utf-8"))
           test_notify = os.environ.get("TEST_NOTIFY", "").lower() in {"true", "1", "yes"}
+          simulate = os.environ.get("SIMULATE_RESTOCK", "").lower() in {"true", "1", "yes"}
           ignore = "${{ github.event.inputs.ignore_enabled }}" == "true"
           enabled = bool(cfg.get("enabled"))
-          run = enabled or test_notify or ignore
-          print(f"enabled={enabled} test_notify={test_notify} ignore={ignore} run={run}")
+          run = enabled or test_notify or simulate or ignore
+          print(f"enabled={enabled} test_notify={test_notify} simulate={simulate} ignore={ignore} run={run}")
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
               fh.write(f"run={'true' if run else 'false'}\n")
           PY
@@ -75,6 +81,9 @@ jobs:
           ARGS=""
           if [ "${{ github.event.inputs.test_notify }}" = "true" ]; then
             ARGS="$ARGS --test-notify"
+          fi
+          if [ "${{ github.event.inputs.simulate_restock }}" = "true" ]; then
+            ARGS="$ARGS --simulate-restock"
           fi
           if [ "${{ github.event.inputs.ignore_enabled }}" = "true" ]; then
             ARGS="$ARGS --ignore-enabled"

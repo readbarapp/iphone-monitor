@@ -556,10 +556,23 @@ def apply_state_machine(
 # ---------------------------------------------------------------------------
 # 通知
 # ---------------------------------------------------------------------------
+def format_connection_test_message() -> str:
+    """只測 Telegram 通道，絕不模仿補貨通知。"""
+    return (
+        "🔌 Telegram 連線測試\n"
+        "\n"
+        "呢條訊息純粹用嚟確認 Bot Token 同 Chat ID 設定正確，"
+        "Telegram 通道可以成功收到訊息。\n"
+        "\n"
+        "唔代表任何 iPhone 有貨，亦唔係補貨通知，唔會改監控狀態。\n"
+        f"時間：{iso_now()}（香港）\n"
+    )
+
+
 def format_message(hits: list[AvailabilityHit], *, test: bool = False) -> str:
-    header = "🧪 測試通知 · Apple 香港庫存監控" if test else "🍎 Apple 香港有貨通知"
+    """真實補貨格式。test=True 只加一行註明係測試模式模擬，版面同正式一樣。"""
     lines = [
-        header,
+        "🍎 Apple 香港有貨通知",
         "",
         f"共 {len(hits)} 項由「無貨」轉為「有貨」（已依優先級排序）：",
         "",
@@ -580,7 +593,7 @@ def format_message(hits: list[AvailabilityHit], *, test: bool = False) -> str:
         )
     lines.append(f"時間：{iso_now()}（香港）")
     if test:
-        lines.append("這是測試訊息，不代表真實庫存。")
+        lines.append("🧪 以上係測試模式模擬「無貨 → 有貨」，唔代表官網真係有貨。")
     return "\n".join(lines).strip() + "\n"
 
 
@@ -762,51 +775,29 @@ def maybe_random_delay(cfg: dict[str, Any], *, skip: bool) -> None:
     time.sleep(delay)
 
 
-def build_sample_hits(cfg: dict[str, Any], catalog: dict[str, Any]) -> list[AvailabilityHit]:
-    """給 --test-notify 用的示範資料（不碰 state）。"""
+def simulate_restock_transition(
+    cfg: dict[str, Any],
+    catalog: dict[str, Any],
+    state: dict[str, Any],
+) -> tuple[list[AvailabilityHit], dict[str, Any], str | None]:
+    """把而家監測對象強制由無貨轉有貨，只回傳真正跨過狀態機的項目。"""
+    cfg = json.loads(json.dumps(cfg))
+    cfg["test_mode"] = True
     watch = resolve_watch_list(cfg, catalog)
     if not watch:
-        watch = [
-            WatchItem(
-                part_number="MJRP4ZA/A",
-                family="iphone-18-pro",
-                name="iPhone 18 Pro 256GB 黑色",
-                color="black",
-                capacity="256gb",
-            )
-        ]
-    stores = [str(s) for s in (cfg.get("stores") or ["R428"])]
-    item = watch[0]
-    hits = [
-        AvailabilityHit(
-            key=item_key("pickup", stores[0], item.part_number),
-            mode="pickup",
-            part_number=item.part_number,
-            name=item.name,
-            capacity=item.capacity,
-            store_id=stores[0],
-            store_name=store_label(catalog, stores[0]),
-            status=STATUS_AVAILABLE,
-            quote="示範：今日可取貨",
-            checkout_url=checkout_url(item.part_number),
-        ),
-        AvailabilityHit(
-            key=item_key("delivery", "DELIVERY", item.part_number),
-            mode="delivery",
-            part_number=item.part_number,
-            name=item.name,
-            capacity=item.capacity,
-            store_id="DELIVERY",
-            store_name="送貨上門（香港）",
-            status=STATUS_AVAILABLE,
-            quote="示範：明天 — 免費",
-            checkout_url=checkout_url(item.part_number),
-        ),
-    ]
-    for hit in hits:
+        return [], state, "config.json 沒有任何監控型號（models 為空）。"
+
+    cfg["mock_status"] = STATUS_UNAVAILABLE
+    empty_hits = mock_hits(cfg, watch, catalog)
+    _, seeded = apply_state_machine(state, empty_hits)
+
+    cfg["mock_status"] = STATUS_AVAILABLE
+    avail_hits = mock_hits(cfg, watch, catalog)
+    for hit in avail_hits:
         hit.score = priority_score(cfg, hit)
-    hits.sort(key=lambda h: (-h.score, h.mode, h.store_id, h.part_number))
-    return hits
+    newly, new_state = apply_state_machine(seeded, avail_hits)
+    newly.sort(key=lambda h: (-h.score, h.mode, h.store_id, h.part_number))
+    return newly, new_state, None
 
 
 # ---------------------------------------------------------------------------
@@ -825,22 +816,57 @@ def run(args: argparse.Namespace) -> int:
         "true",
         "yes",
     }
+    simulate_restock = bool(args.simulate_restock) or os.environ.get(
+        "SIMULATE_RESTOCK", ""
+    ).lower() in {"1", "true", "yes"}
     ignore_enabled = bool(args.ignore_enabled)
 
     if test_notify:
-        LOGGER.info("測試通知模式：傳送示範訊息，不查詢庫存、不改寫狀態機結果")
-        hits = build_sample_hits(cfg, catalog)
-        text = format_message(hits, test=True)
+        LOGGER.info("Telegram 連線測試：只發短訊確認通道，不查庫存、不改狀態機")
+        text = format_connection_test_message()
         print(text)
         sent = dispatch_notifications(cfg, text)
         state["last_run"] = {
             "status": "test_notify",
-            "message": f"已嘗試發送測試通知（成功通道 {sent}）",
+            "message": f"已嘗試發送 Telegram 連線測試（成功通道 {sent}）",
             "notified": 0,
             "checked": 0,
             "at": iso_now(),
         }
         save_json(STATE_PATH, state)
+        return 0
+
+    if simulate_restock:
+        LOGGER.info("測試模式模擬補貨：強制無貨 → 有貨，只在狀態機跨過時發 Telegram")
+        newly, new_state, err = simulate_restock_transition(cfg, catalog, state)
+        if err:
+            LOGGER.error(err)
+            print(err)
+            state["last_run"] = {
+                "status": "error",
+                "message": err,
+                "notified": 0,
+                "checked": 0,
+                "at": iso_now(),
+            }
+            save_json(STATE_PATH, state)
+            return 0
+        notified = 0
+        if newly:
+            text = format_message(newly, test=True)
+            print(text)
+            notified = 1 if dispatch_notifications(cfg, text) else 0
+        else:
+            print("沒有「無貨 → 有貨」的新項目，不發送通知（防洗版）。")
+        new_state["last_run"] = {
+            "status": "simulate_restock",
+            "message": f"測試模式模擬補貨：新轉有貨 {len(newly)}（成功通道 {notified}）",
+            "notified": len(newly),
+            "checked": len(newly),
+            "at": iso_now(),
+            "test_mode": True,
+        }
+        save_json(STATE_PATH, new_state)
         return 0
 
     if not cfg.get("enabled", False) and not ignore_enabled:
@@ -968,13 +994,13 @@ def run_self_test() -> int:
         "stores": ["R428", "R409"],
         "models": [
             {
-                "part_number": "MJRP4ZA/A",
-                "name": "iPhone 18 Pro 256GB 黑色",
+                "part_number": "MK2E4ZA/A",
+                "name": "iPhone Duo 256GB 夜空色",
                 "capacity": "256gb",
             },
             {
-                "part_number": "MJRU4ZA/A",
-                "name": "iPhone 18 Pro 512GB 黑色",
+                "part_number": "MK2G4ZA/A",
+                "name": "iPhone Duo 512GB 夜空色",
                 "capacity": "512gb",
             },
         ],
@@ -1042,13 +1068,30 @@ def run_self_test() -> int:
     check("直達結帳" in text and "門市取貨" in text and "送貨上門" in text, "綜合訊息含通路與結帳連結")
     check(text.count("🍎") == 1, "同週期只產出 1 條訊息")
 
+    ping = format_connection_test_message()
+    check("Telegram 連線測試" in ping, "連線測試標題正確")
+    check("唔代表任何 iPhone 有貨" in ping, "連線測試聲明唔係補貨")
+    check("直達結帳" not in ping and "有貨通知" not in ping, "連線測試不含補貨版面")
+
+    seeded_state = {"items": {}, "schema_version": 1}
+    sim_hits, _, sim_err = simulate_restock_transition(cfg, catalog, seeded_state)
+    check(sim_err is None, "模擬補貨不應報錯")
+    check(len(sim_hits) == 6, f"模擬補貨應產生 6 筆無貨→有貨（實際 {len(sim_hits)}）")
+    sim_again, _, _ = simulate_restock_transition(cfg, catalog, {"items": {h.key: {"status": STATUS_AVAILABLE} for h in sim_hits}})
+    check(len(sim_again) == 6, "模擬補貨會先打成無貨再轉有貨，應再次通知")
+
     print("自我測試完成，失敗數：", failures)
     return 1 if failures else 0
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Apple 香港 iPhone 庫存監控")
-    parser.add_argument("--test-notify", action="store_true", help="只發送測試通知")
+    parser.add_argument("--test-notify", action="store_true", help="只發送 Telegram 連線測試短訊")
+    parser.add_argument(
+        "--simulate-restock",
+        action="store_true",
+        help="測試模式：強制監測對象由無貨轉有貨後才發補貨通知",
+    )
     parser.add_argument("--ignore-enabled", action="store_true", help="忽略 enabled 總開關")
     parser.add_argument("--ignore-hours", action="store_true", help="忽略營業時間窗")
     parser.add_argument("--ignore-interval", action="store_true", help="忽略監控頻率間隔")
