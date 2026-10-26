@@ -1,0 +1,126 @@
+# Apple 香港 iPhone 庫存監控
+# 預設每 2 分鐘執行。GitHub 免費額度每月 2,000 分鐘，
+# 24 小時不間斷每 2 分鐘會遠超額度——平時請到 Actions 頁 Disable，
+# 或把 cron 改成 */10、*/15，開售當日再開。
+name: iPhone HK Monitor
+
+on:
+  schedule:
+    - cron: "*/2 * * * *"
+  workflow_dispatch:
+    inputs:
+      test_notify:
+        description: 發送測試通知（不查真實庫存）
+        type: boolean
+        default: false
+      ignore_enabled:
+        description: 即使總開關為 OFF 也執行查詢
+        type: boolean
+        default: false
+
+concurrency:
+  group: iphone-hk-monitor
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  check:
+    name: Check availability
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      TEST_NOTIFY: ${{ github.event.inputs.test_notify }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      # 總開關關閉且不是測試通知時，只讀 config 後立刻結束，
+      # 省下 pip / 查詢時間（cron 本身仍會佔用 1 分鐘計費單位）。
+      - name: Gate on enabled flag
+        id: gate
+        run: |
+          python3 - <<'PY'
+          import json, os
+          cfg = json.load(open("config.json", encoding="utf-8"))
+          test_notify = os.environ.get("TEST_NOTIFY", "").lower() in {"true", "1", "yes"}
+          ignore = "${{ github.event.inputs.ignore_enabled }}" == "true"
+          enabled = bool(cfg.get("enabled"))
+          run = enabled or test_notify or ignore
+          print(f"enabled={enabled} test_notify={test_notify} ignore={ignore} run={run}")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+              fh.write(f"run={'true' if run else 'false'}\n")
+          PY
+
+      - name: Setup Python
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        if: steps.gate.outputs.run == 'true'
+        run: pip install -r requirements.txt
+
+      - name: Run checker
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          ARGS=""
+          if [ "${{ github.event.inputs.test_notify }}" = "true" ]; then
+            ARGS="$ARGS --test-notify"
+          fi
+          if [ "${{ github.event.inputs.ignore_enabled }}" = "true" ]; then
+            ARGS="$ARGS --ignore-enabled"
+          fi
+          python checker.py $ARGS
+
+      - name: Record disabled skip
+        if: steps.gate.outputs.run != 'true'
+        run: |
+          python3 - <<'PY'
+          import json
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          path = "state.json"
+          try:
+              state = json.load(open(path, encoding="utf-8"))
+          except Exception:
+              state = {"items": {}, "schema_version": 1}
+          prev = (state.get("last_run") or {}).get("status")
+          if prev == "disabled":
+              print("skipped: enabled=false (state already recorded)")
+              raise SystemExit(0)
+          now = datetime.now(tz=ZoneInfo("Asia/Hong_Kong")).isoformat(timespec="seconds")
+          state["last_run"] = {
+              "status": "disabled",
+              "message": "監控總開關為 OFF（enabled=false），安全退出，不查詢 Apple API。",
+              "notified": 0,
+              "checked": 0,
+              "at": now,
+          }
+          with open(path, "w", encoding="utf-8") as fh:
+              json.dump(state, fh, ensure_ascii=False, indent=2)
+              fh.write("\n")
+          print("skipped: enabled=false")
+          PY
+
+      - name: Commit state.json
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state.json
+          if git diff --cached --quiet; then
+            echo "state.json unchanged"
+            exit 0
+          fi
+          git commit -m "chore: update inventory state"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
