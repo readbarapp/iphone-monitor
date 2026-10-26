@@ -165,6 +165,29 @@ def parse_hhmm(value: str) -> tuple[int, int]:
     return int(hour), int(minute)
 
 
+def due_for_interval(cfg: dict[str, Any], state: dict[str, Any], moment: datetime | None = None) -> bool:
+    """距離上次成功查詢未滿 check_interval_minutes 則略過（cron 未改到時的保險）。"""
+    try:
+        interval = max(1, int(cfg.get("check_interval_minutes") or 2))
+    except (TypeError, ValueError):
+        interval = 2
+    last = state.get("last_run") or {}
+    if last.get("status") != "ok":
+        return True
+    raw = last.get("at")
+    if not raw:
+        return True
+    try:
+        prev = datetime.fromisoformat(str(raw))
+    except ValueError:
+        return True
+    if prev.tzinfo is None:
+        prev = prev.replace(tzinfo=HK_TZ)
+    moment = moment or now_hk()
+    elapsed = (moment - prev).total_seconds()
+    return elapsed >= (interval - 0.2) * 60
+
+
 def within_business_hours(cfg: dict[str, Any], moment: datetime | None = None) -> bool:
     hours = cfg.get("business_hours") or {}
     if not hours.get("enabled", False):
@@ -867,6 +890,14 @@ def run(args: argparse.Namespace) -> int:
         return 0
 
     test_mode = bool(cfg.get("test_mode"))
+    is_manual = os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch"
+    if not is_manual and not args.ignore_interval and not due_for_interval(cfg, state):
+        interval = cfg.get("check_interval_minutes") or 2
+        msg = f"距離上次查詢未滿 {interval} 分鐘，略過本輪（不改寫狀態）。"
+        LOGGER.info(msg)
+        print(msg)
+        return 0
+
     if not test_mode and not args.ignore_hours and not within_business_hours(cfg):
         msg = "目前不在營業時間窗內，略過本輪查詢（不改寫庫存狀態）。"
         LOGGER.info(msg)
@@ -984,6 +1015,14 @@ def run_self_test() -> int:
     check(within_business_hours(cfg, inside), "營業時間內應通過")
     check(not within_business_hours(cfg, outside), "營業時間外應過濾")
 
+    cfg["check_interval_minutes"] = 15
+    fresh = {"last_run": {"status": "ok", "at": inside.isoformat()}}
+    later = inside.replace(minute=inside.minute + 3)
+    much_later = inside.replace(hour=inside.hour + 1)
+    check(not due_for_interval(cfg, fresh, later), "未滿間隔不應再查")
+    check(due_for_interval(cfg, fresh, much_later), "滿間隔應再查")
+    check(due_for_interval(cfg, {"last_run": {"status": "disabled", "at": inside.isoformat()}}, later), "非成功查詢不套用間隔")
+
     watch = resolve_watch_list(cfg, catalog)
     hits = mock_hits(cfg, watch, catalog)
     check(len(hits) == 6, f"雙模式模擬應產生 6 組（實際 {len(hits)}）")
@@ -1027,6 +1066,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--test-notify", action="store_true", help="只發送測試通知")
     parser.add_argument("--ignore-enabled", action="store_true", help="忽略 enabled 總開關")
     parser.add_argument("--ignore-hours", action="store_true", help="忽略營業時間窗")
+    parser.add_argument("--ignore-interval", action="store_true", help="忽略監控頻率間隔")
     parser.add_argument("--no-delay", action="store_true", help="跳過隨機延遲")
     parser.add_argument("--self-test", action="store_true", help="執行不連網的邏輯測試")
     parser.add_argument("-v", "--verbose", action="store_true")
