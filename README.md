@@ -58,7 +58,7 @@ GitHub → Settings → Developer settings → Personal access tokens → Fine-g
 - Repository access：只勾這個 repo
 - Permissions：
   - **Contents: Read and write**（更新 `config.json`）
-  - **Actions: Read and write**（觸發測試通知）
+  - **Actions: Read and write**（觸發連線測試與模擬補貨）
   - **Workflows: Read and write**（由控制台改監控頻率 cron）
   - **Secrets: Read and write**（可選，只在要覆寫通訊憑證時）
 
@@ -100,11 +100,13 @@ python3 -m http.server 8080
 | 總開關 | `enabled` | `false` 時 checker 印提示並 `exit(0)` |
 | 測試模式 | `test_mode` / `mock_status` | 不打 Apple API，直接模擬有貨／無貨 |
 | 取貨模式 | `fulfillment_modes` | `pickup`、`delivery` 可並存 |
-| 型號下拉 | `models[]` | 香港現行 iPhone 18 Pro / Max、17、Air、17e、Duo |
+| 型號下拉 | `models[]` | 只保留 iPhone Duo（預設）同 18 Pro Max |
 | 門市多選 | `stores` + `priority.stores` | 六間香港 Apple Store |
 | 優先級 | `priority` | 門市權重 ×10000 + 容量 ×100 + 通路 |
 | 監控頻率 | `check_interval_minutes` + `monitor.yml` cron | 儲存後改 Actions 排程；用量面板只係預估 |
-| 測試通知 | `workflow_dispatch` | 觸發 Actions 發送示範訊息 |
+| 測試模式狀態板 | `test_mode` / `mock_status` | 列出每部機 × 門市／送貨而家被設成有貨定冇貨 |
+| 測試 Telegram 連線 | `workflow_dispatch` `test_notify` | 只發連線短訊，**唔會**扮 iPhone 有貨 |
+| 模擬補貨並通知 | `workflow_dispatch` `simulate_restock` | 強制冇貨→有貨，先發真實格式補貨 Telegram |
 | 儲存設定 | GitHub Contents API | 更新 `config.json`。Telegram 欄位**留空＝唔改 Secrets**（值讀唔返） |
 
 ---
@@ -157,19 +159,27 @@ python checker.py --no-delay
 
 4. **不要改設定**再跑一次：不應再通知（防洗版）。
 5. 改回 `"unavailable"` 跑一次，再改 `"available"`：應再次通知。
-6. 只測通道、不改狀態機：
+6. 只測 Telegram 連線、不改狀態機、不扮有貨：
 
 ```bash
 python checker.py --test-notify
 ```
 
-7. 邏輯自我測試（不連網）：
+預期訊息開頭係 `🔌 Telegram 連線測試`，唔會出現型號、門市或「有貨通知」。
+
+7. 一鍵模擬「冇貨 → 有貨」並發真實格式補貨訊息：
+
+```bash
+python checker.py --simulate-restock
+```
+
+8. 邏輯自我測試（不連網）：
 
 ```bash
 python checker.py --self-test
 ```
 
-8. 驗證總開關：
+9. 驗證總開關：
 
 ```bash
 # 把 enabled 設為 false
@@ -185,8 +195,9 @@ python checker.py
 4. 控制台把模擬狀態改成 **有貨** → 儲存。
 5. 再 Run workflow：應收到 **1 條**聚合通知，含直達結帳連結。
 6. 再 Run 一次：不該再收到。
-7. 按控制台 **測試通知**：觸發 `test_notify`，不影響真實狀態機。
-8. 確認無誤後，關閉測試模式，才開始打官網。
+7. 按控制台 **測試 Telegram 連線**：只發連線短訊，不影響狀態機，亦唔會寫任何 iPhone 有貨字眼。
+8. 或按 **模擬補貨並通知**：強制監測對象由冇貨轉有貨，先發送真實格式補貨 Telegram。
+9. 確認無誤後，關閉測試模式，才開始打官網。
 
 ---
 
@@ -266,7 +277,8 @@ GitHub Actions **以整分鐘進位**。即便 `enabled=false`，cron 仍會 che
 
 ```bash
 python checker.py                 # 依 config 執行
-python checker.py --test-notify   # 只發測試訊息
+python checker.py --test-notify        # 只發 Telegram 連線測試短訊
+python checker.py --simulate-restock   # 測試模式：冇貨→有貨先發補貨通知
 python checker.py --ignore-enabled
 python checker.py --ignore-hours
 python checker.py --no-delay
@@ -296,7 +308,7 @@ SKU 若隨官網改版，更新 `catalog.json` 即可，控制台會自動讀取
 | 現象 | 處理 |
 | --- | --- |
 | 控制台儲存失敗 `Bad credentials` | PAT 過期或權限不足 |
-| 測試通知 404 | workflow 檔名必須是 `.github/workflows/monitor.yml`，且 PAT 有 Actions 寫入 |
+| 連線測試／模擬補貨 404 | workflow 檔名必須是 `.github/workflows/monitor.yml`，且 PAT 有 Actions 寫入 |
 | 有貨但沒通知 | 看 `state.json`：若上次已是 `available`，屬防洗版。先用測試模式把狀態打成無貨再測 |
 | 永遠 unknown | Apple 541／網路失敗。拉長間隔，或用 `--verbose` 看 log |
 | Actions 分鐘燒太快 | Disable workflow；不要 24 小時每 2 分鐘空轉 |
