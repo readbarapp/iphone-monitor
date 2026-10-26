@@ -4,7 +4,7 @@ Apple 香港官網 iPhone 庫存監控器。
 
 設計重點
 --------
-- Zero-Trust：Telegram / Discord 憑證只從環境變數（GitHub Secrets）讀取，
+- Zero-Trust：Telegram 憑證只從環境變數（GitHub Secrets）讀取，
   絕不寫入 config.json。
 - 總開關：config.enabled == false 時安全退出（exit 0），不打 Apple API。
 - 測試模式：test_mode 開啟時跳過真實 API，改讀 mock_status，
@@ -616,28 +616,13 @@ def send_telegram(text: str) -> bool:
     return ok
 
 
-def send_discord(text: str) -> bool:
-    webhook = os.environ.get("DISCORD_WEBHOOK_URL", "").strip()
-    if not webhook:
-        LOGGER.info("未設定 DISCORD_WEBHOOK_URL，略過 Discord")
-        return False
-    # Discord webhook 單則上限 2000 字
-    chunk = text if len(text) <= 1900 else text[:1900] + "\n…"
-    ok = _post_json(webhook, {"content": chunk})
-    if ok:
-        LOGGER.info("已發送 Discord 通知")
-    return ok
-
-
 def dispatch_notifications(cfg: dict[str, Any], text: str) -> int:
     notify = cfg.get("notifications") or {}
     sent = 0
     if notify.get("telegram_enabled", True):
         sent += int(send_telegram(text))
-    if notify.get("discord_enabled", True):
-        sent += int(send_discord(text))
     if sent == 0:
-        LOGGER.warning("沒有任何通知通道成功。請檢查 GitHub Secrets 與 notifications 開關。")
+        LOGGER.warning("Telegram 通知失敗。請檢查 TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID。")
     return sent
 
 
