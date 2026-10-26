@@ -1,0 +1,179 @@
+{
+  "region": "HK",
+  "locale": "zh-HK",
+  "updated": "2026-10-26",
+  "stores": [
+    {
+      "id": "R428",
+      "name": "ifc mall",
+      "name_zh": "中環 ifc mall",
+      "district": "中環",
+      "address": "國際金融中心商場，金融街 8 號",
+      "hours": "10:00–21:00"
+    },
+    {
+      "id": "R409",
+      "name": "Causeway Bay",
+      "name_zh": "銅鑼灣 Causeway Bay",
+      "district": "銅鑼灣",
+      "address": "希慎廣場，軒尼詩道 500 號",
+      "hours": "10:00–22:00"
+    },
+    {
+      "id": "R499",
+      "name": "Canton Road",
+      "name_zh": "尖沙咀 廣東道",
+      "district": "尖沙咀",
+      "address": "廣東道 100 號",
+      "hours": "10:00–22:00"
+    },
+    {
+      "id": "R485",
+      "name": "Festival Walk",
+      "name_zh": "九龍塘 又一城",
+      "district": "九龍塘",
+      "address": "達之路 80 號 Festival Walk",
+      "hours": "10:00–22:00"
+    },
+    {
+      "id": "R673",
+      "name": "apm Hong Kong",
+      "name_zh": "觀塘 apm",
+      "district": "觀塘",
+      "address": "觀塘道 418 號",
+      "hours": "10:00–22:00"
+    },
+    {
+      "id": "R610",
+      "name": "New Town Plaza",
+      "name_zh": "沙田 新城市廣場",
+      "district": "沙田",
+      "address": "沙田正街 18 號新城市廣場一期 L4",
+      "hours": "10:00–22:00"
+    }
+  ],
+  "families": [
+    {
+      "id": "iphone-18-pro",
+      "label": "iPhone 18 Pro",
+      "buy_path": "iphone-18-pro"
+    },
+    {
+      "id": "iphone-18-pro-max",
+      "label": "iPhone 18 Pro Max",
+      "buy_path": "iphone-18-pro"
+    },
+    {
+      "id": "iphone-17",
+      "label": "iPhone 17",
+      "buy_path": "iphone-17"
+    },
+    {
+      "id": "iphone-air",
+      "label": "iPhone Air",
+      "buy_path": "iphone-air"
+    },
+    {
+      "id": "iphone-17e",
+      "label": "iPhone 17e",
+      "buy_path": "iphone-17e"
+    },
+    {
+      "id": "iphone-duo",
+      "label": "iPhone Duo",
+      "buy_path": "iphone-duo"
+    }
+  ],
+  "color_labels": {
+    "black": "黑色",
+    "white": "白色",
+    "silver": "銀色",
+    "burgundy": "布根地紅色",
+    "glacier": "冰川色",
+    "mistblue": "霧藍色",
+    "sage": "鼠尾草綠",
+    "lavender": "薰衣草色",
+    "spaceblack": "太空黑色",
+    "cloudwhite": "雲白色",
+    "lightgold": "淺金色",
+    "skyblue": "天藍色",
+    "soft_pink": "柔粉色",
+    "starwhite": "星光白",
+    "nightsky": "夜空色"
+  },
+  "products": [
+    {"part": "MJRP4ZA/A", "family": "iphone-18-pro", "name": "iPhone 18 Pro 256GB 黑色", "color": "black", "capacity": "256gb", "price": 10499},
+    {"part": "MJRQ4ZA/A", "family": "iphone-18-pro", "name": "iPhone 18 Pro 256GB 銀色", "color": "silver", "capacity": "256gb", "price": 10499},
+    {"part": "MJRT4ZA/A", "family": "iphone-18-pro", "name": "iPhone 18 Pro 256GB 冰川色", "color": "glacier", "capacity": "256gb", "price": 10499},
+    {"part": "MJRR4ZA/A", "family": "iphone-18-pro", "name": "iPhone 18 Pro 256GB 布根地紅色", "color": "burgundy", "capacity": "256gb", "price": 10499},
+    {"part": "MJRU4ZA/A", "family": "iphone-18-pro", "name": "iPhone 18 Pro 512GB 黑色", "color": "black", "capacity": "512gb", "price": 12299},
+    {"part": "MJRV4ZA/A", "family": "iphone-18-pro", "name": "iPhone 18 Pro 512GB 銀色", "color": "silver", "capacity": "512gb", "price": 12299},
+    {"part": "MJRX4ZA/A", "family": "iphone-18-pro", "name": "iPhone 18 Pro 512GB 冰川色", "color": "glacier", "capacity": "512gb", "price": 12299},
+    {"part": "MJRW4ZA/A", "family": "iphone-18-pro", "name": "iPhone 18 Pro 512GB 布根地紅色", "color": "burgundy", "capacity": "512gb", "price": 12299},
+    {"part": "MJRY4ZA/A", "family": "iphone-18-pro", "name": "iPhone 18 Pro 1TB 黑色", "color": "black", "capacity": "1tb", "price": 15799},
+    {"part": "MJT04ZA/A", "family": "iphone-18-pro", "name": "iPhone 18 Pro 1TB 銀色", "color": "silver", "capacity": "1tb", "price": 15799},
+    {"part": "MJT24ZA/A", "family": "iphone-18-pro", "name": "iPhone 18 Pro 1TB 冰川色", "color": "glacier", "capacity": "1tb", "price": 15799},
+    {"part": "MJT14ZA/A", "family": "iphone-18-pro", "name": "iPhone 18 Pro 1TB 布根地紅色", "color": "burgundy", "capacity": "1tb", "price": 15799},
+    {"part": "MJT34ZA/A", "family": "iphone-18-pro", "name": "iPhone 18 Pro 2TB 黑色", "color": "black", "capacity": "2tb", "price": 20999},
+    {"part": "MJT44ZA/A", "family": "iphone-18-pro", "name": "iPhone 18 Pro 2TB 銀色", "color": "silver", "capacity": "2tb", "price": 20999},
+    {"part": "MJT64ZA/A", "family": "iphone-18-pro", "name": "iPhone 18 Pro 2TB 冰川色", "color": "glacier", "capacity": "2tb", "price": 20999},
+    {"part": "MJT54ZA/A", "family": "iphone-18-pro", "name": "iPhone 18 Pro 2TB 布根地紅色", "color": "burgundy", "capacity": "2tb", "price": 20999},
+
+    {"part": "MJXN4ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 256GB 黑色", "color": "black", "capacity": "256gb", "price": 11499},
+    {"part": "MJXP4ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 256GB 銀色", "color": "silver", "capacity": "256gb", "price": 11499},
+    {"part": "MJXR4ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 256GB 冰川色", "color": "glacier", "capacity": "256gb", "price": 11499},
+    {"part": "MJXQ4ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 256GB 布根地紅色", "color": "burgundy", "capacity": "256gb", "price": 11499},
+    {"part": "MJXT4ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 512GB 黑色", "color": "black", "capacity": "512gb", "price": 13299},
+    {"part": "MJXU4ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 512GB 銀色", "color": "silver", "capacity": "512gb", "price": 13299},
+    {"part": "MJXW4ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 512GB 冰川色", "color": "glacier", "capacity": "512gb", "price": 13299},
+    {"part": "MJXV4ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 512GB 布根地紅色", "color": "burgundy", "capacity": "512gb", "price": 13299},
+    {"part": "MJXX4ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 1TB 黑色", "color": "black", "capacity": "1tb", "price": 16799},
+    {"part": "MJXY4ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 1TB 銀色", "color": "silver", "capacity": "1tb", "price": 16799},
+    {"part": "MJY14ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 1TB 冰川色", "color": "glacier", "capacity": "1tb", "price": 16799},
+    {"part": "MJY04ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 1TB 布根地紅色", "color": "burgundy", "capacity": "1tb", "price": 16799},
+    {"part": "MJY24ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 2TB 黑色", "color": "black", "capacity": "2tb", "price": 21999},
+    {"part": "MJY34ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 2TB 銀色", "color": "silver", "capacity": "2tb", "price": 21999},
+    {"part": "MJY54ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 2TB 冰川色", "color": "glacier", "capacity": "2tb", "price": 21999},
+    {"part": "MJY44ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 2TB 布根地紅色", "color": "burgundy", "capacity": "2tb", "price": 21999},
+
+    {"part": "MG6J4ZA/A", "family": "iphone-17", "name": "iPhone 17 256GB 黑色", "color": "black", "capacity": "256gb", "price": 7799},
+    {"part": "MG6K4ZA/A", "family": "iphone-17", "name": "iPhone 17 256GB 白色", "color": "white", "capacity": "256gb", "price": 7799},
+    {"part": "MG6L4ZA/A", "family": "iphone-17", "name": "iPhone 17 256GB 霧藍色", "color": "mistblue", "capacity": "256gb", "price": 7799},
+    {"part": "MG6N4ZA/A", "family": "iphone-17", "name": "iPhone 17 256GB 鼠尾草綠", "color": "sage", "capacity": "256gb", "price": 7799},
+    {"part": "MG6M4ZA/A", "family": "iphone-17", "name": "iPhone 17 256GB 薰衣草色", "color": "lavender", "capacity": "256gb", "price": 7799},
+    {"part": "MG6P4ZA/A", "family": "iphone-17", "name": "iPhone 17 512GB 黑色", "color": "black", "capacity": "512gb", "price": 9599},
+    {"part": "MG6Q4ZA/A", "family": "iphone-17", "name": "iPhone 17 512GB 白色", "color": "white", "capacity": "512gb", "price": 9599},
+    {"part": "MG6T4ZA/A", "family": "iphone-17", "name": "iPhone 17 512GB 霧藍色", "color": "mistblue", "capacity": "512gb", "price": 9599},
+    {"part": "MG6V4ZA/A", "family": "iphone-17", "name": "iPhone 17 512GB 鼠尾草綠", "color": "sage", "capacity": "512gb", "price": 9599},
+    {"part": "MG6U4ZA/A", "family": "iphone-17", "name": "iPhone 17 512GB 薰衣草色", "color": "lavender", "capacity": "512gb", "price": 9599},
+
+    {"part": "MG2L4ZA/A", "family": "iphone-air", "name": "iPhone Air 256GB 太空黑色", "color": "spaceblack", "capacity": "256gb", "price": 9499},
+    {"part": "MG2M4ZA/A", "family": "iphone-air", "name": "iPhone Air 256GB 雲白色", "color": "cloudwhite", "capacity": "256gb", "price": 9499},
+    {"part": "MG2N4ZA/A", "family": "iphone-air", "name": "iPhone Air 256GB 淺金色", "color": "lightgold", "capacity": "256gb", "price": 9499},
+    {"part": "MG2P4ZA/A", "family": "iphone-air", "name": "iPhone Air 256GB 天藍色", "color": "skyblue", "capacity": "256gb", "price": 9499},
+    {"part": "MG2Q4ZA/A", "family": "iphone-air", "name": "iPhone Air 512GB 太空黑色", "color": "spaceblack", "capacity": "512gb", "price": 11299},
+    {"part": "MG2T4ZA/A", "family": "iphone-air", "name": "iPhone Air 512GB 雲白色", "color": "cloudwhite", "capacity": "512gb", "price": 11299},
+    {"part": "MG2U4ZA/A", "family": "iphone-air", "name": "iPhone Air 512GB 淺金色", "color": "lightgold", "capacity": "512gb", "price": 11299},
+    {"part": "MG2V4ZA/A", "family": "iphone-air", "name": "iPhone Air 512GB 天藍色", "color": "skyblue", "capacity": "512gb", "price": 11299},
+    {"part": "MG2W4ZA/A", "family": "iphone-air", "name": "iPhone Air 1TB 太空黑色", "color": "spaceblack", "capacity": "1tb", "price": 14799},
+    {"part": "MG2X4ZA/A", "family": "iphone-air", "name": "iPhone Air 1TB 雲白色", "color": "cloudwhite", "capacity": "1tb", "price": 14799},
+    {"part": "MG2Y4ZA/A", "family": "iphone-air", "name": "iPhone Air 1TB 淺金色", "color": "lightgold", "capacity": "1tb", "price": 14799},
+    {"part": "MG304ZA/A", "family": "iphone-air", "name": "iPhone Air 1TB 天藍色", "color": "skyblue", "capacity": "1tb", "price": 14799},
+
+    {"part": "MHRV4ZA/A", "family": "iphone-17e", "name": "iPhone 17e 256GB 黑色", "color": "black", "capacity": "256gb", "price": 5999},
+    {"part": "MHRW4ZA/A", "family": "iphone-17e", "name": "iPhone 17e 256GB 白色", "color": "white", "capacity": "256gb", "price": 5999},
+    {"part": "MHRX4ZA/A", "family": "iphone-17e", "name": "iPhone 17e 256GB 柔粉色", "color": "soft_pink", "capacity": "256gb", "price": 5999},
+    {"part": "MHRY4ZA/A", "family": "iphone-17e", "name": "iPhone 17e 512GB 黑色", "color": "black", "capacity": "512gb", "price": 7799},
+    {"part": "MHU04ZA/A", "family": "iphone-17e", "name": "iPhone 17e 512GB 白色", "color": "white", "capacity": "512gb", "price": 7799},
+    {"part": "MHU34ZA/A", "family": "iphone-17e", "name": "iPhone 17e 512GB 柔粉色", "color": "soft_pink", "capacity": "512gb", "price": 7799},
+
+    {"part": "MK2D4ZA/A", "family": "iphone-duo", "name": "iPhone Duo 256GB 星光白", "color": "starwhite", "capacity": "256gb", "price": 17499},
+    {"part": "MK2E4ZA/A", "family": "iphone-duo", "name": "iPhone Duo 256GB 夜空色", "color": "nightsky", "capacity": "256gb", "price": 17499},
+    {"part": "MK2F4ZA/A", "family": "iphone-duo", "name": "iPhone Duo 512GB 星光白", "color": "starwhite", "capacity": "512gb", "price": 19299},
+    {"part": "MK2G4ZA/A", "family": "iphone-duo", "name": "iPhone Duo 512GB 夜空色", "color": "nightsky", "capacity": "512gb", "price": 19299},
+    {"part": "MK2H4ZA/A", "family": "iphone-duo", "name": "iPhone Duo 1TB 星光白", "color": "starwhite", "capacity": "1tb", "price": 22799},
+    {"part": "MK2J4ZA/A", "family": "iphone-duo", "name": "iPhone Duo 1TB 夜空色", "color": "nightsky", "capacity": "1tb", "price": 22799},
+    {"part": "MK2K4ZA/A", "family": "iphone-duo", "name": "iPhone Duo 2TB 星光白", "color": "starwhite", "capacity": "2tb", "price": 27999},
+    {"part": "MK2L4ZA/A", "family": "iphone-duo", "name": "iPhone Duo 2TB 夜空色", "color": "nightsky", "capacity": "2tb", "price": 27999}
+  ]
+}

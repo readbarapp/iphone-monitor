@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>iPhone 香港庫存監控控制台</title>
+  <meta name="description" content="Apple 香港官網 iPhone 庫存監控、智慧聚合通知與控制台" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ["Noto Sans TC", "Inter", "SF Pro Display", "PingFang HK", "system-ui", "sans-serif"],
+          },
+          colors: {
+            apple: { blue: "#0071e3", green: "#30d158", red: "#ff453a", orange: "#ff9f0a" },
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/libsodium-wrappers@0.7.13/dist/sodium.js"></script>
+  <style>
+    body {
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(0, 113, 227, 0.18), transparent 50%),
+        radial-gradient(900px 500px at 100% 0%, rgba(48, 209, 88, 0.08), transparent 45%),
+        #05060a;
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    }
+    .toggle {
+      width: 56px;
+      height: 32px;
+      border-radius: 999px;
+      background: #3a3a3c;
+      position: relative;
+      transition: background .2s ease;
+    }
+    .toggle::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform .2s ease;
+    }
+    .toggle[aria-checked="true"] { background: #30d158; }
+    .toggle[aria-checked="true"]::after { transform: translateX(24px); }
+    .field {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .field:focus { outline: none; border-color: #0071e3; box-shadow: 0 0 0 3px rgba(0,113,227,.25); }
+    .chip-on { background: rgba(0,113,227,.2); border-color: rgba(0,113,227,.55); color: #7cc4ff; }
+  </style>
+</head>
+<body class="min-h-screen text-zinc-100 font-sans antialiased">
+  <header class="sticky top-0 z-30 backdrop-blur-xl bg-black/40 border-b border-white/10">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="h-10 w-10 rounded-2xl bg-white text-black grid place-items-center font-semibold"></div>
+        <div class="min-w-0">
+          <p class="text-xs uppercase tracking-[0.2em] text-zinc-400">Hong Kong · Zero-Trust</p>
+          <h1 class="text-lg sm:text-xl font-semibold truncate">iPhone 官網庫存監控控制台</h1>
+        </div>
+      </div>
+      <div id="statusPill" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300">讀取中</div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-6 sm:py-10 space-y-6 pb-36">
+    <section class="grid lg:grid-cols-3 gap-4">
+      <article class="glass rounded-3xl p-5 sm:p-6 lg:col-span-2">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-semibold">監控總開關</h2>
+            <p class="text-sm text-zinc-400 mt-1">關閉後 checker.py 會印出提示並以 exit(0) 安全退出，不打 Apple API。</p>
+          </div>
+          <button id="enabledToggle" class="toggle" role="switch" aria-checked="false" aria-label="監控總開關"></button>
+        </div>
+        <div class="mt-6 grid sm:grid-cols-2 gap-4">
+          <div class="rounded-2xl bg-white/5 p-4 border border-white/10">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="font-medium">測試模式 Test Mode</p>
+                <p class="text-xs text-zinc-400 mt-1">跳過真實 Apple API，改讀模擬狀態。</p>
+              </div>
+              <button id="testModeToggle" class="toggle" role="switch" aria-checked="true" aria-label="測試模式"></button>
+            </div>
+            <div class="mt-4">
+              <label class="text-xs text-zinc-400">模擬庫存 mock_status</label>
+              <div class="mt-2 flex gap-2">
+                <button data-mock="available" class="mock-btn flex-1 rounded-xl border border-white/10 px-3 py-2 text-sm">有貨 available</button>
+                <button data-mock="unavailable" class="mock-btn flex-1 rounded-xl border border-white/10 px-3 py-2 text-sm chip-on">無貨 unavailable</button>
+              </div>
+            </div>
+          </div>
+          <div class="rounded-2xl bg-white/5 p-4 border border-white/10">
+            <p class="font-medium">取貨模式</p>
+            <p class="text-xs text-zinc-400 mt-1">可同時監控門市取貨與送貨上門。</p>
+            <div class="mt-4 space-y-2">
+              <label class="flex items-center justify-between rounded-xl field px-3 py-2">
+                <span>門市取貨 Pick-up</span>
+                <input id="modePickup" type="checkbox" checked class="h-4 w-4 accent-sky-500" />
+              </label>
+              <label class="flex items-center justify-between rounded-xl field px-3 py-2">
+                <span>送貨上門 Delivery</span>
+                <input id="modeDelivery" type="checkbox" checked class="h-4 w-4 accent-sky-500" />
+              </label>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="glass rounded-3xl p-5 sm:p-6">
+        <h2 class="text-lg font-semibold">用量與額度</h2>
+        <p class="text-xs text-zinc-400 mt-1">GitHub Actions 免費額度每月 2,000 分鐘。</p>
+        <div class="mt-4">
+          <div class="h-3 rounded-full bg-white/10 overflow-hidden">
+            <div id="usageBar" class="h-full w-0 bg-apple-orange transition-all"></div>
+          </div>
+          <p id="usageText" class="mt-3 text-sm leading-relaxed text-zinc-300">計算中…</p>
+          <a class="inline-flex mt-3 text-sm text-sky-400 hover:underline" href="https://github.com/settings/billing" target="_blank" rel="noreferrer">開啟 GitHub Billing →</a>
+        </div>
+        <label class="block mt-4 text-xs text-zinc-400">監控頻率（分鐘，須與 workflow cron 一致）</label>
+        <input id="intervalInput" type="number" min="1" max="60" value="2" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" />
+      </article>
+    </section>
+
+    <section class="grid lg:grid-cols-2 gap-4">
+      <article class="glass rounded-3xl p-5 sm:p-6">
+        <h2 class="text-lg font-semibold">型號、顏色、容量</h2>
+        <p class="text-sm text-zinc-400 mt-1">從官網現行香港 SKU（ZA/A）加入監控清單，可同時盯多款。</p>
+        <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <label class="text-xs text-zinc-400">型號
+            <select id="familySelect" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm"></select>
+          </label>
+          <label class="text-xs text-zinc-400">顏色
+            <select id="colorSelect" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm"></select>
+          </label>
+          <label class="text-xs text-zinc-400">容量
+            <select id="capacitySelect" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm"></select>
+          </label>
+        </div>
+        <div class="mt-3 flex items-center justify-between gap-3">
+          <p id="skuPreview" class="text-sm text-zinc-300 truncate">—</p>
+          <button id="addModelBtn" class="shrink-0 rounded-xl bg-apple-blue px-4 py-2 text-sm font-medium">加入監控</button>
+        </div>
+        <div id="watchList" class="mt-4 flex flex-wrap gap-2"></div>
+      </article>
+
+      <article class="glass rounded-3xl p-5 sm:p-6">
+        <h2 class="text-lg font-semibold">門市多選（Pick-up）</h2>
+        <p class="text-sm text-zinc-400 mt-1">只查你勾選的 Apple Store；權重愈高，通知排序愈前。</p>
+        <div id="storeList" class="mt-4 space-y-2"></div>
+      </article>
+    </section>
+
+    <section class="glass rounded-3xl p-5 sm:p-6">
+      <h2 class="text-lg font-semibold">優先級設定 Priority Settings</h2>
+      <p class="text-sm text-zinc-400 mt-1">同週期多筆有貨會合成 1 條訊息，並依門市 → 容量 → 通路權重排序。</p>
+      <div class="mt-5 grid md:grid-cols-2 gap-6">
+        <div>
+          <p class="text-sm font-medium mb-3">容量優先級</p>
+          <div id="capacityPriority" class="space-y-3"></div>
+        </div>
+        <div>
+          <p class="text-sm font-medium mb-3">通路優先級</p>
+          <label class="block text-xs text-zinc-400">門市取貨
+            <input id="prioPickup" type="range" min="0" max="100" value="100" class="w-full accent-sky-500" />
+          </label>
+          <label class="block text-xs text-zinc-400 mt-3">送貨上門
+            <input id="prioDelivery" type="range" min="0" max="100" value="70" class="w-full accent-sky-500" />
+          </label>
+          <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+            <p>Pickup：<span id="prioPickupVal">100</span></p>
+            <p>Delivery：<span id="prioDeliveryVal">70</span></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid lg:grid-cols-2 gap-4">
+      <article class="glass rounded-3xl p-5 sm:p-6">
+        <h2 class="text-lg font-semibold">營業時間窗</h2>
+        <p class="text-sm text-zinc-400 mt-1">時間窗外正式模式會略過查詢（測試模式不受限）。星期：一=0 … 日=6。</p>
+        <label class="mt-4 flex items-center justify-between rounded-xl field px-3 py-2">
+          <span>啟用營業時間過濾</span>
+          <input id="hoursEnabled" type="checkbox" checked class="h-4 w-4 accent-sky-500" />
+        </label>
+        <div class="mt-3 grid grid-cols-2 gap-3">
+          <label class="text-xs text-zinc-400">開始
+            <input id="hoursStart" type="time" value="10:00" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" />
+          </label>
+          <label class="text-xs text-zinc-400">結束
+            <input id="hoursEnd" type="time" value="22:00" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" />
+          </label>
+        </div>
+      </article>
+
+      <article class="glass rounded-3xl p-5 sm:p-6">
+        <h2 class="text-lg font-semibold">最近監控狀態</h2>
+        <p id="lastRunText" class="text-sm text-zinc-400 mt-1">尚未讀取 state.json</p>
+        <div id="statePreview" class="mt-4 space-y-2 max-h-56 overflow-auto text-sm"></div>
+      </article>
+    </section>
+
+    <section class="glass rounded-3xl p-5 sm:p-6">
+      <h2 class="text-lg font-semibold">GitHub PAT 與通訊憑證</h2>
+      <p class="text-sm text-zinc-400 mt-1">
+        Zero-Trust：PAT 只存在此瀏覽器的 sessionStorage，不會寫進倉庫。
+        Telegram / Discord 金鑰會透過 GitHub Secrets API 加密上傳，不會進入 <code>config.json</code>。
+      </p>
+      <div class="mt-4 grid md:grid-cols-2 gap-3">
+        <label class="text-xs text-zinc-400">GitHub Owner
+          <input id="ghOwner" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" placeholder="your-user" />
+        </label>
+        <label class="text-xs text-zinc-400">Repository
+          <input id="ghRepo" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" placeholder="iphone-monitor" />
+        </label>
+        <label class="text-xs text-zinc-400">Branch
+          <input id="ghBranch" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" value="main" />
+        </label>
+        <label class="text-xs text-zinc-400">Fine-grained PAT（repo Contents + Actions + Secrets）
+          <input id="ghPat" type="password" autocomplete="off" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" placeholder="github_pat_…" />
+        </label>
+        <label class="text-xs text-zinc-400">Telegram Bot Token
+          <input id="tgToken" type="password" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" placeholder="123456:ABC…" />
+        </label>
+        <label class="text-xs text-zinc-400">Telegram Chat ID
+          <input id="tgChat" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" placeholder="123456789" />
+        </label>
+        <label class="text-xs text-zinc-400 md:col-span-2">Discord Webhook URL
+          <input id="dcWebhook" type="password" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" placeholder="https://discord.com/api/webhooks/…" />
+        </label>
+      </div>
+      <div class="mt-3 flex flex-wrap gap-3">
+        <label class="text-sm flex items-center gap-2"><input id="tgEnabled" type="checkbox" checked class="accent-sky-500" /> 啟用 Telegram</label>
+        <label class="text-sm flex items-center gap-2"><input id="dcEnabled" type="checkbox" checked class="accent-sky-500" /> 啟用 Discord</label>
+      </div>
+    </section>
+
+    <section class="sticky bottom-4 z-20 glass rounded-3xl p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+      <p id="saveMsg" class="text-sm text-zinc-400">變更後請按儲存，系統會用 GitHub REST API 更新 config.json。</p>
+      <div class="flex flex-wrap gap-2">
+        <button id="testNotifyBtn" class="rounded-xl border border-white/15 px-4 py-2 text-sm">測試通知</button>
+        <button id="reloadBtn" class="rounded-xl border border-white/15 px-4 py-2 text-sm">重新載入</button>
+        <button id="saveBtn" class="rounded-xl bg-white text-black px-5 py-2 text-sm font-semibold">儲存設定</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const FREE_MINUTES = 2000;
+    const PAT_KEY = "iphone_monitor_pat";
+    const CAPACITIES = ["256gb", "512gb", "1tb", "2tb"];
+    const CAP_LABEL = { "256gb": "256GB", "512gb": "512GB", "1tb": "1TB", "2tb": "2TB" };
+
+    const FALLBACK_CATALOG = {
+      stores: [
+        { id: "R428", name_zh: "中環 ifc mall" },
+        { id: "R409", name_zh: "銅鑼灣 Causeway Bay" },
+        { id: "R499", name_zh: "尖沙咀 廣東道" },
+        { id: "R485", name_zh: "九龍塘 又一城" },
+        { id: "R673", name_zh: "觀塘 apm" },
+        { id: "R610", name_zh: "沙田 新城市廣場" },
+      ],
+      families: [
+        { id: "iphone-18-pro", label: "iPhone 18 Pro" },
+        { id: "iphone-18-pro-max", label: "iPhone 18 Pro Max" },
+        { id: "iphone-17", label: "iPhone 17" },
+        { id: "iphone-air", label: "iPhone Air" },
+        { id: "iphone-17e", label: "iPhone 17e" },
+        { id: "iphone-duo", label: "iPhone Duo" },
+      ],
+      color_labels: {
+        black: "黑色", white: "白色", silver: "銀色", burgundy: "布根地紅色", glacier: "冰川色",
+        mistblue: "霧藍色", sage: "鼠尾草綠", lavender: "薰衣草色", spaceblack: "太空黑色",
+        cloudwhite: "雲白色", lightgold: "淺金色", skyblue: "天藍色", soft_pink: "柔粉色",
+        starwhite: "星光白", nightsky: "夜空色",
+      },
+      products: [],
+    };
+
+    let catalog = FALLBACK_CATALOG;
+    let config = null;
+    let mockStatus = "unavailable";
+
+    const $ = (id) => document.getElementById(id);
+
+    function setToggle(el, on) {
+      el.setAttribute("aria-checked", on ? "true" : "false");
+    }
+    function isOn(el) {
+      return el.getAttribute("aria-checked") === "true";
+    }
+    function toast(msg, ok = true) {
+      $("saveMsg").textContent = msg;
+      $("saveMsg").className = "text-sm " + (ok ? "text-emerald-300" : "text-rose-300");
+    }
+    function detectRepo() {
+      const host = location.hostname;
+      if (host.endsWith("github.io")) {
+        const owner = host.split(".")[0];
+        const repo = location.pathname.split("/").filter(Boolean)[0] || "";
+        return { owner, repo };
+      }
+      return { owner: "", repo: "" };
+    }
+
+    async function loadJSON(path) {
+      const res = await fetch(path, { cache: "no-store" });
+      if (!res.ok) throw new Error(path + " HTTP " + res.status);
+      return res.json();
+    }
+
+    function productsOf(family) {
+      return (catalog.products || []).filter((p) => p.family === family);
+    }
+
+    function fillFamilies() {
+      const sel = $("familySelect");
+      sel.innerHTML = (catalog.families || []).map((f) => `<option value="${f.id}">${f.label}</option>`).join("");
+      fillColors();
+    }
+
+    function fillColors() {
+      const family = $("familySelect").value;
+      const colors = [...new Set(productsOf(family).map((p) => p.color))];
+      $("colorSelect").innerHTML = colors.map((c) => {
+        const label = (catalog.color_labels && catalog.color_labels[c]) || c;
+        return `<option value="${c}">${label}</option>`;
+      }).join("");
+      fillCaps();
+    }
+
+    function fillCaps() {
+      const family = $("familySelect").value;
+      const color = $("colorSelect").value;
+      const caps = [...new Set(productsOf(family).filter((p) => p.color === color).map((p) => p.capacity))];
+      $("capacitySelect").innerHTML = caps.map((c) => `<option value="${c}">${CAP_LABEL[c] || c}</option>`).join("");
+      updateSkuPreview();
+    }
+
+    function currentProduct() {
+      return (catalog.products || []).find((p) =>
+        p.family === $("familySelect").value &&
+        p.color === $("colorSelect").value &&
+        p.capacity === $("capacitySelect").value
+      );
+    }
+
+    function updateSkuPreview() {
+      const p = currentProduct();
+      $("skuPreview").textContent = p ? `${p.name} · ${p.part} · HK$${p.price.toLocaleString()}` : "此組合沒有對應 SKU";
+    }
+
+    function renderWatchList() {
+      const models = config.models || [];
+      $("watchList").innerHTML = models.length
+        ? models.map((m, i) => `
+            <button data-remove="${i}" class="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs">
+              ${m.name || m.part_number} ✕
+            </button>`).join("")
+        : `<p class="text-sm text-zinc-500">尚未加入任何型號</p>`;
+      $("watchList").querySelectorAll("[data-remove]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          config.models.splice(Number(btn.dataset.remove), 1);
+          renderWatchList();
+          estimateUsage();
+        });
+      });
+    }
+
+    function renderStores() {
+      const selected = new Set(config.stores || []);
+      const weights = (config.priority && config.priority.stores) || {};
+      $("storeList").innerHTML = (catalog.stores || []).map((s) => `
+        <div class="flex items-center gap-3 rounded-xl field px-3 py-2">
+          <input type="checkbox" data-store="${s.id}" ${selected.has(s.id) ? "checked" : ""} class="accent-sky-500" />
+          <div class="flex-1 min-w-0">
+            <p class="text-sm truncate">${s.name_zh || s.name}</p>
+            <p class="text-[11px] text-zinc-500">${s.id}</p>
+          </div>
+          <input type="number" min="0" max="100" value="${weights[s.id] ?? 50}" data-store-weight="${s.id}" class="field w-20 rounded-lg px-2 py-1 text-sm" />
+        </div>
+      `).join("");
+    }
+
+    function renderCapPriority() {
+      const weights = (config.priority && config.priority.capacities) || {};
+      $("capacityPriority").innerHTML = CAPACITIES.map((c) => `
+        <label class="block text-xs text-zinc-400">${CAP_LABEL[c]}
+          <input type="range" min="0" max="100" value="${weights[c] ?? 50}" data-cap="${c}" class="w-full accent-sky-500" />
+          <span data-cap-val="${c}" class="text-zinc-200">${weights[c] ?? 50}</span>
+        </label>
+      `).join("");
+      $("capacityPriority").querySelectorAll("[data-cap]").forEach((el) => {
+        el.addEventListener("input", () => {
+          document.querySelector(`[data-cap-val="${el.dataset.cap}"]`).textContent = el.value;
+        });
+      });
+    }
+
+    function hoursPerDay() {
+      if (!$("hoursEnabled").checked) return 24;
+      const [sh, sm] = ($("hoursStart").value || "00:00").split(":").map(Number);
+      const [eh, em] = ($("hoursEnd").value || "23:59").split(":").map(Number);
+      let mins = (eh * 60 + em) - (sh * 60 + sm);
+      if (mins <= 0) mins += 24 * 60;
+      return mins / 60;
+    }
+
+    function estimateUsage() {
+      const interval = Math.max(1, Number($("intervalInput").value) || 2);
+      const hours = hoursPerDay();
+      const runsDay = Math.floor((hours * 60) / interval);
+      const runsMonth = runsDay * 30;
+      // Actions 以整分鐘進位；即使 enabled=false，cron 仍會 checkout。
+      const billed = runsMonth * 1;
+      const pct = Math.min(999, Math.round((billed / FREE_MINUTES) * 100));
+      const bar = $("usageBar");
+      bar.style.width = Math.min(100, pct) + "%";
+      bar.className = "h-full transition-all " + (pct > 100 ? "bg-apple-red" : pct > 70 ? "bg-apple-orange" : "bg-apple-green");
+      const watchN = (config.models || []).length;
+      const storeN = document.querySelectorAll("[data-store]:checked").length || (config.stores || []).length;
+      $("usageText").innerHTML = `
+        每 ${interval} 分鐘 × 每日 ${hours.toFixed(1)} 小時 ≈ <b>${runsDay}</b> 次/日、<b>${runsMonth.toLocaleString()}</b> 次/月。<br/>
+        預估消耗 <b>${billed.toLocaleString()}</b> 分鐘 / 2,000（${pct}%）${pct > 100 ? " · 將超出免費額度" : ""}。<br/>
+        目前監控 ${watchN} 款 × ${storeN} 間門市。cron 在總開關 OFF 時仍會跑，平時請 Disable workflow。
+      `;
+    }
+
+    function applyConfigToForm(cfg) {
+      config = structuredClone(cfg);
+      mockStatus = cfg.mock_status === "available" ? "available" : "unavailable";
+      setToggle($("enabledToggle"), !!cfg.enabled);
+      setToggle($("testModeToggle"), !!cfg.test_mode);
+      document.querySelectorAll(".mock-btn").forEach((b) => {
+        b.classList.toggle("chip-on", b.dataset.mock === mockStatus);
+      });
+      const modes = cfg.fulfillment_modes || [];
+      $("modePickup").checked = modes.includes("pickup");
+      $("modeDelivery").checked = modes.includes("delivery") && (cfg.delivery?.enabled !== false);
+      $("intervalInput").value = cfg.check_interval_minutes || 2;
+      $("hoursEnabled").checked = !!(cfg.business_hours && cfg.business_hours.enabled);
+      $("hoursStart").value = cfg.business_hours?.start || "10:00";
+      $("hoursEnd").value = cfg.business_hours?.end || "22:00";
+      $("prioPickup").value = cfg.priority?.modes?.pickup ?? 100;
+      $("prioDelivery").value = cfg.priority?.modes?.delivery ?? 70;
+      $("prioPickupVal").textContent = $("prioPickup").value;
+      $("prioDeliveryVal").textContent = $("prioDelivery").value;
+      $("ghOwner").value = cfg.github?.owner || detectRepo().owner;
+      $("ghRepo").value = cfg.github?.repo || detectRepo().repo;
+      $("ghBranch").value = cfg.github?.branch || "main";
+      $("tgEnabled").checked = cfg.notifications?.telegram_enabled !== false;
+      $("dcEnabled").checked = cfg.notifications?.discord_enabled !== false;
+      $("ghPat").value = sessionStorage.getItem(PAT_KEY) || "";
+      updatePill();
+      renderWatchList();
+      renderStores();
+      renderCapPriority();
+      estimateUsage();
+    }
+
+    function updatePill() {
+      const on = isOn($("enabledToggle"));
+      const test = isOn($("testModeToggle"));
+      const pill = $("statusPill");
+      if (!on) {
+        pill.textContent = "已暫停 OFF";
+        pill.className = "shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300";
+      } else if (test) {
+        pill.textContent = "測試模式 ON";
+        pill.className = "shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-amber-500/20 text-amber-200";
+      } else {
+        pill.textContent = "監控中 ON";
+        pill.className = "shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-emerald-500/20 text-emerald-200";
+      }
+    }
+
+    function collectConfig() {
+      const stores = [...document.querySelectorAll("[data-store]:checked")].map((el) => el.dataset.store);
+      const storeWeights = {};
+      document.querySelectorAll("[data-store-weight]").forEach((el) => {
+        storeWeights[el.dataset.storeWeight] = Number(el.value) || 0;
+      });
+      const capWeights = {};
+      document.querySelectorAll("[data-cap]").forEach((el) => {
+        capWeights[el.dataset.cap] = Number(el.value) || 0;
+      });
+      const modes = [];
+      if ($("modePickup").checked) modes.push("pickup");
+      if ($("modeDelivery").checked) modes.push("delivery");
+      return {
+        enabled: isOn($("enabledToggle")),
+        test_mode: isOn($("testModeToggle")),
+        mock_status: mockStatus,
+        check_interval_minutes: Number($("intervalInput").value) || 2,
+        fulfillment_modes: modes.length ? modes : ["pickup"],
+        models: config.models || [],
+        stores,
+        delivery: {
+          enabled: $("modeDelivery").checked,
+          location: config.delivery?.location || "Hong Kong",
+        },
+        priority: {
+          stores: storeWeights,
+          capacities: capWeights,
+          modes: {
+            pickup: Number($("prioPickup").value) || 0,
+            delivery: Number($("prioDelivery").value) || 0,
+          },
+        },
+        business_hours: {
+          enabled: $("hoursEnabled").checked,
+          timezone: "Asia/Hong_Kong",
+          start: $("hoursStart").value || "10:00",
+          end: $("hoursEnd").value || "22:00",
+          days: [0, 1, 2, 3, 4, 5, 6],
+        },
+        anti_abuse: config.anti_abuse || {
+          random_delay_seconds: [3, 7],
+          max_retries: 4,
+          backoff_base_seconds: 2,
+          request_timeout_seconds: 20,
+        },
+        notifications: {
+          telegram_enabled: $("tgEnabled").checked,
+          discord_enabled: $("dcEnabled").checked,
+        },
+        github: {
+          owner: $("ghOwner").value.trim(),
+          repo: $("ghRepo").value.trim(),
+          branch: $("ghBranch").value.trim() || "main",
+          config_path: "config.json",
+        },
+      };
+    }
+
+    async function ghApi(path, method, body, pat) {
+      const res = await fetch("https://api.github.com" + path, {
+        method,
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: "Bearer " + pat,
+          "X-GitHub-Api-Version": "2022-11-28",
+          "Content-Type": "application/json",
+        },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const text = await res.text();
+      let data = {};
+      try { data = text ? JSON.parse(text) : {}; } catch { data = { message: text }; }
+      if (!res.ok) throw new Error(data.message || ("GitHub API " + res.status));
+      return data;
+    }
+
+    async function encryptSecret(publicKeyB64, secret) {
+      if (!window.sodium) throw new Error("libsodium 尚未載入");
+      await sodium.ready;
+      const pk = sodium.from_base64(publicKeyB64, sodium.base64_variants.ORIGINAL);
+      const sealed = sodium.crypto_box_seal(sodium.from_string(secret), pk);
+      return sodium.to_base64(sealed, sodium.base64_variants.ORIGINAL);
+    }
+
+    async function upsertSecret(owner, repo, pat, name, value) {
+      if (!value) return;
+      const keyInfo = await ghApi(`/repos/${owner}/${repo}/actions/secrets/public-key`, "GET", null, pat);
+      const encrypted = await encryptSecret(keyInfo.key, value);
+      await ghApi(`/repos/${owner}/${repo}/actions/secrets/${name}`, "PUT", {
+        encrypted_value: encrypted,
+        key_id: keyInfo.key_id,
+      }, pat);
+    }
+
+    async function saveSettings() {
+      const next = collectConfig();
+      const pat = $("ghPat").value.trim();
+      if (!pat) throw new Error("請先填寫 GitHub PAT");
+      if (!next.github.owner || !next.github.repo) throw new Error("請填寫 Owner 與 Repository");
+      sessionStorage.setItem(PAT_KEY, pat);
+      const path = `/repos/${next.github.owner}/${next.github.repo}/contents/config.json`;
+      let sha;
+      try {
+        const current = await ghApi(path + "?ref=" + encodeURIComponent(next.github.branch), "GET", null, pat);
+        sha = current.sha;
+      } catch (err) {
+        if (!String(err.message).includes("Not Found")) throw err;
+      }
+      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(next, null, 2) + "\n")));
+      await ghApi(path, "PUT", {
+        message: "chore: update monitor config from dashboard",
+        content: encoded,
+        branch: next.github.branch,
+        sha,
+      }, pat);
+      const secretJobs = [
+        upsertSecret(next.github.owner, next.github.repo, pat, "TELEGRAM_BOT_TOKEN", $("tgToken").value.trim()),
+        upsertSecret(next.github.owner, next.github.repo, pat, "TELEGRAM_CHAT_ID", $("tgChat").value.trim()),
+        upsertSecret(next.github.owner, next.github.repo, pat, "DISCORD_WEBHOOK_URL", $("dcWebhook").value.trim()),
+      ];
+      const secretResults = await Promise.allSettled(secretJobs);
+      const secretFail = secretResults.filter((r) => r.status === "rejected");
+      config = next;
+      if (secretFail.length) {
+        toast("config.json 已更新，但部分 Secrets 寫入失敗：" + secretFail[0].reason, false);
+      } else {
+        toast("已儲存設定。PAT 未寫入倉庫；通訊憑證已嘗試更新到 GitHub Secrets。");
+      }
+      updatePill();
+    }
+
+    async function testNotify() {
+      const next = collectConfig();
+      const pat = $("ghPat").value.trim();
+      if (!pat || !next.github.owner || !next.github.repo) {
+        throw new Error("測試通知需要 Owner / Repo / PAT，以便觸發 workflow_dispatch");
+      }
+      sessionStorage.setItem(PAT_KEY, pat);
+      await ghApi(
+        `/repos/${next.github.owner}/${next.github.repo}/actions/workflows/monitor.yml/dispatches`,
+        "POST",
+        { ref: next.github.branch || "main", inputs: { test_notify: "true" } },
+        pat
+      );
+      toast("已觸發 GitHub Actions 測試通知，請到 Actions 頁查看執行紀錄。");
+    }
+
+    async function loadState() {
+      try {
+        const state = await loadJSON("state.json");
+        const run = state.last_run || {};
+        $("lastRunText").textContent = `${run.status || "unknown"} · ${run.message || ""} · ${run.at || state.updated_at || ""}`;
+        const items = Object.values(state.items || {});
+        $("statePreview").innerHTML = items.length
+          ? items.slice(0, 20).map((it) => `
+              <div class="flex justify-between gap-3 rounded-xl bg-white/5 px-3 py-2">
+                <span class="truncate">${it.mode === "delivery" ? "送貨" : "門市"} · ${it.name || it.part_number} · ${it.store_name || it.store_id}</span>
+                <span class="${it.status === "available" ? "text-emerald-300" : "text-zinc-400"}">${it.status || "?"}</span>
+              </div>`).join("")
+          : `<p class="text-zinc-500">尚無狀態紀錄。開啟測試模式跑一次即可看到。</p>`;
+      } catch {
+        $("lastRunText").textContent = "讀不到 state.json（本地預覽或尚未執行過監控）。";
+      }
+    }
+
+    function bind() {
+      $("enabledToggle").addEventListener("click", () => {
+        setToggle($("enabledToggle"), !isOn($("enabledToggle")));
+        updatePill();
+        estimateUsage();
+      });
+      $("testModeToggle").addEventListener("click", () => {
+        setToggle($("testModeToggle"), !isOn($("testModeToggle")));
+        updatePill();
+      });
+      document.querySelectorAll(".mock-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          mockStatus = btn.dataset.mock;
+          document.querySelectorAll(".mock-btn").forEach((b) => b.classList.toggle("chip-on", b === btn));
+        });
+      });
+      $("familySelect").addEventListener("change", fillColors);
+      $("colorSelect").addEventListener("change", fillCaps);
+      $("capacitySelect").addEventListener("change", updateSkuPreview);
+      $("addModelBtn").addEventListener("click", () => {
+        const p = currentProduct();
+        if (!p) return toast("沒有對應 SKU", false);
+        config.models = config.models || [];
+        if (config.models.some((m) => m.part_number === p.part)) return toast("此型號已在清單中", false);
+        config.models.push({
+          part_number: p.part,
+          family: p.family,
+          name: p.name,
+          color: p.color,
+          capacity: p.capacity,
+        });
+        renderWatchList();
+        estimateUsage();
+        toast("已加入監控清單（記得按儲存設定）");
+      });
+      ["intervalInput", "hoursEnabled", "hoursStart", "hoursEnd", "modePickup", "modeDelivery"].forEach((id) => {
+        $(id).addEventListener("input", estimateUsage);
+        $(id).addEventListener("change", estimateUsage);
+      });
+      $("storeList").addEventListener("change", estimateUsage);
+      $("prioPickup").addEventListener("input", () => $("prioPickupVal").textContent = $("prioPickup").value);
+      $("prioDelivery").addEventListener("input", () => $("prioDeliveryVal").textContent = $("prioDelivery").value);
+      $("saveBtn").addEventListener("click", async () => {
+        $("saveBtn").disabled = true;
+        try { await saveSettings(); }
+        catch (err) { toast(String(err.message || err), false); }
+        finally { $("saveBtn").disabled = false; }
+      });
+      $("testNotifyBtn").addEventListener("click", async () => {
+        $("testNotifyBtn").disabled = true;
+        try { await testNotify(); }
+        catch (err) { toast(String(err.message || err), false); }
+        finally { $("testNotifyBtn").disabled = false; }
+      });
+      $("reloadBtn").addEventListener("click", () => location.reload());
+    }
+
+    async function boot() {
+      bind();
+      try { catalog = await loadJSON("catalog.json"); }
+      catch { /* 使用內建門市／型號清單 */ }
+      fillFamilies();
+      try {
+        const cfg = await loadJSON("config.json");
+        applyConfigToForm(cfg);
+      } catch (err) {
+        applyConfigToForm({
+          enabled: false,
+          test_mode: true,
+          mock_status: "unavailable",
+          check_interval_minutes: 2,
+          fulfillment_modes: ["pickup", "delivery"],
+          models: [],
+          stores: ["R428", "R409", "R499"],
+          delivery: { enabled: true, location: "Hong Kong" },
+          priority: { stores: {}, capacities: { "256gb": 100, "512gb": 80, "1tb": 60, "2tb": 40 }, modes: { pickup: 100, delivery: 70 } },
+          business_hours: { enabled: true, start: "10:00", end: "22:00" },
+          notifications: { telegram_enabled: true, discord_enabled: true },
+          github: detectRepo(),
+        });
+        toast("讀不到 config.json，已載入預設值：" + err.message, false);
+      }
+      await loadState();
+    }
+
+    boot();
+  </script>
+</body>
+</html>

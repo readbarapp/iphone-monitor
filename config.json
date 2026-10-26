@@ -1,0 +1,82 @@
+{
+  "enabled": false,
+  "test_mode": true,
+  "mock_status": "unavailable",
+  "check_interval_minutes": 2,
+  "fulfillment_modes": [
+    "pickup",
+    "delivery"
+  ],
+  "models": [
+    {
+      "part_number": "MJRP4ZA/A",
+      "family": "iphone-18-pro",
+      "name": "iPhone 18 Pro 256GB 黑色",
+      "color": "black",
+      "capacity": "256gb"
+    }
+  ],
+  "stores": [
+    "R428",
+    "R409",
+    "R499"
+  ],
+  "delivery": {
+    "enabled": true,
+    "location": "Hong Kong"
+  },
+  "priority": {
+    "stores": {
+      "R428": 100,
+      "R409": 90,
+      "R499": 80,
+      "R485": 70,
+      "R673": 60,
+      "R610": 50
+    },
+    "capacities": {
+      "256gb": 100,
+      "512gb": 80,
+      "1tb": 60,
+      "2tb": 40
+    },
+    "modes": {
+      "pickup": 100,
+      "delivery": 70
+    }
+  },
+  "business_hours": {
+    "enabled": true,
+    "timezone": "Asia/Hong_Kong",
+    "start": "10:00",
+    "end": "22:00",
+    "days": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
+  },
+  "anti_abuse": {
+    "random_delay_seconds": [
+      3,
+      7
+    ],
+    "max_retries": 4,
+    "backoff_base_seconds": 2,
+    "request_timeout_seconds": 20
+  },
+  "notifications": {
+    "telegram_enabled": true,
+    "discord_enabled": true
+  },
+  "github": {
+    "owner": "",
+    "repo": "",
+    "branch": "main",
+    "config_path": "config.json"
+  }
+}
