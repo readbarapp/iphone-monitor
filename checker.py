@@ -6,9 +6,10 @@ Apple 香港官網 iPhone 庫存監控器。
 --------
 - Zero-Trust：Telegram 憑證只從環境變數（GitHub Secrets）讀取，
   絕不寫入 config.json。
-- 總開關：config.enabled == false 時安全退出（exit 0），不打 Apple API。
-- 測試模式：test_mode 開啟時跳過真實 API，改讀 mock_status，
-  方便在平時無貨時驗證「無貨 → 有貨」通知鏈。
+- 真實模式：config.enabled == false 時安全退出（exit 0），不打 Apple API。
+  開啟後只監測 iPhone Duo；冇貨 → 有貨先發 Telegram。
+- 模擬模式：--apply-simulation 讀每格獨立貨源，只寫入 simulation 狀態，
+  唔問 Apple；任意一格冇貨 → 有貨先發測試結果 Telegram。
 - 雙模式：店內取貨（pickup）與送貨上門（delivery）。
 - 防洗版：僅在 unavailable → available 時納入通知；同週期多筆打包成 1 條。
 - 優先級：依 config.priority 的門市 / 容量 / 取貨模式權重排序。
@@ -65,6 +66,7 @@ REQUEST_HEADERS = {
 
 HK_TZ = ZoneInfo("Asia/Hong_Kong")
 FREE_MINUTES = 2000
+DUO_FAMILY = "iphone-duo"
 STATUS_AVAILABLE = "available"
 STATUS_UNAVAILABLE = "unavailable"
 STATUS_UNKNOWN = "unknown"
@@ -252,6 +254,11 @@ def resolve_watch_list(cfg: dict[str, Any], catalog: dict[str, Any]) -> list[Wat
             item.family = str(meta.get("family") or "")
         if not item.color:
             item.color = str(meta.get("color") or "")
+        family = item.family or str(meta.get("family") or "")
+        if family != DUO_FAMILY:
+            LOGGER.info("略過非 iPhone Duo 型號：%s", item.part_number)
+            continue
+        item.family = DUO_FAMILY
         seen.add(item.part_number)
         items.append(item)
     return items
@@ -569,14 +576,8 @@ def format_connection_test_message() -> str:
     )
 
 
-def format_message(hits: list[AvailabilityHit], *, test: bool = False) -> str:
-    """真實補貨格式。test=True 只加一行註明係測試模式模擬，版面同正式一樣。"""
-    lines = [
-        "🍎 Apple 香港有貨通知",
-        "",
-        f"共 {len(hits)} 項由「無貨」轉為「有貨」（已依優先級排序）：",
-        "",
-    ]
+def _hit_lines(hits: list[AvailabilityHit]) -> list[str]:
+    lines: list[str] = []
     for idx, hit in enumerate(hits, start=1):
         mode_label = "門市取貨" if hit.mode == "pickup" else "送貨上門"
         place = hit.store_name
@@ -591,9 +592,32 @@ def format_message(hits: list[AvailabilityHit], *, test: bool = False) -> str:
                 "",
             ]
         )
+    return lines
+
+
+def format_message(hits: list[AvailabilityHit]) -> str:
+    """真實模式：官網由冇貨轉有貨。"""
+    lines = [
+        "🍎 Apple 香港有貨通知",
+        "",
+        f"共 {len(hits)} 項由「冇貨」轉為「有貨」（已依優先級排序）：",
+        "",
+    ]
+    lines.extend(_hit_lines(hits))
     lines.append(f"時間：{iso_now()}（香港）")
-    if test:
-        lines.append("🧪 以上係測試模式模擬「無貨 → 有貨」，唔代表官網真係有貨。")
+    return "\n".join(lines).strip() + "\n"
+
+
+def format_simulation_message(hits: list[AvailabilityHit]) -> str:
+    """模擬模式測試結果：講明係測試，並列出邊部機補貨。"""
+    lines = [
+        "🧪 模擬模式測試結果",
+        "",
+        "以下項目由「冇貨」變成「有貨」。呢條係測試訊息，唔代表官網真係有貨。",
+        "",
+    ]
+    lines.extend(_hit_lines(hits))
+    lines.append(f"時間：{iso_now()}（香港）")
     return "\n".join(lines).strip() + "\n"
 
 
@@ -646,34 +670,47 @@ def mock_hits(
     cfg: dict[str, Any],
     watch: list[WatchItem],
     catalog: dict[str, Any],
+    *,
+    statuses: dict[str, str] | None = None,
+    default_status: str | None = None,
 ) -> list[AvailabilityHit]:
-    status = str(cfg.get("mock_status") or STATUS_UNAVAILABLE).lower()
-    if status not in {STATUS_AVAILABLE, STATUS_UNAVAILABLE}:
-        status = STATUS_UNAVAILABLE
-    quote = "模擬：有貨（test_mode）" if status == STATUS_AVAILABLE else "模擬：無貨（test_mode）"
+    """依每格獨立狀態產生模擬結果。default_status 用於自我測試一次過全開／全關。"""
+    per_item = statuses if statuses is not None else ((cfg.get("simulation") or {}).get("statuses") or {})
+    fallback = str(default_status or STATUS_UNAVAILABLE).lower()
+    if fallback not in {STATUS_AVAILABLE, STATUS_UNAVAILABLE}:
+        fallback = STATUS_UNAVAILABLE
     hits: list[AvailabilityHit] = []
     modes = selected_modes(cfg)
     stores = [str(s) for s in (cfg.get("stores") or [])]
     for item in watch:
         if "pickup" in modes:
             for store_id in stores:
-                hit = AvailabilityHit(
-                    key=item_key("pickup", store_id, item.part_number),
-                    mode="pickup",
-                    part_number=item.part_number,
-                    name=item.name,
-                    capacity=item.capacity,
-                    store_id=store_id,
-                    store_name=store_label(catalog, store_id),
-                    status=status,
-                    quote=quote,
-                    checkout_url=checkout_url(item.part_number),
+                key = item_key("pickup", store_id, item.part_number)
+                status = str(per_item.get(key) or fallback).lower()
+                if status not in {STATUS_AVAILABLE, STATUS_UNAVAILABLE}:
+                    status = STATUS_UNAVAILABLE
+                hits.append(
+                    AvailabilityHit(
+                        key=key,
+                        mode="pickup",
+                        part_number=item.part_number,
+                        name=item.name,
+                        capacity=item.capacity,
+                        store_id=store_id,
+                        store_name=store_label(catalog, store_id),
+                        status=status,
+                        quote="模擬：有貨" if status == STATUS_AVAILABLE else "模擬：冇貨",
+                        checkout_url=checkout_url(item.part_number),
+                    )
                 )
-                hits.append(hit)
         if "delivery" in modes:
+            key = item_key("delivery", "DELIVERY", item.part_number)
+            status = str(per_item.get(key) or fallback).lower()
+            if status not in {STATUS_AVAILABLE, STATUS_UNAVAILABLE}:
+                status = STATUS_UNAVAILABLE
             hits.append(
                 AvailabilityHit(
-                    key=item_key("delivery", "DELIVERY", item.part_number),
+                    key=key,
                     mode="delivery",
                     part_number=item.part_number,
                     name=item.name,
@@ -681,7 +718,7 @@ def mock_hits(
                     store_id="DELIVERY",
                     store_name="送貨上門（香港）",
                     status=status,
-                    quote=quote,
+                    quote="模擬：有貨" if status == STATUS_AVAILABLE else "模擬：冇貨",
                     checkout_url=checkout_url(item.part_number),
                 )
             )
@@ -775,29 +812,27 @@ def maybe_random_delay(cfg: dict[str, Any], *, skip: bool) -> None:
     time.sleep(delay)
 
 
-def simulate_restock_transition(
+def apply_simulation(
     cfg: dict[str, Any],
     catalog: dict[str, Any],
     state: dict[str, Any],
 ) -> tuple[list[AvailabilityHit], dict[str, Any], str | None]:
-    """把而家監測對象強制由無貨轉有貨，只回傳真正跨過狀態機的項目。"""
-    cfg = json.loads(json.dumps(cfg))
-    cfg["test_mode"] = True
+    """套用每格模擬貨源。只改 state.simulation，唔動真實 Apple 紀錄。"""
     watch = resolve_watch_list(cfg, catalog)
     if not watch:
         return [], state, "config.json 沒有任何監控型號（models 為空）。"
-
-    cfg["mock_status"] = STATUS_UNAVAILABLE
-    empty_hits = mock_hits(cfg, watch, catalog)
-    _, seeded = apply_state_machine(state, empty_hits)
-
-    cfg["mock_status"] = STATUS_AVAILABLE
-    avail_hits = mock_hits(cfg, watch, catalog)
-    for hit in avail_hits:
+    hits = mock_hits(cfg, watch, catalog)
+    for hit in hits:
         hit.score = priority_score(cfg, hit)
-    newly, new_state = apply_state_machine(seeded, avail_hits)
+    sim_wrap = {"items": dict(((state.get("simulation") or {}).get("items") or {}))}
+    newly, new_sim = apply_state_machine(sim_wrap, hits)
     newly.sort(key=lambda h: (-h.score, h.mode, h.store_id, h.part_number))
-    return newly, new_state, None
+    next_state = dict(state)
+    sim = dict(next_state.get("simulation") or {})
+    sim["items"] = new_sim.get("items") or {}
+    sim["updated_at"] = iso_now()
+    next_state["simulation"] = sim
+    return newly, next_state, None
 
 
 # ---------------------------------------------------------------------------
@@ -816,8 +851,8 @@ def run(args: argparse.Namespace) -> int:
         "true",
         "yes",
     }
-    simulate_restock = bool(args.simulate_restock) or os.environ.get(
-        "SIMULATE_RESTOCK", ""
+    apply_sim = bool(args.apply_simulation) or os.environ.get(
+        "APPLY_SIMULATION", ""
     ).lower() in {"1", "true", "yes"}
     ignore_enabled = bool(args.ignore_enabled)
 
@@ -826,51 +861,52 @@ def run(args: argparse.Namespace) -> int:
         text = format_connection_test_message()
         print(text)
         sent = dispatch_notifications(cfg, text)
-        state["last_run"] = {
-            "status": "test_notify",
+        state["telegram_test"] = {
+            "status": "ok" if sent else "failed",
             "message": f"已嘗試發送 Telegram 連線測試（成功通道 {sent}）",
-            "notified": 0,
-            "checked": 0,
             "at": iso_now(),
         }
         save_json(STATE_PATH, state)
         return 0
 
-    if simulate_restock:
-        LOGGER.info("測試模式模擬補貨：強制無貨 → 有貨，只在狀態機跨過時發 Telegram")
-        newly, new_state, err = simulate_restock_transition(cfg, catalog, state)
+    if apply_sim:
+        LOGGER.info("模擬模式：套用每格貨源，只在冇貨 → 有貨時發測試 Telegram")
+        newly, new_state, err = apply_simulation(cfg, catalog, state)
         if err:
             LOGGER.error(err)
             print(err)
-            state["last_run"] = {
+            sim = dict(state.get("simulation") or {})
+            sim["last_run"] = {
                 "status": "error",
                 "message": err,
                 "notified": 0,
                 "checked": 0,
                 "at": iso_now(),
             }
+            state["simulation"] = sim
             save_json(STATE_PATH, state)
             return 0
         notified = 0
         if newly:
-            text = format_message(newly, test=True)
+            text = format_simulation_message(newly)
             print(text)
             notified = 1 if dispatch_notifications(cfg, text) else 0
         else:
-            print("沒有「無貨 → 有貨」的新項目，不發送通知（防洗版）。")
-        new_state["last_run"] = {
-            "status": "simulate_restock",
-            "message": f"測試模式模擬補貨：新轉有貨 {len(newly)}（成功通道 {notified}）",
+            print("模擬模式：沒有「冇貨 → 有貨」的新項目，不發送通知。")
+        sim = dict(new_state.get("simulation") or {})
+        sim["last_run"] = {
+            "status": "ok",
+            "message": f"模擬模式：新轉有貨 {len(newly)}（成功通道 {notified}）",
             "notified": len(newly),
             "checked": len(newly),
             "at": iso_now(),
-            "test_mode": True,
         }
+        new_state["simulation"] = sim
         save_json(STATE_PATH, new_state)
         return 0
 
     if not cfg.get("enabled", False) and not ignore_enabled:
-        msg = "監控總開關為 OFF（enabled=false），安全退出，不查詢 Apple API。"
+        msg = "真實模式為 OFF（enabled=false），安全退出，不查詢 Apple API。"
         LOGGER.info(msg)
         print(msg)
         # 已是 disabled 就不要重寫 state，避免 Actions 每 2 分鐘空 commit。
@@ -900,7 +936,6 @@ def run(args: argparse.Namespace) -> int:
         save_json(STATE_PATH, state)
         return 0
 
-    test_mode = bool(cfg.get("test_mode"))
     is_manual = os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch"
     if not is_manual and not args.ignore_interval and not due_for_interval(cfg, state):
         interval = cfg.get("check_interval_minutes") or 2
@@ -909,7 +944,7 @@ def run(args: argparse.Namespace) -> int:
         print(msg)
         return 0
 
-    if not test_mode and not args.ignore_hours and not within_business_hours(cfg):
+    if not args.ignore_hours and not within_business_hours(cfg):
         msg = "目前不在營業時間窗內，略過本輪查詢（不改寫庫存狀態）。"
         LOGGER.info(msg)
         print(msg)
@@ -925,17 +960,11 @@ def run(args: argparse.Namespace) -> int:
             save_json(STATE_PATH, state)
         return 0
 
-    maybe_random_delay(cfg, skip=bool(args.no_delay or test_mode))
+    maybe_random_delay(cfg, skip=bool(args.no_delay))
 
-    if test_mode:
-        LOGGER.info(
-            "測試模式開啟，mock_status=%s，跳過真實 Apple API",
-            cfg.get("mock_status"),
-        )
-        hits = mock_hits(cfg, watch, catalog)
-    else:
-        client = AppleClient(cfg)
-        hits = live_hits(cfg, watch, catalog, client)
+    LOGGER.info("真實模式：查詢 Apple 香港官網（只監測 iPhone Duo）")
+    client = AppleClient(cfg)
+    hits = live_hits(cfg, watch, catalog, client)
 
     for hit in hits:
         hit.score = priority_score(cfg, hit)
@@ -953,22 +982,18 @@ def run(args: argparse.Namespace) -> int:
 
     notified = 0
     if newly:
-        text = format_message(newly, test=test_mode)
+        text = format_message(newly)
         print(text)
         notified = 1 if dispatch_notifications(cfg, text) else 0
     else:
-        print("沒有「無貨 → 有貨」的新項目，不發送通知（防洗版）。")
+        print("沒有「冇貨 → 有貨」的新項目，不發送通知（防洗版）。")
 
     new_state["last_run"] = {
         "status": "ok",
-        "message": (
-            f"{'測試模式' if test_mode else '正式模式'}："
-            f"查詢 {len(hits)} 組，新轉有貨 {len(newly)}"
-        ),
+        "message": f"真實模式：查詢 {len(hits)} 組，新轉有貨 {len(newly)}",
         "notified": len(newly),
         "checked": len(hits),
         "at": iso_now(),
-        "test_mode": test_mode,
     }
     save_json(STATE_PATH, new_state)
     return 0
@@ -988,8 +1013,6 @@ def run_self_test() -> int:
 
     cfg = {
         "enabled": False,
-        "test_mode": True,
-        "mock_status": "available",
         "fulfillment_modes": ["pickup", "delivery"],
         "stores": ["R428", "R409"],
         "models": [
@@ -1035,7 +1058,7 @@ def run_self_test() -> int:
     check(due_for_interval(cfg, {"last_run": {"status": "disabled", "at": inside.isoformat()}}, later), "非成功查詢不套用間隔")
 
     watch = resolve_watch_list(cfg, catalog)
-    hits = mock_hits(cfg, watch, catalog)
+    hits = mock_hits(cfg, watch, catalog, default_status=STATUS_AVAILABLE)
     check(len(hits) == 6, f"雙模式模擬應產生 6 組（實際 {len(hits)}）")
 
     # 第一次：空狀態 + available → 全部進入通知
@@ -1047,11 +1070,9 @@ def run_self_test() -> int:
     check(len(newly2) == 0, "持續有貨不應再通知")
 
     # 無貨再有貨
-    cfg["mock_status"] = "unavailable"
-    empty_hits = mock_hits(cfg, watch, catalog)
+    empty_hits = mock_hits(cfg, watch, catalog, default_status=STATUS_UNAVAILABLE)
     _, state3 = apply_state_machine(state, empty_hits)
-    cfg["mock_status"] = "available"
-    again = mock_hits(cfg, watch, catalog)
+    again = mock_hits(cfg, watch, catalog, default_status=STATUS_AVAILABLE)
     newly3, _ = apply_state_machine(state3, again)
     check(len(newly3) == 6, "無貨→有貨應再次通知")
 
@@ -1073,12 +1094,26 @@ def run_self_test() -> int:
     check("唔代表任何 iPhone 有貨" in ping, "連線測試聲明唔係補貨")
     check("直達結帳" not in ping and "有貨通知" not in ping, "連線測試不含補貨版面")
 
-    seeded_state = {"items": {}, "schema_version": 1}
-    sim_hits, _, sim_err = simulate_restock_transition(cfg, catalog, seeded_state)
-    check(sim_err is None, "模擬補貨不應報錯")
-    check(len(sim_hits) == 6, f"模擬補貨應產生 6 筆無貨→有貨（實際 {len(sim_hits)}）")
-    sim_again, _, _ = simulate_restock_transition(cfg, catalog, {"items": {h.key: {"status": STATUS_AVAILABLE} for h in sim_hits}})
-    check(len(sim_again) == 6, "模擬補貨會先打成無貨再轉有貨，應再次通知")
+    duo_cfg = json.loads(json.dumps(cfg))
+    duo_cfg["models"] = [cfg["models"][0]]
+    duo_watch = resolve_watch_list(duo_cfg, catalog)
+    all_keys = [h.key for h in mock_hits(duo_cfg, duo_watch, catalog, default_status=STATUS_UNAVAILABLE)]
+    duo_cfg["simulation"] = {"statuses": {k: STATUS_UNAVAILABLE for k in all_keys}}
+    none, sim_state, sim_err = apply_simulation(duo_cfg, catalog, {"items": {}, "simulation": {"items": {}}})
+    check(sim_err is None and len(none) == 0, "模擬全冇貨不應通知")
+    ifc_key = item_key("pickup", "R428", "MK2E4ZA/A")
+    duo_cfg["simulation"]["statuses"][ifc_key] = STATUS_AVAILABLE
+    one, sim_state, _ = apply_simulation(duo_cfg, catalog, sim_state)
+    check(len(one) == 1 and one[0].store_id == "R428", f"只有 ifc 冇貨→有貨應通知 1 筆（實際 {len(one)}）")
+    zero, sim_state, _ = apply_simulation(duo_cfg, catalog, sim_state)
+    check(len(zero) == 0, "模擬持續有貨不應再通知")
+    cwb_key = item_key("pickup", "R409", "MK2E4ZA/A")
+    duo_cfg["simulation"]["statuses"][cwb_key] = STATUS_AVAILABLE
+    two, _, _ = apply_simulation(duo_cfg, catalog, sim_state)
+    check(len(two) == 1 and two[0].store_id == "R409", "另一格冇貨→有貨才再通知")
+    sim_text = format_simulation_message(one)
+    check("模擬模式測試結果" in sim_text and "唔代表官網真係有貨" in sim_text, "測試結果訊息標明係模擬")
+    check("🍎" not in sim_text, "測試結果唔好同真實補貨標題混淆")
 
     print("自我測試完成，失敗數：", failures)
     return 1 if failures else 0
@@ -1088,9 +1123,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Apple 香港 iPhone 庫存監控")
     parser.add_argument("--test-notify", action="store_true", help="只發送 Telegram 連線測試短訊")
     parser.add_argument(
-        "--simulate-restock",
+        "--apply-simulation",
         action="store_true",
-        help="測試模式：強制監測對象由無貨轉有貨後才發補貨通知",
+        help="套用模擬貨源：只有冇貨→有貨先發測試 Telegram",
     )
     parser.add_argument("--ignore-enabled", action="store_true", help="忽略 enabled 總開關")
     parser.add_argument("--ignore-hours", action="store_true", help="忽略營業時間窗")

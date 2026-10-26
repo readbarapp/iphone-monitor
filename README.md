@@ -2,17 +2,17 @@
 
 企業級、Zero-Trust 的香港官網庫存監控系統：GitHub Actions 定時查詢 + GitHub Pages 控制台 + Telegram 智慧聚合通知。
 
-平時沒貨也能用 **測試模式** 把 `mock_status` 在 `unavailable` / `available` 之間切換，完整演練「無貨 → 有貨」通知鏈，不會洗版。
+控制台分成兩塊：**模擬模式**（每格自己揀有貨／冇貨，儲存時只有冇貨→有貨先發測試 Telegram）同 **真實模式**（打開之後先問 Apple 官網，只盯 iPhone Duo）。
 
 ---
 
 ## 系統做什麼
 
-1. 依 `config.json` 監控指定 iPhone 型號（香港 SKU，後綴 `ZA/A`）。
+1. 依 `config.json` 只監測 **iPhone Duo**（香港 SKU，後綴 `ZA/A`）。
 2. 同時支援 **門市取貨（Pick-up）** 與 **送貨上門（Delivery）**。
-3. 只在狀態從 `unavailable` 變成 `available` 時通知；同一輪多筆有貨會**打包成 1 條訊息**，並依優先級排序。
+3. 只在狀態從冇貨變成有貨時通知；同一輪多筆有貨會**打包成 1 條訊息**，並依優先級排序。
 4. 訊息標註通路，並附上 [直達結帳連結](https://www.apple.com/hk-zh/shop/buy-iphone)。
-5. 控制台可開關監控、改測試模式、估 GitHub Actions 用量，並用 GitHub REST API 回寫 `config.json`。
+5. 控制台可開關真實模式、改模擬貨源、估 GitHub Actions 用量，並用 GitHub REST API 回寫 `config.json`。
 
 ### 架構（Zero-Trust）
 
@@ -58,7 +58,7 @@ GitHub → Settings → Developer settings → Personal access tokens → Fine-g
 - Repository access：只勾這個 repo
 - Permissions：
   - **Contents: Read and write**（更新 `config.json`）
-  - **Actions: Read and write**（觸發連線測試與模擬補貨）
+  - **Actions: Read and write**（觸發連線測試與儲存模擬狀態）
   - **Workflows: Read and write**（由控制台改監控頻率 cron）
   - **Secrets: Read and write**（可選，只在要覆寫通訊憑證時）
 
@@ -87,9 +87,8 @@ python3 -m http.server 8080
 1. 填 Owner / Repo / PAT。
 2. 選擇型號、顏色、容量，按「加入監控」。
 3. 多選門市，調整優先級。
-4. **先保持測試模式 ON、總開關可先 OFF**。
-5. 按 **儲存設定**。
-6. 要用真的監控時：關閉測試模式、打開總開關、再到 Actions 確認 `iPhone HK Monitor` workflow 為 Enable。
+4. 模擬模式：每格揀有貨／冇貨，撳 **儲存模擬狀態**（只有冇貨→有貨先收到測試 Telegram）。
+5. 真實模式：打開開關，按 **儲存設定**，再到 Actions 確認 `iPhone HK Monitor` workflow 為 Enable。
 
 ---
 
@@ -97,107 +96,46 @@ python3 -m http.server 8080
 
 | 元件 | 寫入欄位 | 作用 |
 | --- | --- | --- |
-| 總開關 | `enabled` | `false` 時 checker 印提示並 `exit(0)` |
-| 測試模式 | `test_mode` / `mock_status` | 不打 Apple API，直接模擬有貨／無貨 |
+| 真實模式 | `enabled` | `false` 時不查 Apple。打開後只盯 Duo，冇貨→有貨即 Telegram |
+| 模擬貨源 | `simulation.statuses` | 每格獨立有貨／冇貨。儲存時只有冇貨→有貨發測試訊息 |
 | 取貨模式 | `fulfillment_modes` | `pickup`、`delivery` 可並存 |
-| 型號下拉 | `models[]` | 只保留 iPhone Duo（預設）同 18 Pro Max |
+| 型號下拉 | `models[]` | 只保留 iPhone Duo |
 | 門市多選 | `stores` + `priority.stores` | 六間香港 Apple Store |
 | 優先級 | `priority` | 門市權重 ×10000 + 容量 ×100 + 通路 |
-| 監控頻率 | `check_interval_minutes` + `monitor.yml` cron | 儲存後改 Actions 排程；用量面板只係預估 |
-| 測試模式狀態板 | `test_mode` / `mock_status` | 列出每部機 × 門市／送貨而家被設成有貨定冇貨 |
+| 監控頻率 | `check_interval_minutes` + `monitor.yml` cron | 儲存後改排程；真實模式貨源板會自動刷新 |
+| 最近一次官網貨源 | `state.json` `items` | 上次問 Apple 時，每部 Duo × 門市／送貨嘅有貨情況 |
 | 測試 Telegram 連線 | `workflow_dispatch` `test_notify` | 只發連線短訊，**唔會**扮 iPhone 有貨 |
-| 模擬補貨並通知 | `workflow_dispatch` `simulate_restock` | 強制冇貨→有貨，先發真實格式補貨 Telegram |
-| 儲存設定 | GitHub Contents API | 更新 `config.json`。Telegram 欄位**留空＝唔改 Secrets**（值讀唔返） |
+| 儲存模擬狀態 | `workflow_dispatch` `apply_simulation` | 套用每格模擬貨源，有補貨先發測試 Telegram |
+| 儲存設定 | GitHub Contents API | 更新真實模式開關、頻率、監測清單 |
 
 ---
 
-## 測試模式實戰（強烈建議先做完再盯真貨）
+## 模擬模式實戰（建議先做完再打開真實模式）
 
-目標：證明「無貨 → 有貨」會通知一次，再查一次不會洗版。
+模擬模式同真實模式分開。模擬唔會問 Apple，亦唔會改真實貨源紀錄。
 
-### A. 本地（最快）
+### A. 控制台（建議）
+
+1. 填 PAT。可用「測試 Telegram 連線」確認 bot 收得到短訊。
+2. 模擬模式表格：每格用下拉選 **冇貨** 或 **有貨**。
+3. 撳 **儲存模擬狀態**。
+   - 全部仍然冇貨／已經有貨：唔會收到 Telegram。
+   - 任何一格由冇貨變有貨：收到 **🧪 模擬模式測試結果**，列明邊部機補貨。
+4. 再儲存一次（唔改）：唔應該再收到。
+
+### B. 本地
 
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+source .venv/bin/activate
 pip install -r requirements.txt
-```
-
-1. 確認 `config.json`：
-
-```json
-{
-  "enabled": true,
-  "test_mode": true,
-  "mock_status": "unavailable"
-}
-```
-
-2. 跑第一次（建立「無貨」狀態，不應通知）：
-
-```bash
-python checker.py --no-delay
-```
-
-預期：`沒有「無貨 → 有貨」的新項目`。
-
-3. 把 `mock_status` 改成 `"available"`，再跑：
-
-```bash
-python checker.py --no-delay
-```
-
-預期：印出 **1 條**綜合訊息，門市與送貨都在裡面，並依優先級排序。
-
-若已設定環境變數，就會真的發到 Telegram：
-
-```bash
-export TELEGRAM_BOT_TOKEN="…"
-export TELEGRAM_CHAT_ID="…"
-python checker.py --no-delay
-```
-
-4. **不要改設定**再跑一次：不應再通知（防洗版）。
-5. 改回 `"unavailable"` 跑一次，再改 `"available"`：應再次通知。
-6. 只測 Telegram 連線、不改狀態機、不扮有貨：
-
-```bash
-python checker.py --test-notify
-```
-
-預期訊息開頭係 `🔌 Telegram 連線測試`，唔會出現型號、門市或「有貨通知」。
-
-7. 一鍵模擬「冇貨 → 有貨」並發真實格式補貨訊息：
-
-```bash
-python checker.py --simulate-restock
-```
-
-8. 邏輯自我測試（不連網）：
-
-```bash
 python checker.py --self-test
+python checker.py --test-notify
+python checker.py --apply-simulation
+python checker.py   # enabled=false 時應印出「真實模式為 OFF」
 ```
 
-9. 驗證總開關：
-
-```bash
-# 把 enabled 設為 false
-python checker.py
-# 應印出「監控總開關為 OFF」並以狀態碼 0 結束
-```
-
-### B. 雲端（控制台 + Actions）
-
-1. 控制台：測試模式 ON、`mock_status = 無貨`、總開關 ON → 儲存。
-2. Actions → `iPhone HK Monitor` → **Run workflow**。
-3. 看 `state.json`：各組合應為 `unavailable`，不該收到通知。
-4. 控制台把模擬狀態改成 **有貨** → 儲存。
-5. 再 Run workflow：應收到 **1 條**聚合通知，含直達結帳連結。
-6. 再 Run 一次：不該再收到。
-7. 按控制台 **測試 Telegram 連線**：只發連線短訊，不影響狀態機，亦唔會寫任何 iPhone 有貨字眼。
-8. 或按 **模擬補貨並通知**：強制監測對象由冇貨轉有貨，先發送真實格式補貨 Telegram。
-9. 確認無誤後，關閉測試模式，才開始打官網。
+真實模式：控制台打開開關 → **儲存設定** → 系統即刻查一次 Apple，之後按你設嘅頻率更新「最近一次官網貨源」。任何 Duo 由冇貨變有貨就發 🍎 通知。
 
 ---
 
@@ -265,8 +203,8 @@ GitHub Actions **以整分鐘進位**。即便 `enabled=false`，cron 仍會 che
 .
 ├── index.html                 # Tailwind 控制台（GitHub Pages）
 ├── checker.py                 # 監控、狀態機、聚合通知
-├── config.json                # 公開設定（enabled / test_mode / 優先級）
-├── catalog.json               # 香港門市與現行 iPhone SKU
+├── config.json                # 公開設定（真實模式開關 / 模擬貨源 / 優先級）
+├── catalog.json               # 香港門市與 iPhone Duo SKU
 ├── state.json                 # 防洗版狀態（Actions 會回寫）
 ├── requirements.txt
 ├── .github/workflows/monitor.yml
@@ -277,8 +215,8 @@ GitHub Actions **以整分鐘進位**。即便 `enabled=false`，cron 仍會 che
 
 ```bash
 python checker.py                 # 依 config 執行
-python checker.py --test-notify        # 只發 Telegram 連線測試短訊
-python checker.py --simulate-restock   # 測試模式：冇貨→有貨先發補貨通知
+python checker.py --test-notify         # 只發 Telegram 連線測試短訊
+python checker.py --apply-simulation    # 套用模擬貨源：冇貨→有貨先發測試結果
 python checker.py --ignore-enabled
 python checker.py --ignore-hours
 python checker.py --no-delay
@@ -308,8 +246,8 @@ SKU 若隨官網改版，更新 `catalog.json` 即可，控制台會自動讀取
 | 現象 | 處理 |
 | --- | --- |
 | 控制台儲存失敗 `Bad credentials` | PAT 過期或權限不足 |
-| 連線測試／模擬補貨 404 | workflow 檔名必須是 `.github/workflows/monitor.yml`，且 PAT 有 Actions 寫入 |
-| 有貨但沒通知 | 看 `state.json`：若上次已是 `available`，屬防洗版。先用測試模式把狀態打成無貨再測 |
+| 連線測試／儲存模擬 404 | workflow 檔名必須是 `.github/workflows/monitor.yml`，且 PAT 有 Actions 寫入 |
+| 有貨但沒通知 | 看 `state.json`：若上次已是 `available`，屬防洗版。真實同模擬係兩套紀錄 |
 | 永遠 unknown | Apple 541／網路失敗。拉長間隔，或用 `--verbose` 看 log |
 | Actions 分鐘燒太快 | Disable workflow；不要 24 小時每 2 分鐘空轉 |
 | Telegram 沒收到 | Secret 名稱是否 `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID`，以及有冇同 bot 講過話 |
