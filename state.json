@@ -3,9 +3,10 @@
   "schema_version": 1,
   "items": {},
   "last_run": {
-    "status": "never",
-    "message": "尚未執行",
+    "status": "disabled",
+    "message": "監控總開關為 OFF（enabled=false），安全退出，不查詢 Apple API。",
     "notified": 0,
-    "checked": 0
+    "checked": 0,
+    "at": "2026-10-26T14:48:29+08:00"
   }
 }
