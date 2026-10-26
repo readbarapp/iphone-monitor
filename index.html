@@ -105,8 +105,8 @@
                 <button data-mock="unavailable" class="mock-btn flex-1 rounded-xl border border-white/10 px-3 py-2 text-sm chip-on">無貨 unavailable</button>
               </div>
               <ol class="mt-3 text-[11px] leading-relaxed text-zinc-400 list-decimal pl-4 space-y-1">
-                <li>總開關 ON、測試模式 ON、先選「無貨」→ 儲存 → Actions 跑一次（唔應該有 Telegram）</li>
-                <li>改「有貨」→ 儲存 → 再跑一次（應該收到 1 條有貨訊息）</li>
+                <li>總開關 ON、測試模式 ON、先選「無貨」→ 儲存 → 去 Actions 撳 Run workflow（<b>唔好</b>撳「測試 Telegram 通道」）</li>
+                <li>改「有貨」→ 儲存 → 再 Run workflow 一次，先會收到模擬有貨訊息</li>
                 <li>唔改再跑一次（唔應該再收到，防洗版）</li>
               </ol>
             </div>
@@ -290,7 +290,7 @@
     <section class="glass rounded-3xl p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
       <p id="saveMsg" class="text-sm text-zinc-400">變更後請按儲存，系統會用 GitHub REST API 更新 config.json。</p>
       <div class="flex flex-wrap gap-2">
-        <button id="testNotifyBtn" class="rounded-xl border border-white/15 px-4 py-2 text-sm">測試通知</button>
+        <button id="testNotifyBtn" class="rounded-xl border border-white/15 px-4 py-2 text-sm" title="即刻發一條示範訊息，唔理有貨定無貨">測試 Telegram 通道</button>
         <button id="reloadBtn" class="rounded-xl border border-white/15 px-4 py-2 text-sm">重新載入</button>
         <button id="saveBtn" class="rounded-xl bg-white text-black px-5 py-2 text-sm font-semibold">儲存設定</button>
       </div>
@@ -724,10 +724,12 @@
     }
 
     async function testNotify() {
+      const ok = window.confirm("呢個會即刻發送一條示範訊息去 Telegram，唔經「有貨／無貨」狀態機。\n\n要測模擬補貨，請改去 Actions 撳 Run workflow，唔好撳呢粒掣。\n\n確定而家要測通道？");
+      if (!ok) return;
       const next = collectConfig();
       const pat = $("ghPat").value.trim();
       if (!pat || !next.github.owner || !next.github.repo) {
-        throw new Error("測試通知需要 Owner / Repo / PAT，以便觸發 workflow_dispatch");
+        throw new Error("測試 Telegram 通道需要 Owner / Repo / PAT");
       }
       sessionStorage.setItem(PAT_KEY, pat);
       await ghApi(
@@ -736,7 +738,7 @@
         { ref: next.github.branch || "main", inputs: { test_notify: "true" } },
         pat
       );
-      toast("已觸發 GitHub Actions 測試通知，請到 Actions 頁查看執行紀錄。");
+      toast("已觸發示範訊息（只測通道）。模擬有貨請用 Actions → Run workflow。");
     }
 
     async function loadState() {
