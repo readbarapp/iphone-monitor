@@ -3,10 +3,10 @@
   "schema_version": 1,
   "items": {},
   "last_run": {
-    "status": "disabled",
-    "message": "監控總開關為 OFF（enabled=false），安全退出，不查詢 Apple API。",
+    "status": "test_notify",
+    "message": "已嘗試發送 Telegram 連線測試（成功通道 1）",
     "notified": 0,
     "checked": 0,
-    "at": "2026-10-26T16:24:22+08:00"
+    "at": "2026-10-26T17:46:11+08:00"
   }
 }
