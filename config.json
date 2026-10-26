@@ -2,24 +2,23 @@
   "enabled": false,
   "test_mode": true,
   "mock_status": "unavailable",
-  "check_interval_minutes": 2,
+  "check_interval_minutes": 15,
   "fulfillment_modes": [
     "pickup",
     "delivery"
   ],
   "models": [
     {
-      "part_number": "MJRP4ZA/A",
-      "family": "iphone-18-pro",
-      "name": "iPhone 18 Pro 256GB 黑色",
-      "color": "black",
-      "capacity": "256gb"
+      "part_number": "MK2J4ZA/A",
+      "family": "iphone-duo",
+      "name": "iPhone Duo 1TB 夜空色",
+      "color": "nightsky",
+      "capacity": "1tb"
     }
   ],
   "stores": [
     "R428",
-    "R409",
-    "R499"
+    "R409"
   ],
   "delivery": {
     "enabled": true,
@@ -35,10 +34,10 @@
       "R610": 50
     },
     "capacities": {
-      "256gb": 100,
-      "512gb": 80,
-      "1tb": 60,
-      "2tb": 40
+      "256gb": 3,
+      "512gb": 15,
+      "1tb": 100,
+      "2tb": 23
     },
     "modes": {
       "pickup": 100,
@@ -73,8 +72,8 @@
     "telegram_enabled": true
   },
   "github": {
-    "owner": "",
-    "repo": "",
+    "owner": "readbarapp",
+    "repo": "iphone-monitor",
     "branch": "main",
     "config_path": "config.json"
   }
