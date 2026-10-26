@@ -70,8 +70,7 @@
     "request_timeout_seconds": 20
   },
   "notifications": {
-    "telegram_enabled": true,
-    "discord_enabled": true
+    "telegram_enabled": true
   },
   "github": {
     "owner": "",

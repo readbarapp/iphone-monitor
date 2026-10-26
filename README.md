@@ -1,6 +1,6 @@
 # Apple iPhone 香港官網庫存監控
 
-企業級、Zero-Trust 的香港官網庫存監控系統：GitHub Actions 定時查詢 + GitHub Pages 控制台 + Telegram / Discord 智慧聚合通知。
+企業級、Zero-Trust 的香港官網庫存監控系統：GitHub Actions 定時查詢 + GitHub Pages 控制台 + Telegram 智慧聚合通知。
 
 平時沒貨也能用 **測試模式** 把 `mock_status` 在 `unavailable` / `available` 之間切換，完整演練「無貨 → 有貨」通知鏈，不會洗版。
 
@@ -20,7 +20,7 @@
 | --- | --- | --- |
 | 公開設定 | `config.json` | 開關、型號、門市、優先級。**不含任何 token** |
 | 執行狀態 | `state.json` | 每個「型號 × 通路」上次庫存，供防洗版 |
-| 機密 | GitHub Secrets | `TELEGRAM_BOT_TOKEN`、`TELEGRAM_CHAT_ID`、`DISCORD_WEBHOOK_URL` |
+| 機密 | GitHub Secrets | `TELEGRAM_BOT_TOKEN`、`TELEGRAM_CHAT_ID` |
 | 控制台 PAT | 瀏覽器 `sessionStorage` | 只在當次分頁有效，關分頁即消失 |
 
 官方路徑 `https://www.apple.com/hk-zh/shop/fulfillment-messages` 目前常回 **HTTP 541** 攔截頁。`checker.py` 仍會先嘗試該端點，失敗後自動改走：
@@ -46,9 +46,8 @@ Repo → **Settings → Secrets and variables → Actions**，新增：
 | --- | --- |
 | `TELEGRAM_BOT_TOKEN` | 向 [@BotFather](https://t.me/BotFather) 建立機器人後取得 |
 | `TELEGRAM_CHAT_ID` | 對機器人發訊息後，用 `https://api.telegram.org/bot<TOKEN>/getUpdates` 查看 `chat.id` |
-| `DISCORD_WEBHOOK_URL` | Discord 頻道 → 編輯頻道 → 整合 → Webhook |
 
-控制台「更新通訊憑證」三個欄位係**可選覆寫**：GitHub 唔會把 Secret 值讀返畀網頁，所以唔會自動填。你已經喺 Settings 加咗就留空；得要換 token 先填。
+控制台「更新 Telegram 憑證」兩個欄位係**可選覆寫**：GitHub 唔會把 Secret 值讀返畀網頁，所以唔會自動填。你已經喺 Settings 加咗就留空；得要換 token 先填。通知只經 Telegram。
 
 ### 3. 建立 Fine-grained PAT（給控制台用）
 
@@ -106,7 +105,7 @@ python3 -m http.server 8080
 | 優先級 | `priority` | 門市權重 ×10000 + 容量 ×100 + 通路 |
 | 監控頻率 | `check_interval_minutes` + `monitor.yml` cron | 儲存後改 Actions 排程；用量面板只係預估 |
 | 測試通知 | `workflow_dispatch` | 觸發 Actions 發送示範訊息 |
-| 儲存設定 | GitHub Contents API | 更新 `config.json`。通訊三欄**留空＝唔改 Secrets**（值讀唔返） |
+| 儲存設定 | GitHub Contents API | 更新 `config.json`。Telegram 欄位**留空＝唔改 Secrets**（值讀唔返） |
 
 ---
 
@@ -148,12 +147,11 @@ python checker.py --no-delay
 
 預期：印出 **1 條**綜合訊息，門市與送貨都在裡面，並依優先級排序。
 
-若已設定環境變數，就會真的發到 Telegram / Discord：
+若已設定環境變數，就會真的發到 Telegram：
 
 ```bash
 export TELEGRAM_BOT_TOKEN="…"
 export TELEGRAM_CHAT_ID="…"
-export DISCORD_WEBHOOK_URL="…"
 python checker.py --no-delay
 ```
 
@@ -302,7 +300,7 @@ SKU 若隨官網改版，更新 `catalog.json` 即可，控制台會自動讀取
 | 有貨但沒通知 | 看 `state.json`：若上次已是 `available`，屬防洗版。先用測試模式把狀態打成無貨再測 |
 | 永遠 unknown | Apple 541／網路失敗。拉長間隔，或用 `--verbose` 看 log |
 | Actions 分鐘燒太快 | Disable workflow；不要 24 小時每 2 分鐘空轉 |
-| Discord 沒收到 | Webhook 是否完整、`notifications.discord_enabled` 是否為 true |
+| Telegram 沒收到 | Secret 名稱是否 `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID`，以及有冇同 bot 講過話 |
 
 ---
 

@@ -99,11 +99,16 @@
               <button id="testModeToggle" class="toggle" role="switch" aria-checked="true" aria-label="測試模式"></button>
             </div>
             <div class="mt-4">
-              <label class="text-xs text-zinc-400">模擬庫存 mock_status</label>
+              <label class="text-xs text-zinc-400">模擬庫存 mock_status（要撳儲存 + 跑 workflow 先生效）</label>
               <div class="mt-2 flex gap-2">
                 <button data-mock="available" class="mock-btn flex-1 rounded-xl border border-white/10 px-3 py-2 text-sm">有貨 available</button>
                 <button data-mock="unavailable" class="mock-btn flex-1 rounded-xl border border-white/10 px-3 py-2 text-sm chip-on">無貨 unavailable</button>
               </div>
+              <ol class="mt-3 text-[11px] leading-relaxed text-zinc-400 list-decimal pl-4 space-y-1">
+                <li>總開關 ON、測試模式 ON、先選「無貨」→ 儲存 → Actions 跑一次（唔應該有 Telegram）</li>
+                <li>改「有貨」→ 儲存 → 再跑一次（應該收到 1 條有貨訊息）</li>
+                <li>唔改再跑一次（唔應該再收到，防洗版）</li>
+              </ol>
             </div>
           </div>
           <div class="rounded-2xl bg-white/5 p-4 border border-white/10">
@@ -125,7 +130,7 @@
 
       <article class="glass rounded-3xl p-5 sm:p-6">
         <h2 class="text-lg font-semibold">監控頻率</h2>
-        <p class="text-xs text-zinc-400 mt-1">儲存後會寫入 <code>config.json</code>，並同步改 <code>monitor.yml</code> 的 cron。GitHub 排程可能慢 1–5 分鐘。</p>
+        <p class="text-xs text-zinc-400 mt-1">只係改呢度<strong>未會</strong>即時改 Actions。一定要填 PAT 再撳「儲存設定」，先會改 <code>config.json</code> 同 <code>monitor.yml</code> cron。GitHub 排程可能再慢 1–5 分鐘。</p>
         <label class="block mt-4 text-xs text-zinc-400">幾耐查一次
           <select id="intervalInput" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm">
             <option value="2">每 2 分鐘（開售衝刺，額度很兇）</option>
@@ -259,18 +264,17 @@
         <button type="button" id="secretStatusBtn" class="rounded-xl border border-white/15 px-3 py-1.5 text-xs">檢查 Secrets 有冇設定</button>
         <div id="secretStatus" class="text-xs text-zinc-400">GitHub <b>唔會</b>把 Secret 值讀返畀網頁。PAT 最多睇到「有冇呢個名」。</div>
       </div>
-      <div class="mt-4 flex flex-wrap gap-3">
-        <label class="text-sm flex items-center gap-2"><input id="tgEnabled" type="checkbox" checked class="accent-sky-500" /> 啟用 Telegram</label>
-        <label class="text-sm flex items-center gap-2"><input id="dcEnabled" type="checkbox" checked class="accent-sky-500" /> 啟用 Discord</label>
+      <div class="mt-4">
+        <label class="text-sm flex items-center gap-2"><input id="tgEnabled" type="checkbox" checked class="accent-sky-500" /> 啟用 Telegram 通知</label>
       </div>
 
       <details class="mt-5 rounded-2xl bg-white/5 border border-white/10 p-4">
-        <summary class="cursor-pointer text-sm font-medium">更新通訊憑證（可選，留空＝唔改）</summary>
+        <summary class="cursor-pointer text-sm font-medium">更新 Telegram 憑證（可選，留空＝唔改）</summary>
         <p class="text-xs text-zinc-400 mt-3 leading-relaxed">
-          呢三個欄位<b>唔會自動載入</b>現有 Secret 值（GitHub 唔提供讀返）。
+          呢兩個欄位<b>唔會自動載入</b>現有 Secret 值。
           你已經喺 Settings → Secrets 加咗
-          <code>TELEGRAM_BOT_TOKEN</code> / <code>TELEGRAM_CHAT_ID</code> / <code>DISCORD_WEBHOOK_URL</code>，
-          就唔使再填。得要換 token、改 chat id，或者第一次用控制台寫入，先填然後儲存。
+          <code>TELEGRAM_BOT_TOKEN</code> / <code>TELEGRAM_CHAT_ID</code>，
+          就唔使再填。得要換 token 或改 chat id 先填然後儲存。通知只經 Telegram。
         </p>
         <div class="mt-3 grid md:grid-cols-2 gap-3">
           <label class="text-xs text-zinc-400">新的 Telegram Bot Token（留空＝維持現有 Secret）
@@ -278,9 +282,6 @@
           </label>
           <label class="text-xs text-zinc-400">新的 Telegram Chat ID
             <input id="tgChat" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" placeholder="已設定就留空" />
-          </label>
-          <label class="text-xs text-zinc-400 md:col-span-2">新的 Discord Webhook URL
-            <input id="dcWebhook" type="password" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" placeholder="已設定就留空" />
           </label>
         </div>
       </details>
@@ -507,7 +508,6 @@
       $("ghRepo").value = cfg.github?.repo || detectRepo().repo;
       $("ghBranch").value = cfg.github?.branch || "main";
       $("tgEnabled").checked = cfg.notifications?.telegram_enabled !== false;
-      $("dcEnabled").checked = cfg.notifications?.discord_enabled !== false;
       $("ghPat").value = sessionStorage.getItem(PAT_KEY) || "";
       updatePill();
       renderWatchList();
@@ -580,7 +580,6 @@
         },
         notifications: {
           telegram_enabled: $("tgEnabled").checked,
-          discord_enabled: $("dcEnabled").checked,
         },
         github: {
           owner: $("ghOwner").value.trim(),
@@ -679,7 +678,6 @@
       const rows = [
         ["TELEGRAM_BOT_TOKEN", "Telegram Token"],
         ["TELEGRAM_CHAT_ID", "Telegram Chat ID"],
-        ["DISCORD_WEBHOOK_URL", "Discord Webhook"],
       ].map(([key, label]) => {
         const on = names.has(key);
         return `<span class="inline-flex items-center gap-1 mr-3 ${on ? "text-emerald-300" : "text-zinc-500"}">${on ? "● 已設定" : "○ 未設定"} ${label}</span>`;
@@ -709,7 +707,6 @@
       const filled = [
         ["TELEGRAM_BOT_TOKEN", $("tgToken").value.trim()],
         ["TELEGRAM_CHAT_ID", $("tgChat").value.trim()],
-        ["DISCORD_WEBHOOK_URL", $("dcWebhook").value.trim()],
       ].filter(([, v]) => v);
       const secretResults = await Promise.allSettled(
         filled.map(([name, value]) => upsertSecret(owner, repo, pat, name, value))
@@ -843,7 +840,7 @@
           delivery: { enabled: true, location: "Hong Kong" },
           priority: { stores: {}, capacities: { "256gb": 100, "512gb": 80, "1tb": 60, "2tb": 40 }, modes: { pickup: 100, delivery: 70 } },
           business_hours: { enabled: true, start: "10:00", end: "22:00" },
-          notifications: { telegram_enabled: true, discord_enabled: true },
+          notifications: { telegram_enabled: true },
           github: detectRepo(),
         });
         toast("讀不到 config.json，已載入預設值：" + err.message, false);
