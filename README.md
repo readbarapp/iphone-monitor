@@ -48,7 +48,7 @@ Repo → **Settings → Secrets and variables → Actions**，新增：
 | `TELEGRAM_CHAT_ID` | 對機器人發訊息後，用 `https://api.telegram.org/bot<TOKEN>/getUpdates` 查看 `chat.id` |
 | `DISCORD_WEBHOOK_URL` | Discord 頻道 → 編輯頻道 → 整合 → Webhook |
 
-控制台「儲存設定」也可以在你提供 PAT 後，把這三個值加密寫入 Secrets。
+控制台「更新通訊憑證」三個欄位係**可選覆寫**：GitHub 唔會把 Secret 值讀返畀網頁，所以唔會自動填。你已經喺 Settings 加咗就留空；得要換 token 先填。
 
 ### 3. 建立 Fine-grained PAT（給控制台用）
 
@@ -60,7 +60,8 @@ GitHub → Settings → Developer settings → Personal access tokens → Fine-g
 - Permissions：
   - **Contents: Read and write**（更新 `config.json`）
   - **Actions: Read and write**（觸發測試通知）
-  - **Secrets: Read and write**（可選，用來寫入通訊憑證）
+  - **Workflows: Read and write**（由控制台改監控頻率 cron）
+  - **Secrets: Read and write**（可選，只在要覆寫通訊憑證時）
 
 PAT **不要** commit 進倉庫。
 
@@ -103,9 +104,9 @@ python3 -m http.server 8080
 | 型號下拉 | `models[]` | 香港現行 iPhone 18 Pro / Max、17、Air、17e、Duo |
 | 門市多選 | `stores` + `priority.stores` | 六間香港 Apple Store |
 | 優先級 | `priority` | 門市權重 ×10000 + 容量 ×100 + 通路 |
-| 用量面板 | `check_interval_minutes` | 對比每月 2,000 分鐘，附 [Billing](https://github.com/settings/billing) |
+| 監控頻率 | `check_interval_minutes` + `monitor.yml` cron | 儲存後改 Actions 排程；用量面板只係預估 |
 | 測試通知 | `workflow_dispatch` | 觸發 Actions 發送示範訊息 |
-| 儲存設定 | GitHub Contents API | 更新 `config.json`；憑證走 Secrets API |
+| 儲存設定 | GitHub Contents API | 更新 `config.json`。通訊三欄**留空＝唔改 Secrets**（值讀唔返） |
 
 ---
 

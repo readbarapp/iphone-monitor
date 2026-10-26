@@ -79,7 +79,7 @@
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-4 py-6 sm:py-10 space-y-6 pb-36">
+  <main class="max-w-6xl mx-auto px-4 py-6 sm:py-10 space-y-6">
     <section class="grid lg:grid-cols-3 gap-4">
       <article class="glass rounded-3xl p-5 sm:p-6 lg:col-span-2">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -124,17 +124,30 @@
       </article>
 
       <article class="glass rounded-3xl p-5 sm:p-6">
-        <h2 class="text-lg font-semibold">用量與額度</h2>
-        <p class="text-xs text-zinc-400 mt-1">GitHub Actions 免費額度每月 2,000 分鐘。</p>
-        <div class="mt-4">
-          <div class="h-3 rounded-full bg-white/10 overflow-hidden">
+        <h2 class="text-lg font-semibold">監控頻率</h2>
+        <p class="text-xs text-zinc-400 mt-1">儲存後會寫入 <code>config.json</code>，並同步改 <code>monitor.yml</code> 的 cron。GitHub 排程可能慢 1–5 分鐘。</p>
+        <label class="block mt-4 text-xs text-zinc-400">幾耐查一次
+          <select id="intervalInput" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm">
+            <option value="2">每 2 分鐘（開售衝刺，額度很兇）</option>
+            <option value="5">每 5 分鐘</option>
+            <option value="10">每 10 分鐘</option>
+            <option value="15">每 15 分鐘（建議日常）</option>
+            <option value="20">每 20 分鐘</option>
+            <option value="30">每 30 分鐘</option>
+            <option value="60">每 60 分鐘</option>
+          </select>
+        </label>
+        <div class="mt-5">
+          <div class="flex items-start justify-between gap-3">
+            <p class="text-sm font-medium">預估每月消耗</p>
+            <span class="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-zinc-300">不是已用量</span>
+          </div>
+          <div class="mt-3 h-3 rounded-full bg-white/10 overflow-hidden">
             <div id="usageBar" class="h-full w-0 bg-apple-orange transition-all"></div>
           </div>
           <p id="usageText" class="mt-3 text-sm leading-relaxed text-zinc-300">計算中…</p>
-          <a class="inline-flex mt-3 text-sm text-sky-400 hover:underline" href="https://github.com/settings/billing" target="_blank" rel="noreferrer">開啟 GitHub Billing →</a>
+          <a class="inline-flex mt-3 text-sm text-sky-400 hover:underline" href="https://github.com/settings/billing" target="_blank" rel="noreferrer">查看真正已用分鐘（GitHub Billing）→</a>
         </div>
-        <label class="block mt-4 text-xs text-zinc-400">監控頻率（分鐘，須與 workflow cron 一致）</label>
-        <input id="intervalInput" type="number" min="1" max="60" value="2" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" />
       </article>
     </section>
 
@@ -217,11 +230,17 @@
     </section>
 
     <section class="glass rounded-3xl p-5 sm:p-6">
-      <h2 class="text-lg font-semibold">GitHub PAT 與通訊憑證</h2>
+      <h2 class="text-lg font-semibold">GitHub PAT</h2>
       <p class="text-sm text-zinc-400 mt-1">
-        Zero-Trust：PAT 只存在此瀏覽器的 sessionStorage，不會寫進倉庫。
-        Telegram / Discord 金鑰會透過 GitHub Secrets API 加密上傳，不會進入 <code>config.json</code>。
+        PAT 只負責控制台改設定、改監控頻率、觸發測試通知。只留喺呢個分頁，唔會寫進倉庫。
       </p>
+      <ol class="mt-3 text-xs text-zinc-400 list-decimal pl-5 space-y-1">
+        <li>開啟 <a class="text-sky-400 hover:underline" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noreferrer">建立 Fine-grained token</a></li>
+        <li>Repository access 只勾 <code>iphone-monitor</code></li>
+        <li>Permissions：Contents、Actions、Workflows 都設 <b>Read and write</b>（Workflows 用來改 cron）</li>
+        <li>若要由控制台覆寫通訊 Secret，再加 Secrets <b>Read and write</b></li>
+        <li>把 <code>github_pat_…</code> 貼入下面（唔好用 Telegram bot token）</li>
+      </ol>
       <div class="mt-4 grid md:grid-cols-2 gap-3">
         <label class="text-xs text-zinc-400">GitHub Owner
           <input id="ghOwner" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" placeholder="your-user" />
@@ -232,26 +251,42 @@
         <label class="text-xs text-zinc-400">Branch
           <input id="ghBranch" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" value="main" />
         </label>
-        <label class="text-xs text-zinc-400">Fine-grained PAT（repo Contents + Actions + Secrets）
+        <label class="text-xs text-zinc-400">GitHub Fine-grained PAT（以 github_pat_ 開頭）
           <input id="ghPat" type="password" autocomplete="off" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" placeholder="github_pat_…" />
         </label>
-        <label class="text-xs text-zinc-400">Telegram Bot Token
-          <input id="tgToken" type="password" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" placeholder="123456:ABC…" />
-        </label>
-        <label class="text-xs text-zinc-400">Telegram Chat ID
-          <input id="tgChat" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" placeholder="123456789" />
-        </label>
-        <label class="text-xs text-zinc-400 md:col-span-2">Discord Webhook URL
-          <input id="dcWebhook" type="password" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" placeholder="https://discord.com/api/webhooks/…" />
-        </label>
       </div>
-      <div class="mt-3 flex flex-wrap gap-3">
+      <div class="mt-3 flex flex-wrap items-center gap-3">
+        <button type="button" id="secretStatusBtn" class="rounded-xl border border-white/15 px-3 py-1.5 text-xs">檢查 Secrets 有冇設定</button>
+        <div id="secretStatus" class="text-xs text-zinc-400">GitHub <b>唔會</b>把 Secret 值讀返畀網頁。PAT 最多睇到「有冇呢個名」。</div>
+      </div>
+      <div class="mt-4 flex flex-wrap gap-3">
         <label class="text-sm flex items-center gap-2"><input id="tgEnabled" type="checkbox" checked class="accent-sky-500" /> 啟用 Telegram</label>
         <label class="text-sm flex items-center gap-2"><input id="dcEnabled" type="checkbox" checked class="accent-sky-500" /> 啟用 Discord</label>
       </div>
+
+      <details class="mt-5 rounded-2xl bg-white/5 border border-white/10 p-4">
+        <summary class="cursor-pointer text-sm font-medium">更新通訊憑證（可選，留空＝唔改）</summary>
+        <p class="text-xs text-zinc-400 mt-3 leading-relaxed">
+          呢三個欄位<b>唔會自動載入</b>現有 Secret 值（GitHub 唔提供讀返）。
+          你已經喺 Settings → Secrets 加咗
+          <code>TELEGRAM_BOT_TOKEN</code> / <code>TELEGRAM_CHAT_ID</code> / <code>DISCORD_WEBHOOK_URL</code>，
+          就唔使再填。得要換 token、改 chat id，或者第一次用控制台寫入，先填然後儲存。
+        </p>
+        <div class="mt-3 grid md:grid-cols-2 gap-3">
+          <label class="text-xs text-zinc-400">新的 Telegram Bot Token（留空＝維持現有 Secret）
+            <input id="tgToken" type="password" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" placeholder="已設定就留空" />
+          </label>
+          <label class="text-xs text-zinc-400">新的 Telegram Chat ID
+            <input id="tgChat" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" placeholder="已設定就留空" />
+          </label>
+          <label class="text-xs text-zinc-400 md:col-span-2">新的 Discord Webhook URL
+            <input id="dcWebhook" type="password" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" placeholder="已設定就留空" />
+          </label>
+        </div>
+      </details>
     </section>
 
-    <section class="sticky bottom-4 z-20 glass rounded-3xl p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+    <section class="glass rounded-3xl p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
       <p id="saveMsg" class="text-sm text-zinc-400">變更後請按儲存，系統會用 GitHub REST API 更新 config.json。</p>
       <div class="flex flex-wrap gap-2">
         <button id="testNotifyBtn" class="rounded-xl border border-white/15 px-4 py-2 text-sm">測試通知</button>
@@ -264,6 +299,7 @@
   <script>
     const FREE_MINUTES = 2000;
     const PAT_KEY = "iphone_monitor_pat";
+    const INTERVALS = [2, 5, 10, 15, 20, 30, 60];
     const CAPACITIES = ["256gb", "512gb", "1tb", "2tb"];
     const CAP_LABEL = { "256gb": "256GB", "512gb": "512GB", "1tb": "1TB", "2tb": "2TB" };
 
@@ -413,6 +449,11 @@
       });
     }
 
+    function snapInterval(raw) {
+      const n = Number(raw) || 15;
+      return INTERVALS.reduce((best, x) => Math.abs(x - n) < Math.abs(best - n) ? x : best, INTERVALS[0]);
+    }
+
     function hoursPerDay() {
       if (!$("hoursEnabled").checked) return 24;
       const [sh, sm] = ($("hoursStart").value || "00:00").split(":").map(Number);
@@ -423,7 +464,7 @@
     }
 
     function estimateUsage() {
-      const interval = Math.max(1, Number($("intervalInput").value) || 2);
+      const interval = snapInterval($("intervalInput").value);
       const hours = hoursPerDay();
       const runsDay = Math.floor((hours * 60) / interval);
       const runsMonth = runsDay * 30;
@@ -436,9 +477,10 @@
       const watchN = (config.models || []).length;
       const storeN = document.querySelectorAll("[data-store]:checked").length || (config.stores || []).length;
       $("usageText").innerHTML = `
-        每 ${interval} 分鐘 × 每日 ${hours.toFixed(1)} 小時 ≈ <b>${runsDay}</b> 次/日、<b>${runsMonth.toLocaleString()}</b> 次/月。<br/>
-        預估消耗 <b>${billed.toLocaleString()}</b> 分鐘 / 2,000（${pct}%）${pct > 100 ? " · 將超出免費額度" : ""}。<br/>
-        目前監控 ${watchN} 款 × ${storeN} 間門市。cron 在總開關 OFF 時仍會跑，平時請 Disable workflow。
+        <b>預估</b>（未發生）：每 ${interval} 分鐘 × 每日 ${hours.toFixed(1)} 小時 ≈ ${runsDay} 次/日。<br/>
+        若 cron 開住跑滿 30 日，約 <b>${billed.toLocaleString()}</b> 分鐘，對比免費 2,000（${pct}%）${pct > 100 ? " · 會超標，建議改 15 分鐘或平時 Disable workflow" : ""}。<br/>
+        呢條 bar <b>唔係</b>你而家已用咗幾多。真正已用量只喺 Billing 頁。<br/>
+        監控清單 ${watchN} 款 × ${storeN} 間門市。總開關 OFF 都唔會停 cron。
       `;
     }
 
@@ -453,7 +495,7 @@
       const modes = cfg.fulfillment_modes || [];
       $("modePickup").checked = modes.includes("pickup");
       $("modeDelivery").checked = modes.includes("delivery") && (cfg.delivery?.enabled !== false);
-      $("intervalInput").value = cfg.check_interval_minutes || 2;
+      $("intervalInput").value = String(snapInterval(cfg.check_interval_minutes || 15));
       $("hoursEnabled").checked = !!(cfg.business_hours && cfg.business_hours.enabled);
       $("hoursStart").value = cfg.business_hours?.start || "10:00";
       $("hoursEnd").value = cfg.business_hours?.end || "22:00";
@@ -507,7 +549,7 @@
         enabled: isOn($("enabledToggle")),
         test_mode: isOn($("testModeToggle")),
         mock_status: mockStatus,
-        check_interval_minutes: Number($("intervalInput").value) || 2,
+        check_interval_minutes: snapInterval($("intervalInput").value),
         fulfillment_modes: modes.length ? modes : ["pickup"],
         models: config.models || [],
         stores,
@@ -576,13 +618,73 @@
     }
 
     async function upsertSecret(owner, repo, pat, name, value) {
-      if (!value) return;
+      if (!value) return false;
       const keyInfo = await ghApi(`/repos/${owner}/${repo}/actions/secrets/public-key`, "GET", null, pat);
       const encrypted = await encryptSecret(keyInfo.key, value);
       await ghApi(`/repos/${owner}/${repo}/actions/secrets/${name}`, "PUT", {
         encrypted_value: encrypted,
         key_id: keyInfo.key_id,
       }, pat);
+      return true;
+    }
+
+    function decodeB64(content) {
+      return decodeURIComponent(escape(atob(content.replace(/\n/g, ""))));
+    }
+
+    async function putRepoFile(owner, repo, branch, pat, path, text, message) {
+      const api = `/repos/${owner}/${repo}/contents/${path}`;
+      let sha;
+      try {
+        const current = await ghApi(api + "?ref=" + encodeURIComponent(branch), "GET", null, pat);
+        sha = current.sha;
+      } catch (err) {
+        if (!String(err.message).includes("Not Found")) throw err;
+      }
+      await ghApi(api, "PUT", {
+        message,
+        content: btoa(unescape(encodeURIComponent(text))),
+        branch,
+        sha,
+      }, pat);
+    }
+
+    async function syncWorkflowCron(owner, repo, branch, pat, minutes) {
+      const path = ".github/workflows/monitor.yml";
+      const api = `/repos/${owner}/${repo}/contents/${path}`;
+      const current = await ghApi(api + "?ref=" + encodeURIComponent(branch), "GET", null, pat);
+      const yaml = decodeB64(current.content);
+      const cron = "*/" + minutes + " * * * *";
+      const next = yaml.replace(/cron:\s*["'][^"']+["']/, 'cron: "' + cron + '"');
+      if (next === yaml) throw new Error("workflow 找不到 cron 行，未改頻率");
+      await ghApi(api, "PUT", {
+        message: "chore: set monitor interval to every " + minutes + " minutes",
+        content: btoa(unescape(encodeURIComponent(next))),
+        branch,
+        sha: current.sha,
+      }, pat);
+    }
+
+    async function refreshSecretStatus() {
+      const owner = $("ghOwner").value.trim();
+      const repo = $("ghRepo").value.trim();
+      const pat = $("ghPat").value.trim();
+      if (!owner || !repo || !pat) {
+        $("secretStatus").innerHTML = "填好 Owner / Repo / PAT 先可以檢查有冇設定過 Secret 名。值永遠睇唔到。";
+        return;
+      }
+      sessionStorage.setItem(PAT_KEY, pat);
+      const data = await ghApi(`/repos/${owner}/${repo}/actions/secrets`, "GET", null, pat);
+      const names = new Set((data.secrets || []).map((s) => s.name));
+      const rows = [
+        ["TELEGRAM_BOT_TOKEN", "Telegram Token"],
+        ["TELEGRAM_CHAT_ID", "Telegram Chat ID"],
+        ["DISCORD_WEBHOOK_URL", "Discord Webhook"],
+      ].map(([key, label]) => {
+        const on = names.has(key);
+        return `<span class="inline-flex items-center gap-1 mr-3 ${on ? "text-emerald-300" : "text-zinc-500"}">${on ? "● 已設定" : "○ 未設定"} ${label}</span>`;
+      });
+      $("secretStatus").innerHTML = rows.join("") + "<br/>值唔會顯示。已設定就唔使再填下面。";
     }
 
     async function saveSettings() {
@@ -591,33 +693,35 @@
       if (!pat) throw new Error("請先填寫 GitHub PAT");
       if (!next.github.owner || !next.github.repo) throw new Error("請填寫 Owner 與 Repository");
       sessionStorage.setItem(PAT_KEY, pat);
-      const path = `/repos/${next.github.owner}/${next.github.repo}/contents/config.json`;
-      let sha;
+      const { owner, repo, branch } = next.github;
+      await putRepoFile(
+        owner, repo, branch, pat, "config.json",
+        JSON.stringify(next, null, 2) + "\n",
+        "chore: update monitor config from dashboard"
+      );
+      let cronNote = "";
       try {
-        const current = await ghApi(path + "?ref=" + encodeURIComponent(next.github.branch), "GET", null, pat);
-        sha = current.sha;
+        await syncWorkflowCron(owner, repo, branch, pat, next.check_interval_minutes);
+        cronNote = "監控頻率已改為每 " + next.check_interval_minutes + " 分鐘。";
       } catch (err) {
-        if (!String(err.message).includes("Not Found")) throw err;
+        cronNote = "config 已存，但改 cron 失敗（PAT 需要 Workflows 寫入）：" + err.message;
       }
-      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(next, null, 2) + "\n")));
-      await ghApi(path, "PUT", {
-        message: "chore: update monitor config from dashboard",
-        content: encoded,
-        branch: next.github.branch,
-        sha,
-      }, pat);
-      const secretJobs = [
-        upsertSecret(next.github.owner, next.github.repo, pat, "TELEGRAM_BOT_TOKEN", $("tgToken").value.trim()),
-        upsertSecret(next.github.owner, next.github.repo, pat, "TELEGRAM_CHAT_ID", $("tgChat").value.trim()),
-        upsertSecret(next.github.owner, next.github.repo, pat, "DISCORD_WEBHOOK_URL", $("dcWebhook").value.trim()),
-      ];
-      const secretResults = await Promise.allSettled(secretJobs);
+      const filled = [
+        ["TELEGRAM_BOT_TOKEN", $("tgToken").value.trim()],
+        ["TELEGRAM_CHAT_ID", $("tgChat").value.trim()],
+        ["DISCORD_WEBHOOK_URL", $("dcWebhook").value.trim()],
+      ].filter(([, v]) => v);
+      const secretResults = await Promise.allSettled(
+        filled.map(([name, value]) => upsertSecret(owner, repo, pat, name, value))
+      );
       const secretFail = secretResults.filter((r) => r.status === "rejected");
       config = next;
       if (secretFail.length) {
-        toast("config.json 已更新，但部分 Secrets 寫入失敗：" + secretFail[0].reason, false);
+        toast(cronNote + " 部分 Secrets 寫入失敗：" + secretFail[0].reason, false);
+      } else if (filled.length) {
+        toast("已儲存。" + cronNote + " 並更新咗 " + filled.length + " 個通訊 Secret。");
       } else {
-        toast("已儲存設定。PAT 未寫入倉庫；通訊憑證已嘗試更新到 GitHub Secrets。");
+        toast("已儲存。" + cronNote + " 通訊欄位留空，現有 Secrets 未改動。");
       }
       updatePill();
     }
@@ -711,6 +815,12 @@
         finally { $("testNotifyBtn").disabled = false; }
       });
       $("reloadBtn").addEventListener("click", () => location.reload());
+      $("secretStatusBtn").addEventListener("click", async () => {
+        $("secretStatusBtn").disabled = true;
+        try { await refreshSecretStatus(); }
+        catch (err) { $("secretStatus").textContent = String(err.message || err); }
+        finally { $("secretStatusBtn").disabled = false; }
+      });
     }
 
     async function boot() {
