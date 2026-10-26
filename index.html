@@ -79,7 +79,7 @@
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-4 py-6 sm:py-10 space-y-6 pb-36">
+  <main class="max-w-6xl mx-auto px-4 py-6 sm:py-10 space-y-6">
     <section class="grid lg:grid-cols-3 gap-4">
       <article class="glass rounded-3xl p-5 sm:p-6 lg:col-span-2">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -124,14 +124,17 @@
       </article>
 
       <article class="glass rounded-3xl p-5 sm:p-6">
-        <h2 class="text-lg font-semibold">用量與額度</h2>
-        <p class="text-xs text-zinc-400 mt-1">GitHub Actions 免費額度每月 2,000 分鐘。</p>
+        <div class="flex items-start justify-between gap-3">
+          <h2 class="text-lg font-semibold">預估每月消耗</h2>
+          <span class="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-zinc-300">不是已用量</span>
+        </div>
+        <p class="text-xs text-zinc-400 mt-1">依下面頻率「如果跑滿 30 日」會用幾多 Actions 分鐘。本頁讀不到你帳戶已經用咗幾多。</p>
         <div class="mt-4">
           <div class="h-3 rounded-full bg-white/10 overflow-hidden">
             <div id="usageBar" class="h-full w-0 bg-apple-orange transition-all"></div>
           </div>
           <p id="usageText" class="mt-3 text-sm leading-relaxed text-zinc-300">計算中…</p>
-          <a class="inline-flex mt-3 text-sm text-sky-400 hover:underline" href="https://github.com/settings/billing" target="_blank" rel="noreferrer">開啟 GitHub Billing →</a>
+          <a class="inline-flex mt-3 text-sm text-sky-400 hover:underline" href="https://github.com/settings/billing" target="_blank" rel="noreferrer">查看真正已用分鐘（GitHub Billing）→</a>
         </div>
         <label class="block mt-4 text-xs text-zinc-400">監控頻率（分鐘，須與 workflow cron 一致）</label>
         <input id="intervalInput" type="number" min="1" max="60" value="2" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" />
@@ -219,9 +222,16 @@
     <section class="glass rounded-3xl p-5 sm:p-6">
       <h2 class="text-lg font-semibold">GitHub PAT 與通訊憑證</h2>
       <p class="text-sm text-zinc-400 mt-1">
-        Zero-Trust：PAT 只存在此瀏覽器的 sessionStorage，不會寫進倉庫。
-        Telegram / Discord 金鑰會透過 GitHub Secrets API 加密上傳，不會進入 <code>config.json</code>。
+        PAT 係 GitHub 個人存取權杖，用嚟讓控制台幫你改 <code>config.json</code> 同觸發測試通知。
+        只留喺呢個分頁（sessionStorage），唔會寫進倉庫。
+        Telegram / Discord 金鑰會加密寫入 GitHub Secrets。
       </p>
+      <ol class="mt-3 text-xs text-zinc-400 list-decimal pl-5 space-y-1">
+        <li>開啟 <a class="text-sky-400 hover:underline" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noreferrer">建立 Fine-grained token</a></li>
+        <li>Repository access 只勾 <code>iphone-monitor</code></li>
+        <li>Permissions：Contents <b>Read and write</b>、Actions <b>Read and write</b>；要由控制台寫 Secrets 再加 Secrets Write</li>
+        <li>Generate 之後把 <code>github_pat_…</code> 貼入下面（唔好用 Telegram bot token）</li>
+      </ol>
       <div class="mt-4 grid md:grid-cols-2 gap-3">
         <label class="text-xs text-zinc-400">GitHub Owner
           <input id="ghOwner" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" placeholder="your-user" />
@@ -232,7 +242,7 @@
         <label class="text-xs text-zinc-400">Branch
           <input id="ghBranch" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" value="main" />
         </label>
-        <label class="text-xs text-zinc-400">Fine-grained PAT（repo Contents + Actions + Secrets）
+        <label class="text-xs text-zinc-400">GitHub Fine-grained PAT（以 github_pat_ 開頭，不是 Telegram token）
           <input id="ghPat" type="password" autocomplete="off" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" placeholder="github_pat_…" />
         </label>
         <label class="text-xs text-zinc-400">Telegram Bot Token
@@ -251,7 +261,7 @@
       </div>
     </section>
 
-    <section class="sticky bottom-4 z-20 glass rounded-3xl p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+    <section class="glass rounded-3xl p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
       <p id="saveMsg" class="text-sm text-zinc-400">變更後請按儲存，系統會用 GitHub REST API 更新 config.json。</p>
       <div class="flex flex-wrap gap-2">
         <button id="testNotifyBtn" class="rounded-xl border border-white/15 px-4 py-2 text-sm">測試通知</button>
@@ -436,9 +446,10 @@
       const watchN = (config.models || []).length;
       const storeN = document.querySelectorAll("[data-store]:checked").length || (config.stores || []).length;
       $("usageText").innerHTML = `
-        每 ${interval} 分鐘 × 每日 ${hours.toFixed(1)} 小時 ≈ <b>${runsDay}</b> 次/日、<b>${runsMonth.toLocaleString()}</b> 次/月。<br/>
-        預估消耗 <b>${billed.toLocaleString()}</b> 分鐘 / 2,000（${pct}%）${pct > 100 ? " · 將超出免費額度" : ""}。<br/>
-        目前監控 ${watchN} 款 × ${storeN} 間門市。cron 在總開關 OFF 時仍會跑，平時請 Disable workflow。
+        <b>預估</b>（未發生）：每 ${interval} 分鐘 × 每日 ${hours.toFixed(1)} 小時 ≈ ${runsDay} 次/日。<br/>
+        若 cron 開住跑滿 30 日，約 <b>${billed.toLocaleString()}</b> 分鐘，對比免費 2,000（${pct}%）${pct > 100 ? " · 會超標，建議改 15 分鐘或平時 Disable workflow" : ""}。<br/>
+        呢條 bar <b>唔係</b>你而家已用咗幾多。真正已用量只喺 Billing 頁。<br/>
+        監控清單 ${watchN} 款 × ${storeN} 間門市。總開關 OFF 都唔會停 cron。
       `;
     }
 
