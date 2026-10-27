@@ -61,6 +61,7 @@ GitHub → Settings → Developer settings → Personal access tokens → Fine-g
   - **Actions: Read and write**（觸發連線測試與儲存模擬狀態）
   - **Workflows: Read and write**（由控制台改監控頻率 cron）
   - **Secrets: Read and write**（可選，只在要覆寫通訊憑證時）
+  - Account permissions **Plan: Read**（可選，控制台先讀到成個帳戶嘅 GitHub Billing 分鐘）
 
 PAT **不要** commit 進倉庫。
 
@@ -108,6 +109,7 @@ python3 -m http.server 8080
 | 測試 Telegram 連線 | `workflow_dispatch` `test_notify` | 只發連線短訊，**唔會**扮 iPhone 有貨 |
 | 儲存模擬狀態 | `workflow_dispatch` `apply_simulation` | 套用每格模擬貨源，有補貨先發測試 Telegram |
 | 儲存設定 | GitHub Contents API | 更新真實模式開關、頻率、監測清單 |
+| 本月 GitHub 用量 | GitHub Billing / Actions API | 控制台左邊 bar 顯示本月已用分鐘。有 Plan: Read 就讀帳戶 Billing；否則讀呢個倉本月跑咗幾多次 |
 | 用量提醒 | `state.json` `usage` | 每次排程約 +1 分鐘；到 1,800 同 2,000 發 Telegram |
 
 ---
@@ -121,7 +123,7 @@ python3 -m http.server 8080
    唔需要。鬧鐘喺 GitHub 伺服器行，有貨會直接 Telegram 你。控制台只係改設定用。
 
 3. **超過 2,000 分鐘會唔會自動停？**  
-   唔會優雅停。關「真實模式」都停唔到鬧鐘。要真正停燒分鐘：Actions → `iPhone HK Monitor` → Disable workflow。私人倉庫超額之後 GitHub 可能突然跑唔到，或者開始收費。本系統會喺估計用到 **1,800** 同 **2,000** 分鐘各發一次 Telegram 提醒。公開倉庫通常唔計呢個 2,000 額度。真正已用量只喺 [GitHub Billing](https://github.com/settings/billing)。
+   唔會優雅停。關「真實模式」都停唔到鬧鐘。要真正停燒分鐘：Actions → `iPhone HK Monitor` → Disable workflow。私人倉庫超額之後 GitHub 可能突然跑唔到，或者開始收費。本系統會喺估計用到 **1,800** 同 **2,000** 分鐘各發一次 Telegram 提醒。公開倉庫通常唔計呢個 2,000 額度。控制台「本月 GitHub 用量」會讀 GitHub 真實數字；亦可以打開 [GitHub Billing](https://github.com/settings/billing) 核對。
 
 ---
 
@@ -174,7 +176,7 @@ GitHub Actions **以整分鐘進位**。即便 `enabled=false`，cron 仍會 che
 - 平時到 Actions 頁 **Disable** `iPhone HK Monitor`，開售當日再 Enable。
 - 總開關只適合「開售日臨時暫停」，不能省 cron 本身的分鐘。
 - 要把頻率改成 10 分鐘：同時改 `.github/workflows/monitor.yml` 的 cron（例如 `*/10 * * * *`）與控制台「監控頻率」。
-- 控制台用量面板會依頻率與營業時間即時估算，並連結 [GitHub Billing](https://github.com/settings/billing)。
+- 控制台用量面板會讀 GitHub 本月真實已用分鐘（唔再係「跑滿 30 日」預估）。要睇成個帳戶，PAT 加 Plan: Read。
 
 ---
 
