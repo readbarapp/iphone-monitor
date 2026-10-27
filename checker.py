@@ -7,7 +7,8 @@ Apple 香港官網 iPhone 庫存監控器。
 - Zero-Trust：Telegram 憑證只從環境變數（GitHub Secrets）讀取，
   絕不寫入 config.json。
 - 真實模式：config.enabled == false 時安全退出（exit 0），不打 Apple API。
-  開啟後只監測 iPhone Duo；冇貨 → 有貨先發 Telegram。
+  開啟後只監測 iPhone Duo；只有今個星期內可取／可送先當有貨。
+  一月先送到嘅預訂當冇貨，唔發通知。
 - 模擬模式：--apply-simulation 讀每格獨立貨源，只寫入 simulation 狀態，
   唔問 Apple；任意一格冇貨 → 有貨先發測試結果 Telegram。
 - 雙模式：店內取貨（pickup）與送貨上門（delivery）。
@@ -27,11 +28,12 @@ import json
 import logging
 import os
 import random
+import re
 import sys
 import time
 import urllib.parse
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -165,6 +167,77 @@ def item_key(mode: str, store_id: str, part_number: str) -> str:
 def parse_hhmm(value: str) -> tuple[int, int]:
     hour, minute = value.split(":")
     return int(hour), int(minute)
+
+
+def soon_window_days(cfg: dict[str, Any] | None = None) -> int:
+    try:
+        days = int((cfg or {}).get("soon_window_days") or 7)
+    except (TypeError, ValueError):
+        days = 7
+    return max(1, min(days, 31))
+
+
+_WEEKDAY_ZH = {"一": 0, "二": 1, "三": 2, "四": 3, "五": 4, "六": 5, "日": 6, "天": 6}
+
+
+def parse_fulfillment_date(quote: str, now: datetime | None = None) -> date | None:
+    """從官網貨期句子抽出日期。解唔到就回 None。"""
+    text = str(quote or "")
+    moment = now or now_hk()
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=HK_TZ)
+    today = moment.astimezone(HK_TZ).date()
+    if re.search(r"今日|今天|即日|即時|\btoday\b", text, re.I):
+        return today
+    if re.search(r"明天|明日|\btomorrow\b", text, re.I):
+        return today + timedelta(days=1)
+    if "後天" in text:
+        return today + timedelta(days=2)
+    weekday = re.search(r"(?:週|周|星期)([一二三四五六日天])", text)
+    if weekday:
+        target = _WEEKDAY_ZH[weekday.group(1)]
+        delta = (target - today.weekday()) % 7
+        return today + timedelta(days=delta)
+    numbered = re.search(r"(?:(\d{4})\s*年\s*)?(\d{1,2})\s*月\s*(\d{1,2})\s*日", text)
+    if numbered:
+        year_s, month_s, day_s = numbered.group(1), numbered.group(2), numbered.group(3)
+        month, day = int(month_s), int(day_s)
+        year = int(year_s) if year_s else today.year
+        try:
+            parsed = date(year, month, day)
+        except ValueError:
+            return None
+        if year_s is None and parsed < today:
+            try:
+                parsed = date(year + 1, month, day)
+            except ValueError:
+                return None
+        return parsed
+    return None
+
+
+def apply_soon_window(
+    status: str,
+    quote: str,
+    *,
+    mode: str,
+    cfg: dict[str, Any] | None = None,
+    now: datetime | None = None,
+) -> tuple[str, str]:
+    """只有今個星期內可取／可送先當有貨。一月先送到當冇貨。"""
+    if status != STATUS_AVAILABLE:
+        return status, quote
+    moment = now or now_hk()
+    days = soon_window_days(cfg)
+    today = (moment if moment.tzinfo else moment.replace(tzinfo=HK_TZ)).astimezone(HK_TZ).date()
+    parsed = parse_fulfillment_date(quote, moment)
+    if parsed is not None:
+        if today <= parsed <= today + timedelta(days=days):
+            return STATUS_AVAILABLE, quote
+        return STATUS_UNAVAILABLE, quote or "貨期超過一個星期（唔當即時）"
+    if mode == "pickup":
+        return STATUS_AVAILABLE, quote
+    return STATUS_UNAVAILABLE, quote or "貨期未明（唔當即時）"
 
 
 def due_for_interval(cfg: dict[str, Any], state: dict[str, Any], moment: datetime | None = None) -> bool:
@@ -433,6 +506,7 @@ def parse_pickup_payload(
     watch: list[WatchItem],
     selected_stores: set[str],
     catalog: dict[str, Any],
+    cfg: dict[str, Any] | None = None,
 ) -> list[AvailabilityHit]:
     hits: list[AvailabilityHit] = []
     watch_by_part = {w.part_number: w for w in watch}
@@ -456,6 +530,7 @@ def parse_pickup_payload(
                 continue
             item = watch_by_part[part]
             status, quote = _pickup_status(info if isinstance(info, dict) else {})
+            status, quote = apply_soon_window(status, quote, mode="pickup", cfg=cfg)
             title = ""
             if isinstance(info, dict):
                 regular = (info.get("messageTypes") or {}).get("regular") or {}
@@ -480,6 +555,7 @@ def parse_pickup_payload(
 def parse_delivery_payload(
     payload: dict[str, Any],
     watch: list[WatchItem],
+    cfg: dict[str, Any] | None = None,
 ) -> list[AvailabilityHit]:
     hits: list[AvailabilityHit] = []
     watch_by_part = {w.part_number: w for w in watch}
@@ -492,6 +568,7 @@ def parse_delivery_payload(
         if not isinstance(block, dict):
             continue
         status, quote = _delivery_status(block)
+        status, quote = apply_soon_window(status, quote, mode="delivery", cfg=cfg)
         hits.append(
             AvailabilityHit(
                 key=item_key("delivery", "DELIVERY", part),
@@ -600,7 +677,7 @@ def format_message(hits: list[AvailabilityHit]) -> str:
     lines = [
         "🍎 Apple 香港有貨通知",
         "",
-        f"共 {len(hits)} 項由「冇貨」轉為「有貨」（已依優先級排序）：",
+        f"共 {len(hits)} 項今個星期內可取／可送（由「稍後／冇貨」轉為即時有貨）：",
         "",
     ]
     lines.extend(_hit_lines(hits))
@@ -739,11 +816,11 @@ def live_hits(
 
     if "pickup" in modes:
         payload = client.try_fulfillment(parts, next(iter(stores), None), location)
-        parsed = parse_pickup_payload(payload, watch, stores, catalog) if payload else []
+        parsed = parse_pickup_payload(payload, watch, stores, catalog, cfg) if payload else []
         if not parsed:
             LOGGER.info("fulfillment-messages 無可用取貨資料，改查 pickup-message")
             payload = client.pickup(parts, location="Hong Kong")
-            parsed = parse_pickup_payload(payload, watch, stores, catalog) if payload else []
+            parsed = parse_pickup_payload(payload, watch, stores, catalog, cfg) if payload else []
         if not parsed:
             LOGGER.error("取貨查詢失敗，本輪門市狀態維持上次結果（不改寫）")
             # 補 unknown，讓狀態機略過
@@ -768,11 +845,11 @@ def live_hits(
 
     if "delivery" in modes:
         payload = client.try_fulfillment(parts, None, location)
-        parsed = parse_delivery_payload(payload, watch) if payload else []
+        parsed = parse_delivery_payload(payload, watch, cfg) if payload else []
         if not parsed:
             LOGGER.info("fulfillment-messages 無可用送貨資料，改查 delivery-message")
             payload = client.delivery(parts, location=location)
-            parsed = parse_delivery_payload(payload, watch) if payload else []
+            parsed = parse_delivery_payload(payload, watch, cfg) if payload else []
         if not parsed:
             LOGGER.error("送貨查詢失敗，本輪送貨狀態維持上次結果（不改寫）")
             for item in watch:
@@ -1114,6 +1191,22 @@ def run_self_test() -> int:
     sim_text = format_simulation_message(one)
     check("模擬模式測試結果" in sim_text and "唔代表官網真係有貨" in sim_text, "測試結果訊息標明係模擬")
     check("🍎" not in sim_text, "測試結果唔好同真實補貨標題混淆")
+
+    now = datetime(2026, 10, 27, 15, 0, tzinfo=HK_TZ)  # 星期二
+    cfg7 = {"soon_window_days": 7}
+    check(parse_fulfillment_date("今日可取貨", now) == now.date(), "今日＝今天")
+    check(parse_fulfillment_date("明天 — 免費", now) == now.date() + timedelta(days=1), "明天")
+    check(parse_fulfillment_date("1 月 16 日 — 免費", now) == date(2027, 1, 16), "無年份嘅一月當明年")
+    check(parse_fulfillment_date("10 月 28 日可取", now) == date(2026, 10, 28), "本月日期")
+    soon_today, _ = apply_soon_window(STATUS_AVAILABLE, "今日可取", mode="pickup", cfg=cfg7, now=now)
+    later, later_q = apply_soon_window(STATUS_AVAILABLE, "1 月 16 日 — 免費", mode="delivery", cfg=cfg7, now=now)
+    vague_del, _ = apply_soon_window(STATUS_AVAILABLE, "可送貨", mode="delivery", cfg=cfg7, now=now)
+    vague_pick, _ = apply_soon_window(STATUS_AVAILABLE, "", mode="pickup", cfg=cfg7, now=now)
+    check(soon_today == STATUS_AVAILABLE, "今個星期內取貨當有貨")
+    check(later == STATUS_UNAVAILABLE, "一月先送到當冇貨")
+    check("1 月 16 日" in later_q, "一月貨期句子要留低俾人睇")
+    check(vague_del == STATUS_UNAVAILABLE, "送貨無日期唔當即時")
+    check(vague_pick == STATUS_AVAILABLE, "門市顯示有貨但無日期，當可即取")
 
     from usage import run_self_test as usage_self_test
 

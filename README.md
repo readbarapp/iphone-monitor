@@ -96,7 +96,8 @@ python3 -m http.server 8080
 
 | 元件 | 寫入欄位 | 作用 |
 | --- | --- | --- |
-| 真實模式 | `enabled` | `false` 時不查 Apple。打開後只盯 Duo，冇貨→有貨即 Telegram |
+| 真實模式 | `enabled` | `false` 時不查 Apple。打開後只盯 Duo，今個星期內可取／可送先當有貨 |
+| 即時貨期窗 | `soon_window_days` | 預設 7 日。一月先送到當冇貨，唔通知 |
 | 模擬貨源 | `simulation.statuses` | 每格獨立有貨／冇貨。儲存時只有冇貨→有貨發測試訊息 |
 | 取貨模式 | `fulfillment_modes` | `pickup`、`delivery` 可並存 |
 | 型號下拉 | `models[]` | 只保留 iPhone Duo |
