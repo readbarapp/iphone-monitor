@@ -137,15 +137,18 @@
           </label>
           <div class="mt-4">
             <div class="flex items-start justify-between gap-3">
-              <p class="text-sm font-medium">預估每月消耗</p>
-              <span class="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-zinc-300">不是已用量</span>
+              <p class="text-sm font-medium">本月 GitHub 用量</p>
+              <span id="usageBadge" class="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-zinc-300">未讀取</span>
             </div>
             <div class="mt-3 h-3 rounded-full bg-white/10 overflow-hidden">
               <div id="usageBar" class="h-full w-0 bg-apple-orange transition-all"></div>
             </div>
-            <p id="usageText" class="mt-3 text-sm leading-relaxed text-zinc-300">計算中…</p>
-            <p id="usageActual" class="mt-2 text-xs text-zinc-400">本月實際累計：尚未有排程紀錄。</p>
-            <a class="inline-flex mt-3 text-sm text-sky-400 hover:underline" href="https://github.com/settings/billing" target="_blank" rel="noreferrer">查看真正已用分鐘（GitHub Billing）→</a>
+            <p id="usageText" class="mt-3 text-sm leading-relaxed text-zinc-300">填好 Owner／PAT 之後會讀 GitHub 本月真實用量。</p>
+            <p id="usageActual" class="mt-2 text-xs text-zinc-400"></p>
+            <div class="mt-3 flex flex-wrap items-center gap-3">
+              <button type="button" id="usageRefreshBtn" class="text-sm text-sky-400 hover:underline">重新讀取用量</button>
+              <a class="inline-flex text-sm text-sky-400 hover:underline" href="https://github.com/settings/billing" target="_blank" rel="noreferrer">打開 GitHub Billing →</a>
+            </div>
           </div>
         </div>
         <div class="lg:col-span-2 rounded-2xl bg-white/5 p-4 border border-white/10">
@@ -245,13 +248,13 @@
     <section class="glass rounded-3xl p-5 sm:p-6">
       <h2 class="text-lg font-semibold">GitHub PAT</h2>
       <p class="text-sm text-zinc-400 mt-1">
-        PAT 只負責控制台改設定、改監控頻率、儲存模擬狀態、觸發連線測試。只留喺呢個分頁，唔會寫進倉庫。
+        PAT 只負責控制台改設定、改監控頻率、讀 GitHub 用量、儲存模擬狀態、觸發連線測試。只留喺呢個分頁，唔會寫進倉庫。
       </p>
       <ol class="mt-3 text-xs text-zinc-400 list-decimal pl-5 space-y-1">
         <li>開啟 <a class="text-sky-400 hover:underline" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noreferrer">建立 Fine-grained token</a></li>
         <li>Repository access 只勾 <code>iphone-monitor</code></li>
         <li>Permissions：Contents、Actions、Workflows 都設 <b>Read and write</b>（Workflows 用來改 cron）</li>
-        <li>若要顯示整個 GitHub 帳戶用量：同一頁向下搵 <b>Account permissions</b>（唔係 Repository permissions）→ <b>Plan</b> 設 <b>Read</b> → 儲存。Resource owner 要係你自己嘅帳戶先見到呢一欄</li>
+        <li>若要顯示整個 GitHub 帳戶用量：同一頁向下搵 <b>Account permissions</b>（唔係 Repository permissions）→ <b>Plan</b> 設 <b>Read</b> → 儲存。Resource owner 要係你自己嘅帳戶先見到呢一欄。冇呢個權限都會讀呢個倉庫本月已跑幾多次</li>
         <li>若要由控制台覆寫通訊 Secret，再加 Secrets <b>Read and write</b></li>
         <li>把 <code>github_pat_…</code> 貼入下面（唔好用 Telegram bot token）</li>
       </ol>
@@ -339,6 +342,9 @@
     let config = null;
     let latestState = { items: {}, simulation: {} };
     let liveTimer = null;
+    let liveUsage = null;
+    let usageTimer = null;
+    let usageInFlight = false;
 
     const $ = (id) => document.getElementById(id);
 
@@ -624,24 +630,184 @@
     }
 
     function estimateUsage() {
+      paintUsage();
+    }
+
+    function utcMonthNow() {
+      const d = new Date();
+      return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1 };
+    }
+
+    function monthStartIso(year, month) {
+      const mm = String(month).padStart(2, "0");
+      return `${year}-${mm}-01T00:00:00Z`;
+    }
+
+    function nextMonthStartIso(year, month) {
+      if (month === 12) return monthStartIso(year + 1, 1);
+      return monthStartIso(year, month + 1);
+    }
+
+    function actionsMinutesFromItems(items) {
+      let minutes = 0;
+      for (const item of items || []) {
+        const label = `${item.product || ""} ${item.sku || ""}`;
+        if (!/action/i.test(label)) continue;
+        const unit = String(item.unitType || item.unit_type || "").toLowerCase();
+        let qty = Number(item.netQuantity ?? item.grossQuantity ?? item.quantity ?? 0);
+        if (!Number.isFinite(qty)) continue;
+        if (/ms/.test(unit)) qty /= 60000;
+        else if (/hour/.test(unit)) qty *= 60;
+        minutes += qty;
+      }
+      return Math.round(minutes);
+    }
+
+    function paintUsageBar(used, quota) {
+      const pct = quota > 0 ? Math.min(999, Math.round((used / quota) * 100)) : 0;
+      const bar = $("usageBar");
+      if (!bar) return pct;
+      bar.style.width = Math.min(100, pct) + "%";
+      bar.className = "h-full transition-all " + (pct > 100 ? "bg-apple-red" : pct > 70 ? "bg-apple-orange" : "bg-apple-green");
+      return pct;
+    }
+
+    function projectionNote() {
       const interval = snapInterval($("intervalInput").value);
       const hours = hoursPerDay();
       const runsDay = Math.floor((hours * 60) / interval);
-      const runsMonth = runsDay * 30;
-      // Actions 以整分鐘進位；即使 enabled=false，cron 仍會 checkout。
-      const billed = runsMonth * 1;
-      const pct = Math.min(999, Math.round((billed / FREE_MINUTES) * 100));
-      const bar = $("usageBar");
-      bar.style.width = Math.min(100, pct) + "%";
-      bar.className = "h-full transition-all " + (pct > 100 ? "bg-apple-red" : pct > 70 ? "bg-apple-orange" : "bg-apple-green");
-      const watchN = (config.models || []).length;
-      const storeN = document.querySelectorAll("[data-store]:checked").length || (config.stores || []).length;
-      $("usageText").innerHTML = `
-        <b>預估</b>（未發生）：每 ${interval} 分鐘 × 每日 ${hours.toFixed(1)} 小時 ≈ ${runsDay} 次/日。<br/>
-        若 cron 開住跑滿 30 日，約 <b>${billed.toLocaleString()}</b> 分鐘，對比免費 2,000（${pct}%）${pct > 100 ? " · 會超標，建議改 15 分鐘或平時 Disable workflow" : ""}。<br/>
-        呢條 bar <b>唔係</b>你而家已用咗幾多。真正已用量只喺 Billing 頁。<br/>
-        監控清單 ${watchN} 款 Duo × ${storeN} 間門市。<b>盯多幾部／幾間門市，每月分鐘數一樣</b>（按「跑幾多次」計，唔係按查幾多款）。真實模式 OFF 都唔會停鬧鐘，仍約 1 分鐘／次。
-      `;
+      return `若維持每 ${interval} 分鐘、每日 ${hours.toFixed(1)} 小時，滿月大約 ${runsDay * 30} 分鐘。盯多幾部機唔會加分鐘。`;
+    }
+
+    function paintUsage() {
+      const badge = $("usageBadge");
+      const text = $("usageText");
+      const extra = $("usageActual");
+      if (!text) return;
+      if (!liveUsage) {
+        if (badge) badge.textContent = $("ghPat")?.value.trim() ? "讀取中" : "未讀取";
+        paintUsageBar(0, FREE_MINUTES);
+        text.textContent = $("ghPat")?.value.trim()
+          ? "正在向 GitHub 讀本月真實用量…"
+          : "填好 Owner／Repo／PAT 之後，呢度會顯示 GitHub 本月已用分鐘，唔再係預估。";
+        if (extra) extra.textContent = projectionNote();
+        return;
+      }
+      const used = Number(liveUsage.used) || 0;
+      const quota = Number(liveUsage.quota) || FREE_MINUTES;
+      const pct = paintUsageBar(liveUsage.countsTowardQuota ? used : 0, quota);
+      if (badge) {
+        badge.textContent = liveUsage.countsTowardQuota ? "GitHub 真實用量" : "公開倉 · 通常唔計額度";
+        badge.className = "shrink-0 rounded-full px-2 py-0.5 text-[11px] " + (liveUsage.countsTowardQuota ? "bg-emerald-500/15 text-emerald-200" : "bg-white/10 text-zinc-300");
+      }
+      const month = liveUsage.month || "本月";
+      if (liveUsage.source === "billing") {
+        text.innerHTML = `
+          <b>${month} UTC</b> GitHub 帳戶已用 <b>${used.toLocaleString()}</b> 分鐘，對比免費 ${quota.toLocaleString()}（${pct}%）${pct > 100 ? " · 已超免費額度" : ""}。<br/>
+          數字來自 GitHub Billing API。${liveUsage.repoRuns != null ? `呢個倉庫同期已跑 ${liveUsage.repoRuns.toLocaleString()} 次（每次約 1 分鐘）。` : ""}
+        `;
+      } else {
+        const quotaLine = liveUsage.countsTowardQuota
+          ? `對比免費 ${quota.toLocaleString()}（${pct}%）${pct > 100 ? " · 已超免費額度" : ""}。`
+          : "呢個倉庫係公開嘅，呢啲分鐘通常唔計入 2,000 免費額度。";
+        text.innerHTML = `
+          <b>${month} UTC</b> 呢個倉庫 GitHub Actions 已跑 <b>${used.toLocaleString()}</b> 次，約 ${used.toLocaleString()} 分鐘。${quotaLine}<br/>
+          數字來自 GitHub Actions（本倉）。要睇成個帳戶用量，PAT 加 Account permissions → <b>Plan: Read</b>。
+        `;
+      }
+      if (extra) extra.textContent = projectionNote();
+    }
+
+    async function tryBillingActionsMinutes(owner, pat, year, month) {
+      const qs = `year=${year}&month=${month}`;
+      const paths = [
+        `/users/${encodeURIComponent(owner)}/settings/billing/usage/summary?${qs}&product=actions`,
+        `/users/${encodeURIComponent(owner)}/settings/billing/usage?${qs}`,
+        `/organizations/${encodeURIComponent(owner)}/settings/billing/usage/summary?${qs}&product=actions`,
+        `/orgs/${encodeURIComponent(owner)}/settings/billing/usage?${qs}`,
+      ];
+      for (const path of paths) {
+        try {
+          const data = await ghApi(path, "GET", null, pat, "2026-03-10");
+          const minutes = actionsMinutesFromItems(data.usageItems || data.usage_items || []);
+          if (minutes > 0 || Array.isArray(data.usageItems) || Array.isArray(data.usage_items)) {
+            return minutes;
+          }
+        } catch {
+          /* 多數 PAT 冇 Plan: Read，改讀本倉庫 Actions */
+        }
+      }
+      return null;
+    }
+
+    async function fetchRepoActionRuns(owner, repo, pat, year, month) {
+      const created = `${monthStartIso(year, month)}..${nextMonthStartIso(year, month)}`;
+      const data = await ghApi(
+        `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/actions/runs?per_page=1&created=${encodeURIComponent(created)}`,
+        "GET",
+        null,
+        pat
+      );
+      return Number(data.total_count) || 0;
+    }
+
+    async function refreshGitHubUsage() {
+      const owner = $("ghOwner")?.value.trim();
+      const repo = $("ghRepo")?.value.trim();
+      const pat = $("ghPat")?.value.trim();
+      if (!owner || !repo || !pat) {
+        liveUsage = null;
+        paintUsage();
+        return;
+      }
+      if (usageInFlight) return;
+      usageInFlight = true;
+      if ($("usageBadge")) $("usageBadge").textContent = "讀取中";
+      try {
+        const { year, month } = utcMonthNow();
+        const monthLabel = `${year}-${String(month).padStart(2, "0")}`;
+        let isPrivate = true;
+        try {
+          const info = await ghApi(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`, "GET", null, pat);
+          isPrivate = !!info.private;
+        } catch {
+          isPrivate = true;
+        }
+        const [billingMinutes, repoRuns] = await Promise.all([
+          tryBillingActionsMinutes(owner, pat, year, month),
+          fetchRepoActionRuns(owner, repo, pat, year, month).catch(() => null),
+        ]);
+        if (billingMinutes != null) {
+          liveUsage = {
+            used: billingMinutes,
+            quota: FREE_MINUTES,
+            source: "billing",
+            repoRuns,
+            countsTowardQuota: true,
+            month: monthLabel,
+          };
+        } else if (repoRuns != null) {
+          liveUsage = {
+            used: repoRuns,
+            quota: FREE_MINUTES,
+            source: "actions",
+            repoRuns,
+            countsTowardQuota: isPrivate,
+            month: monthLabel,
+          };
+        } else {
+          throw new Error("讀唔到 GitHub 用量");
+        }
+        paintUsage();
+      } catch (err) {
+        liveUsage = null;
+        paintUsage();
+        if ($("usageText")) {
+          $("usageText").textContent = "讀唔到 GitHub 用量：" + (err.message || err) + "。確認 PAT 有 Actions 讀取權限。";
+        }
+      } finally {
+        usageInFlight = false;
+      }
     }
 
     function applyConfigToForm(cfg) {
@@ -754,13 +920,13 @@
       };
     }
 
-    async function ghApi(path, method, body, pat) {
+    async function ghApi(path, method, body, pat, apiVersion) {
       const res = await fetch("https://api.github.com" + path, {
         method,
         headers: {
           Accept: "application/vnd.github+json",
           Authorization: "Bearer " + pat,
-          "X-GitHub-Api-Version": "2022-11-28",
+          "X-GitHub-Api-Version": apiVersion || "2022-11-28",
           "Content-Type": "application/json",
         },
         body: body ? JSON.stringify(body) : undefined,
@@ -910,6 +1076,7 @@
           toast(($("saveMsg").textContent || "") + " 即刻查詢未能排程：" + err.message, false);
         }
       }
+      refreshGitHubUsage();
       updatePill();
     }
 
@@ -993,15 +1160,6 @@
             ? `上次模擬：${simRun.message || ""} · ${simRun.at}`
             : "尚未儲存過模擬狀態。";
         }
-        const usage = latestState.usage || {};
-        if ($("usageActual")) {
-          if (usage.estimated_minutes != null) {
-            $("usageActual").textContent =
-              `本月（${usage.month || "—"} UTC）本系統已累計約 ${usage.estimated_minutes} 分鐘（每次排程約 1 分鐘）。到 1,800 同 2,000 會 Telegram 提醒。真正已用量仍以 Billing 為準。`;
-          } else {
-            $("usageActual").textContent = "本月實際累計：尚未有排程紀錄。到 1,800 同 2,000 分鐘會 Telegram 提醒。";
-          }
-        }
         renderLiveBoard();
       } catch {
         if ($("lastRunText")) $("lastRunText").textContent = "讀不到 state.json（本地預覽或尚未執行過監控）。";
@@ -1078,6 +1236,13 @@
         catch (err) { toast(String(err.message || err), false); }
         finally { $("saveSimBtn").disabled = false; }
       });
+      if ($("usageRefreshBtn")) {
+        $("usageRefreshBtn").addEventListener("click", () => refreshGitHubUsage());
+      }
+      ["ghPat", "ghOwner", "ghRepo"].forEach((id) => {
+        if (!$(id)) return;
+        $(id).addEventListener("change", () => refreshGitHubUsage());
+      });
       $("reloadBtn").addEventListener("click", () => location.reload());
       $("secretStatusBtn").addEventListener("click", async () => {
         $("secretStatusBtn").disabled = true;
@@ -1113,6 +1278,9 @@
       }
       await loadState();
       startLiveRefresh();
+      await refreshGitHubUsage();
+      if (usageTimer) clearInterval(usageTimer);
+      usageTimer = setInterval(refreshGitHubUsage, 5 * 60 * 1000);
     }
 
     boot();
