@@ -97,7 +97,7 @@ python3 -m http.server 8080
 | 元件 | 寫入欄位 | 作用 |
 | --- | --- | --- |
 | 真實模式 | `enabled` | `false` 時不查 Apple。打開後只盯 Duo |
-| 即時貨期窗 | `soon_window_days` | 送貨／取貨都係：7 日內可送或可取先當有貨，其他當冇貨 |
+| 幾耐之內先當有貨 | `soon_window_days` | 真實模式左邊下拉，預設 7 日。送貨／取貨都係：呢個日數內可送或可取先當有貨，其他當冇貨。要撳「儲存設定」先生效 |
 | 模擬貨源 | `simulation.statuses` | 每格獨立有貨／冇貨。儲存時只有冇貨→有貨發測試訊息 |
 | 取貨模式 | `fulfillment_modes` | `pickup`、`delivery` 可並存 |
 | 型號下拉 | `models[]` | 只保留 iPhone Duo |

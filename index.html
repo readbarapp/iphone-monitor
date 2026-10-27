@@ -104,7 +104,7 @@
       <div class="mt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 class="text-xl font-semibold">問 Apple 官網（只盯 iPhone Duo）</h2>
-          <p id="liveModeHint" class="text-sm text-zinc-400 mt-1">而家：真實模式已關閉。送貨同取貨都係：7 日內可送到／可取先當有貨，其他當冇貨。</p>
+          <p id="liveModeHint" class="text-sm text-zinc-400 mt-1">而家：真實模式已關閉。左邊「幾耐之內先當有貨」可以改日數。送貨同取貨同一規則。</p>
         </div>
         <div class="flex items-center gap-3">
           <span class="text-sm text-zinc-300">真實模式</span>
@@ -124,6 +124,17 @@
             <option value="30">每 30 分鐘</option>
             <option value="60">每 60 分鐘</option>
           </select>
+          <label class="mt-4 block">
+            <h3 class="font-medium">幾耐之內先當有貨</h3>
+            <p class="text-[11px] text-zinc-400 mt-1">送貨同取貨同一規則。揀完要撳下面「儲存設定」先生效。</p>
+            <select id="soonWindowInput" class="field mt-3 w-full rounded-xl px-3 py-2 text-sm">
+              <option value="3">3 日內可送／可取</option>
+              <option value="5">5 日內可送／可取</option>
+              <option value="7" selected>7 日內可送／可取（建議）</option>
+              <option value="10">10 日內可送／可取</option>
+              <option value="14">14 日內可送／可取</option>
+            </select>
+          </label>
           <div class="mt-4">
             <div class="flex items-start justify-between gap-3">
               <p class="text-sm font-medium">預估每月消耗</p>
@@ -141,7 +152,7 @@
           <div class="flex items-start justify-between gap-3">
             <div>
               <h3 class="font-medium">最近一次官網貨源</h3>
-              <p id="lastRunText" class="text-xs text-zinc-400 mt-1">尚未讀取。有貨＝7 日內可送或可取。遲過 7 日或冇寫日期，一律當冇貨、唔通知。</p>
+              <p id="lastRunText" class="text-xs text-zinc-400 mt-1">尚未讀取。有貨＝設定日數內可送或可取。遲過呢個窗或冇寫日期，一律當冇貨、唔通知。</p>
             </div>
             <span id="liveBadge" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300">尚未查詢</span>
           </div>
@@ -285,7 +296,7 @@
     </section>
 
     <section class="glass rounded-3xl p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-      <p id="saveMsg" class="text-sm text-zinc-400">「儲存設定」寫入真實模式開關、頻率、監測清單。模擬貨源請用上面「儲存模擬狀態」。</p>
+      <p id="saveMsg" class="text-sm text-zinc-400">「儲存設定」寫入真實模式開關、頻率、幾耐之內先當有貨、監測清單。模擬貨源請用上面「儲存模擬狀態」。</p>
       <div class="flex flex-wrap gap-2">
         <button id="testNotifyBtn" class="rounded-xl border border-white/15 px-4 py-2 text-sm" title="只發連線測試短訊，唔會扮 iPhone 有貨">測試 Telegram 連線</button>
         <button id="reloadBtn" class="rounded-xl border border-white/15 px-4 py-2 text-sm">重新載入</button>
@@ -467,9 +478,20 @@
       return statuses;
     }
 
+    function snapSoonWindow(raw) {
+      const n = Number(raw);
+      if ([3, 5, 7, 10, 14].includes(n)) return n;
+      if (Number.isFinite(n) && n >= 1 && n <= 30) return Math.round(n);
+      return 7;
+    }
+
+    function soonDays() {
+      return snapSoonWindow($("soonWindowInput")?.value || config?.soon_window_days || 7);
+    }
+
     function statusLabel(status, quote) {
       const q = String(quote || "");
-      if (status === "available") return "有貨（7 日內）";
+      if (status === "available") return `有貨（${soonDays()} 日內）`;
       if (status === "unavailable" && /月/.test(q)) return "稍後先有（唔通知）";
       if (status === "unavailable") return "冇貨";
       return "尚未查詢";
@@ -637,6 +659,7 @@
       $("modePickup").checked = modes.includes("pickup");
       $("modeDelivery").checked = modes.includes("delivery") && (cfg.delivery?.enabled !== false);
       $("intervalInput").value = String(snapInterval(cfg.check_interval_minutes || 15));
+      if ($("soonWindowInput")) $("soonWindowInput").value = String(snapSoonWindow(cfg.soon_window_days || 7));
       $("hoursEnabled").checked = !!(cfg.business_hours && cfg.business_hours.enabled);
       $("hoursStart").value = cfg.business_hours?.start || "10:00";
       $("hoursEnd").value = cfg.business_hours?.end || "22:00";
@@ -665,11 +688,11 @@
       if (!on) {
         pill.textContent = "真實模式 OFF";
         pill.className = "shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300";
-        if (hint) hint.textContent = "而家：真實模式已關閉。送貨同取貨都係：7 日內可送到／可取先當有貨，其他當冇貨。";
+        if (hint) hint.textContent = `而家：真實模式已關閉。送貨同取貨都係：${soonDays()} 日內可送到／可取先當有貨，其他當冇貨。`;
       } else {
         pill.textContent = "真實模式 ON";
         pill.className = "shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-emerald-500/20 text-emerald-200";
-        if (hint) hint.textContent = "而家：真實模式已開啟。7 日內可送或可取先 Telegram；一月預訂、遲過 7 日、冇寫日期都當冇貨。";
+        if (hint) hint.textContent = `而家：真實模式已開啟。${soonDays()} 日內可送或可取先 Telegram；遲過呢個窗、冇寫日期都當冇貨。`;
       }
     }
 
@@ -688,7 +711,7 @@
       if ($("modeDelivery").checked) modes.push("delivery");
       return {
         enabled: isOn($("enabledToggle")),
-        soon_window_days: Number(config.soon_window_days) || 7,
+        soon_window_days: soonDays(),
         check_interval_minutes: snapInterval($("intervalInput").value),
         fulfillment_modes: modes.length ? modes : ["pickup"],
         models: config.models || [],
@@ -1011,6 +1034,12 @@
         $(id).addEventListener("input", estimateUsage);
         $(id).addEventListener("change", estimateUsage);
       });
+      if ($("soonWindowInput")) {
+        $("soonWindowInput").addEventListener("change", () => {
+          updatePill();
+          renderLiveBoard();
+        });
+      }
       $("modePickup").addEventListener("change", () => { renderSimBoard(); renderLiveBoard(); });
       $("modeDelivery").addEventListener("change", () => { renderSimBoard(); renderLiveBoard(); });
       $("storeList").addEventListener("change", () => {
@@ -1058,6 +1087,7 @@
       } catch (err) {
         applyConfigToForm({
           enabled: false,
+          soon_window_days: 7,
           check_interval_minutes: 15,
           fulfillment_modes: ["pickup", "delivery"],
           models: [],
