@@ -122,7 +122,7 @@
   },
   "simulation": {
     "statuses": {
-      "pickup:R428:MK2J4ZA/A": "unavailable",
+      "pickup:R428:MK2J4ZA/A": "available",
       "pickup:R409:MK2J4ZA/A": "unavailable",
       "pickup:R499:MK2J4ZA/A": "unavailable",
       "pickup:R485:MK2J4ZA/A": "unavailable",
