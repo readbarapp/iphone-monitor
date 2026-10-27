@@ -114,7 +114,7 @@
       <div class="mt-6 grid lg:grid-cols-3 gap-4">
         <div class="lg:col-span-1 rounded-2xl bg-white/5 p-4 border border-white/10">
           <h3 class="font-medium">幾耐查一次</h3>
-          <p class="text-[11px] text-zinc-400 mt-1">儲存設定先會改排程。設咗 15 分鐘，下面貨源板亦會跟住刷新。</p>
+          <p class="text-[11px] text-zinc-400 mt-1">儲存設定先會改排程同每日時段。設咗 15 分鐘，下面貨源板亦會跟住刷新。</p>
           <select id="intervalInput" class="field mt-3 w-full rounded-xl px-3 py-2 text-sm">
             <option value="2">每 2 分鐘（開售衝刺，額度很兇）</option>
             <option value="5">每 5 分鐘</option>
@@ -124,6 +124,22 @@
             <option value="30">每 30 分鐘</option>
             <option value="60">每 60 分鐘</option>
           </select>
+          <div class="mt-4">
+            <h3 class="font-medium">每日監控時段（香港時間）</h3>
+            <p class="text-[11px] text-zinc-400 mt-1">你自己定幾點開始、幾點完。儲存之後鬧鐘只喺呢段時間響，出時段唔會跑。</p>
+            <label class="mt-3 flex items-center justify-between rounded-xl field px-3 py-2">
+              <span>全日 24 小時監控</span>
+              <input id="hoursAllDay" type="checkbox" class="h-4 w-4 accent-sky-500" />
+            </label>
+            <div id="hoursFields" class="mt-3 grid grid-cols-2 gap-3">
+              <label class="text-xs text-zinc-400">開始
+                <input id="hoursStart" type="time" value="10:00" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" />
+              </label>
+              <label class="text-xs text-zinc-400">結束
+                <input id="hoursEnd" type="time" value="22:00" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" />
+              </label>
+            </div>
+          </div>
           <label class="mt-4 block">
             <h3 class="font-medium">幾耐之內先當有貨</h3>
             <p class="text-[11px] text-zinc-400 mt-1">送貨同取貨同一規則。揀完要撳下面「儲存設定」先生效。</p>
@@ -225,23 +241,6 @@
             <p>Delivery：<span id="prioDeliveryVal">70</span></p>
           </div>
         </div>
-      </div>
-    </section>
-
-    <section class="glass rounded-3xl p-5 sm:p-6">
-      <h2 class="text-lg font-semibold">營業時間窗（只限真實模式）</h2>
-      <p class="text-sm text-zinc-400 mt-1">時間窗外真實模式會略過查詢，唔打官網。模擬模式不受限。星期：一=0 … 日=6。</p>
-      <label class="mt-4 flex items-center justify-between rounded-xl field px-3 py-2 max-w-md">
-        <span>啟用營業時間過濾</span>
-        <input id="hoursEnabled" type="checkbox" checked class="h-4 w-4 accent-sky-500" />
-      </label>
-      <div class="mt-3 grid grid-cols-2 gap-3 max-w-md">
-        <label class="text-xs text-zinc-400">開始
-          <input id="hoursStart" type="time" value="10:00" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" />
-        </label>
-        <label class="text-xs text-zinc-400">結束
-          <input id="hoursEnd" type="time" value="22:00" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" />
-        </label>
       </div>
     </section>
 
@@ -620,13 +619,75 @@
       return INTERVALS.reduce((best, x) => Math.abs(x - n) < Math.abs(best - n) ? x : best, INTERVALS[0]);
     }
 
+    function hoursWindowEnabled() {
+      return !$("hoursAllDay") || !$("hoursAllDay").checked;
+    }
+
+    function syncHoursFields() {
+      const allDay = !hoursWindowEnabled();
+      ["hoursStart", "hoursEnd"].forEach((id) => {
+        if ($(id)) $(id).disabled = allDay;
+      });
+      if ($("hoursFields")) $("hoursFields").style.opacity = allDay ? "0.45" : "1";
+    }
+
     function hoursPerDay() {
-      if (!$("hoursEnabled").checked) return 24;
+      if (!hoursWindowEnabled()) return 24;
       const [sh, sm] = ($("hoursStart").value || "00:00").split(":").map(Number);
       const [eh, em] = ($("hoursEnd").value || "23:59").split(":").map(Number);
       let mins = (eh * 60 + em) - (sh * 60 + sm);
       if (mins <= 0) mins += 24 * 60;
       return mins / 60;
+    }
+
+    function parseHm(value) {
+      const [h, m] = String(value || "00:00").split(":").map(Number);
+      return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
+    }
+
+    function hktToUtcMin(hktMin) {
+      let v = hktMin - 8 * 60;
+      v %= 24 * 60;
+      if (v < 0) v += 24 * 60;
+      return v;
+    }
+
+    function utcHoursForWindow(startHkt, endHkt, allDay) {
+      if (allDay) return [...Array(24).keys()];
+      const start = hktToUtcMin(parseHm(startHkt));
+      const end = hktToUtcMin(parseHm(endHkt));
+      if (start === end) return [...Array(24).keys()];
+      const hours = [];
+      for (let h = 0; h < 24; h++) {
+        const a = h * 60;
+        const b = a + 60;
+        const overlap = start < end
+          ? (a < end && b > start)
+          : !(a >= end && b <= start);
+        if (overlap) hours.push(h);
+      }
+      return hours;
+    }
+
+    function compactHourField(hours) {
+      if (hours.length === 24) return "*";
+      const sorted = [...hours].sort((a, b) => a - b);
+      const parts = [];
+      for (let i = 0; i < sorted.length; ) {
+        let j = i;
+        while (j + 1 < sorted.length && sorted[j + 1] === sorted[j] + 1) j += 1;
+        parts.push(j > i ? sorted[i] + "-" + sorted[j] : String(sorted[i]));
+        i = j + 1;
+      }
+      return parts.join(",");
+    }
+
+    function buildMonitorCron(minutes, hoursCfg) {
+      const step = snapInterval(minutes);
+      const allDay = !(hoursCfg && hoursCfg.enabled);
+      const hours = utcHoursForWindow(hoursCfg?.start || "10:00", hoursCfg?.end || "22:00", allDay);
+      const hourField = compactHourField(hours);
+      return "*/" + step + " " + hourField + " * * *";
     }
 
     function estimateUsage() {
@@ -666,7 +727,7 @@
       const interval = snapInterval($("intervalInput").value);
       const hours = hoursPerDay();
       const runsDay = Math.floor((hours * 60) / interval);
-      return `若維持每 ${interval} 分鐘、每日 ${hours.toFixed(1)} 小時，滿月大約 ${runsDay * 30} 分鐘。盯多幾部機唔會加分鐘。`;
+      return `若維持每 ${interval} 分鐘、每日 ${hours.toFixed(1)} 小時，滿月大約 ${runsDay * 30} 分鐘。公開倉標準 runner 通常唔計入 2,000 額度；盯多幾部機都唔會加分鐘。`;
     }
 
     function paintUsage() {
@@ -824,9 +885,10 @@
       $("modeDelivery").checked = modes.includes("delivery") && (cfg.delivery?.enabled !== false);
       $("intervalInput").value = String(snapInterval(cfg.check_interval_minutes || 15));
       if ($("soonWindowInput")) $("soonWindowInput").value = String(snapSoonWindow(cfg.soon_window_days || 7));
-      $("hoursEnabled").checked = !!(cfg.business_hours && cfg.business_hours.enabled);
+      if ($("hoursAllDay")) $("hoursAllDay").checked = !(cfg.business_hours && cfg.business_hours.enabled);
       $("hoursStart").value = cfg.business_hours?.start || "10:00";
       $("hoursEnd").value = cfg.business_hours?.end || "22:00";
+      syncHoursFields();
       $("prioPickup").value = cfg.priority?.modes?.pickup ?? 100;
       $("prioDelivery").value = cfg.priority?.modes?.delivery ?? 70;
       $("prioPickupVal").textContent = $("prioPickup").value;
@@ -893,7 +955,7 @@
           },
         },
         business_hours: {
-          enabled: $("hoursEnabled").checked,
+          enabled: hoursWindowEnabled(),
           timezone: "Asia/Hong_Kong",
           start: $("hoursStart").value || "10:00",
           end: $("hoursEnd").value || "22:00",
@@ -978,19 +1040,19 @@
       }, pat);
     }
 
-    async function syncWorkflowCron(owner, repo, branch, pat, minutes) {
+    async function syncWorkflowCron(owner, repo, branch, pat, minutes, hoursCfg) {
       const path = ".github/workflows/monitor.yml";
       const api = `/repos/${owner}/${repo}/contents/${path}`;
       const current = await ghApi(api + "?ref=" + encodeURIComponent(branch), "GET", null, pat);
       const yaml = decodeB64(current.content || "");
-      const cron = "*/" + minutes + " * * * *";
+      const cron = buildMonitorCron(minutes, hoursCfg);
       const cronRe = /cron:\s*["']([^"']+)["']/;
       const match = yaml.match(cronRe);
       if (!match) throw new Error("workflow 找不到 cron 行，未改頻率");
-      if (match[1] === cron) return { changed: false, minutes };
+      if (match[1] === cron) return { changed: false, minutes, cron };
       try {
         await ghApi(api, "PUT", {
-          message: "chore: set monitor interval to every " + minutes + " minutes",
+          message: "chore: set monitor cron to " + cron,
           content: btoa(unescape(encodeURIComponent(yaml.replace(cronRe, 'cron: "' + cron + '"')))),
           branch,
           sha: current.sha,
@@ -998,11 +1060,11 @@
       } catch (err) {
         const msg = String(err.message || err);
         if (/403|Resource not accessible|workflow/i.test(msg)) {
-          throw new Error("改頻率需要 PAT 的 Workflows 寫入權限。而家頻率未改：" + msg);
+          throw new Error("改排程需要 PAT 的 Workflows 寫入權限。而家頻率／時段未改：" + msg);
         }
         throw err;
       }
-      return { changed: true, minutes };
+      return { changed: true, minutes, cron };
     }
 
     async function refreshSecretStatus() {
@@ -1040,10 +1102,17 @@
       );
       let cronNote = "";
       try {
-        const cronResult = await syncWorkflowCron(owner, repo, branch, pat, next.check_interval_minutes);
+        const cronResult = await syncWorkflowCron(
+          owner, repo, branch, pat,
+          next.check_interval_minutes,
+          next.business_hours
+        );
+        const windowNote = next.business_hours?.enabled
+          ? "香港時間 " + (next.business_hours.start || "10:00") + "–" + (next.business_hours.end || "22:00")
+          : "全日 24 小時";
         cronNote = cronResult.changed
-          ? "監控頻率已改為每 " + cronResult.minutes + " 分鐘。"
-          : "監控頻率維持每 " + cronResult.minutes + " 分鐘。";
+          ? "排程已改為每 " + cronResult.minutes + " 分鐘，" + windowNote + "。"
+          : "排程維持每 " + cronResult.minutes + " 分鐘，" + windowNote + "。";
       } catch (err) {
         cronNote = "config 已存，但改 cron 失敗：" + err.message;
       }
@@ -1199,10 +1268,14 @@
         renderLiveBoard();
         toast("已加入監控清單（記得按儲存設定）");
       });
-      ["intervalInput", "hoursEnabled", "hoursStart", "hoursEnd", "modePickup", "modeDelivery"].forEach((id) => {
+      ["intervalInput", "hoursAllDay", "hoursStart", "hoursEnd", "modePickup", "modeDelivery"].forEach((id) => {
+        if (!$(id)) return;
         $(id).addEventListener("input", estimateUsage);
         $(id).addEventListener("change", estimateUsage);
       });
+      if ($("hoursAllDay")) {
+        $("hoursAllDay").addEventListener("change", syncHoursFields);
+      }
       if ($("soonWindowInput")) {
         $("soonWindowInput").addEventListener("change", () => {
           updatePill();
