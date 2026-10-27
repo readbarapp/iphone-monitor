@@ -128,7 +128,7 @@
           </select>
           <div class="mt-4">
             <h3 class="font-medium">每日監控時段（香港時間）</h3>
-            <p class="text-[11px] text-zinc-400 mt-1">你自己定幾點開始、幾點完。儲存之後鬧鐘只喺呢段時間響，出時段唔會跑。</p>
+            <p class="text-[11px] text-zinc-400 mt-1">你自己定幾點開始、幾點完。儲存後 GitHub 只會喺呢段時間拉起監測；出時段唔會問 Apple。</p>
             <label class="mt-3 flex items-center justify-between rounded-xl field px-3 py-2">
               <span>全日 24 小時監控</span>
               <input id="hoursAllDay" type="checkbox" class="h-4 w-4 accent-sky-500" />
@@ -174,6 +174,11 @@
             <div>
               <h3 class="font-medium">最近一次官網貨源</h3>
               <p id="lastRunText" class="text-xs text-zinc-400 mt-1">尚未讀取。有貨＝設定日數內可送或可取。遲過呢個窗或冇寫日期，一律當冇貨、唔通知。</p>
+              <div class="mt-3 rounded-xl bg-black/30 border border-white/10 p-3">
+                <p class="text-xs font-medium text-zinc-200">監測心跳（確認係咪真係按間隔喺跑）</p>
+                <p class="text-[11px] text-zinc-500 mt-1">填咗 PAT 會每 15 秒直接讀 GitHub 嘅 state.json。每轉查貨會加一筆香港時間；兩筆相差應約等於你設嘅分鐘。Loop 死會 Telegram 你。</p>
+                <p id="loopTicks" class="mt-2 text-[11px] text-zinc-300 leading-relaxed whitespace-pre-wrap font-mono"></p>
+              </div>
             </div>
             <span id="liveBadge" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300">尚未查詢</span>
           </div>
@@ -254,7 +259,7 @@
       <ol class="mt-3 text-xs text-zinc-400 list-decimal pl-5 space-y-1">
         <li>開啟 <a class="text-sky-400 hover:underline" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noreferrer">建立 Fine-grained token</a></li>
         <li>Repository access 只勾 <code>iphone-monitor</code></li>
-        <li>Permissions：Contents、Actions、Workflows 都設 <b>Read and write</b>（Workflows 用來改 cron）</li>
+        <li>Permissions：Contents、Actions、Workflows 都設 <b>Read and write</b>（Workflows 用來改 watchdog 時段）</li>
         <li>用量會讀呢個倉庫本月 Actions 跑咗幾多次（要有 Actions 讀取）。GitHub 官方 Billing API 唔支援 Fine-grained PAT，所以即使 Plan 設咗 Read，帳戶總用量多數仍然讀唔到</li>
         <li>若要由控制台覆寫通訊 Secret，再加 Secrets <b>Read and write</b></li>
         <li>把 <code>github_pat_…</code> 貼入下面（唔好用 Telegram bot token）</li>
@@ -684,12 +689,11 @@
       return parts.join(",");
     }
 
-    function buildMonitorCron(minutes, hoursCfg) {
-      const step = snapInterval(minutes);
+    function buildWatchdogCron(hoursCfg) {
       const allDay = !(hoursCfg && hoursCfg.enabled);
       const hours = utcHoursForWindow(hoursCfg?.start || "10:00", hoursCfg?.end || "22:00", allDay);
       const hourField = compactHourField(hours);
-      return "*/" + step + " " + hourField + " * * *";
+      return "*/5 " + hourField + " * * *";
     }
 
     function estimateUsage() {
@@ -728,8 +732,7 @@
     function projectionNote() {
       const interval = snapInterval($("intervalInput").value);
       const hours = hoursPerDay();
-      const runsDay = Math.floor((hours * 60) / interval);
-      return `若維持每 ${interval} 分鐘、每日 ${hours.toFixed(1)} 小時，滿月大約 ${runsDay * 30} 分鐘。公開倉標準 runner 通常唔計入 2,000 額度；盯多幾部機都唔會加分鐘。`;
+      return `若維持每 ${interval} 分鐘、每日 ${hours.toFixed(1)} 小時：公開倉標準 runner 通常免費。私人倉 runner 會長駐，大約一日 ${Math.round(hours * 60)} 分鐘（滿月約 ${Math.round(hours * 60) * 30}）。盯多幾部機都唔會加分鐘。`;
     }
 
     function paintUsage() {
@@ -1042,19 +1045,19 @@
       }, pat);
     }
 
-    async function syncWorkflowCron(owner, repo, branch, pat, minutes, hoursCfg) {
+    async function syncWorkflowCron(owner, repo, branch, pat, hoursCfg) {
       const path = ".github/workflows/monitor.yml";
       const api = `/repos/${owner}/${repo}/contents/${path}`;
       const current = await ghApi(api + "?ref=" + encodeURIComponent(branch), "GET", null, pat);
       const yaml = decodeB64(current.content || "");
-      const cron = buildMonitorCron(minutes, hoursCfg);
+      const cron = buildWatchdogCron(hoursCfg);
       const cronRe = /cron:\s*["']([^"']+)["']/;
       const match = yaml.match(cronRe);
-      if (!match) throw new Error("workflow 找不到 cron 行，未改頻率");
-      if (match[1] === cron) return { changed: false, minutes, cron };
+      if (!match) throw new Error("workflow 找不到 cron 行，未改 watchdog 時段");
+      if (match[1] === cron) return { changed: false, cron };
       try {
         await ghApi(api, "PUT", {
-          message: "chore: set monitor cron to " + cron,
+          message: "chore: set watchdog cron to " + cron,
           content: btoa(unescape(encodeURIComponent(yaml.replace(cronRe, 'cron: "' + cron + '"')))),
           branch,
           sha: current.sha,
@@ -1062,11 +1065,11 @@
       } catch (err) {
         const msg = String(err.message || err);
         if (/403|Resource not accessible|workflow/i.test(msg)) {
-          throw new Error("改排程需要 PAT 的 Workflows 寫入權限。而家頻率／時段未改：" + msg);
+          throw new Error("改 watchdog 需要 PAT 的 Workflows 寫入權限。而家時段未改：" + msg);
         }
         throw err;
       }
-      return { changed: true, minutes, cron };
+      return { changed: true, cron };
     }
 
     async function refreshSecretStatus() {
@@ -1104,19 +1107,14 @@
       );
       let cronNote = "";
       try {
-        const cronResult = await syncWorkflowCron(
-          owner, repo, branch, pat,
-          next.check_interval_minutes,
-          next.business_hours
-        );
+        const cronResult = await syncWorkflowCron(owner, repo, branch, pat, next.business_hours);
         const windowNote = next.business_hours?.enabled
           ? "香港時間 " + (next.business_hours.start || "10:00") + "–" + (next.business_hours.end || "22:00")
           : "全日 24 小時";
-        cronNote = cronResult.changed
-          ? "排程已改為每 " + cronResult.minutes + " 分鐘，" + windowNote + "。"
-          : "排程維持每 " + cronResult.minutes + " 分鐘，" + windowNote + "。";
+        cronNote = "查貨間隔 " + next.check_interval_minutes + " 分鐘（job 內循環）。Watchdog 每 5 分鐘檢查 loop。"
+          + (cronResult.changed ? " 已更新時段：" : " 時段：") + windowNote + "。";
       } catch (err) {
-        cronNote = "config 已存，但改 cron 失敗：" + err.message;
+        cronNote = "config 已存，但改 watchdog 失敗：" + err.message;
       }
       const filled = [
         ["TELEGRAM_BOT_TOKEN", $("tgToken").value.trim()],
@@ -1199,9 +1197,52 @@
       toast("已儲存模擬狀態。若有任何一格由冇貨變有貨，Telegram 會收到測試結果；其他情況唔會發訊息。");
     }
 
+    async function loadStateFromGithub() {
+      const owner = $("ghOwner")?.value.trim();
+      const repo = $("ghRepo")?.value.trim();
+      const pat = $("ghPat")?.value.trim();
+      const branch = $("ghBranch")?.value.trim() || "main";
+      if (!owner || !repo || !pat) return null;
+      const file = await ghApi(
+        `/repos/${owner}/${repo}/contents/state.json?ref=${encodeURIComponent(branch)}`,
+        "GET",
+        null,
+        pat
+      );
+      return JSON.parse(decodeB64(file.content || ""));
+    }
+
+    function renderLoopTicks(state) {
+      const el = $("loopTicks");
+      if (!el) return;
+      const loop = (state && state.loop) || {};
+      const ticks = (loop.ticks || []).slice(-8);
+      if (!ticks.length) {
+        el.textContent = "監測心跳尚未有紀錄。真實模式 ON 並儲存後，呢度會列出最近幾次查貨時間。填咗 PAT 會直接讀 GitHub，唔使等 Pages。";
+        return;
+      }
+      const interval = Number(loop.interval_minutes) || 0;
+      const lines = ticks.map((t, i) => {
+        if (i === 0) return t;
+        const prev = Date.parse(ticks[i - 1]);
+        const cur = Date.parse(t);
+        const gap = Number.isFinite(prev) && Number.isFinite(cur) ? Math.round((cur - prev) / 60000) : "?";
+        const expected = interval || 1;
+        const late = typeof gap === "number" && gap > expected + 1;
+        return `${t}（距上一轉約 ${gap} 分鐘${late ? " ⚠️ 疏咗" : ""}）`;
+      });
+      const alive = loop.alive ? "loop 運行中" : `loop 已停${loop.stopped ? "：" + loop.stopped : ""}`;
+      el.textContent = `${alive} · 設定 ${interval || "?"} 分鐘一轉 · 已連續 ${loop.tick_count || ticks.length} 次\n最近心跳：\n` + lines.join("\n");
+    }
+
     async function loadState() {
       try {
-        latestState = await loadJSON("state.json");
+        try {
+          latestState = await loadStateFromGithub();
+        } catch {
+          latestState = null;
+        }
+        if (!latestState) latestState = await loadJSON("state.json");
         const run = latestState.last_run || {};
         const liveOn = isOn($("enabledToggle"));
         if ($("lastRunText")) {
@@ -1213,9 +1254,11 @@
               : "真實模式已關閉。打開並儲存後先會問 Apple。";
           }
         }
+        renderLoopTicks(latestState);
         if ($("liveBadge")) {
+          const beat = (latestState.loop || {}).heartbeat_at || run.at;
           if (run.status === "ok") {
-            $("liveBadge").textContent = "已更新 " + (run.at || "");
+            $("liveBadge").textContent = "心跳 " + (beat || "");
             $("liveBadge").className = "shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-emerald-500/20 text-emerald-200";
           } else if (run.status === "disabled") {
             $("liveBadge").textContent = "真實模式 OFF";
@@ -1239,7 +1282,7 @@
 
     function startLiveRefresh() {
       if (liveTimer) clearInterval(liveTimer);
-      liveTimer = setInterval(loadState, 30000);
+      liveTimer = setInterval(loadState, 15000);
     }
 
     function bind() {

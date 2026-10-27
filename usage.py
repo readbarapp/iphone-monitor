@@ -160,15 +160,27 @@ def run_self_test() -> int:
     check("1800" in text and "用量提醒" in text, "1800 提醒文案")
     text2 = format_usage_warning(2000, 2005, "2026-10")
     check("2000" in text2 and "Disable workflow" in text2, "2000 提醒叫人停鬧鐘")
+    check(parse_minutes(["usage.py", "--minutes", "5"]) == 5, "可傳入今轉實際分鐘")
+    check(parse_minutes(["usage.py"]) == 1, "冇傳分鐘就當 1")
 
     print("用量自我測試完成，失敗數：", failures)
     return 1 if failures else 0
 
 
+def parse_minutes(argv: list[str]) -> int:
+    if "--minutes" not in argv:
+        return 1
+    idx = argv.index("--minutes")
+    try:
+        return max(1, int(argv[idx + 1]))
+    except (IndexError, ValueError):
+        return 1
+
+
 def main() -> int:
     if "--self-test" in sys.argv:
         return run_self_test()
-    state, crossed = apply_usage_tick(load_state(), minutes=1)
+    state, crossed = apply_usage_tick(load_state(), minutes=parse_minutes(sys.argv))
     usage = state.get("usage") or {}
     used = int(usage.get("estimated_minutes") or 0)
     month = str(usage.get("month") or billing_month())
