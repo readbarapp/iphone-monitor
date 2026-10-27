@@ -61,7 +61,7 @@ GitHub → Settings → Developer settings → Personal access tokens → Fine-g
   - **Actions: Read and write**（觸發連線測試與儲存模擬狀態）
   - **Workflows: Read and write**（由控制台改監控頻率 cron）
   - **Secrets: Read and write**（可選，只在要覆寫通訊憑證時）
-  - Account permissions **Plan: Read**（可選。喺 token 頁面向落、Repository permissions 下面；Resource owner 要係你自己先見到。用來讀成個帳戶嘅 GitHub Billing）
+  - Account permissions **Plan: Read**（可選，但 GitHub Billing usage API 官方話唔支援 Fine-grained PAT，多數仍然讀唔到帳戶總用量）
 
 PAT **不要** commit 進倉庫。
 
@@ -109,7 +109,7 @@ python3 -m http.server 8080
 | 測試 Telegram 連線 | `workflow_dispatch` `test_notify` | 只發連線短訊，**唔會**扮 iPhone 有貨 |
 | 儲存模擬狀態 | `workflow_dispatch` `apply_simulation` | 套用每格模擬貨源，有補貨先發測試 Telegram |
 | 儲存設定 | GitHub Contents API | 更新真實模式開關、頻率、監測清單 |
-| 本月 GitHub 用量 | GitHub Billing / Actions API | 控制台左邊 bar 顯示本月已用分鐘。有 Plan: Read 就讀帳戶 Billing；否則讀呢個倉本月跑咗幾多次 |
+| 本月 GitHub 用量 | GitHub Actions API | 控制台左邊顯示呢個監控倉本月真實跑咗幾多次。帳戶 Billing 總用量 Fine-grained PAT 通常讀唔到 |
 | 用量提醒 | `state.json` `usage` | 每次排程約 +1 分鐘；到 1,800 同 2,000 發 Telegram |
 
 ---
@@ -176,7 +176,7 @@ GitHub Actions **以整分鐘進位**。即便 `enabled=false`，cron 仍會 che
 - 平時到 Actions 頁 **Disable** `iPhone HK Monitor`，開售當日再 Enable。
 - 總開關只適合「開售日臨時暫停」，不能省 cron 本身的分鐘。
 - 要把頻率改成 10 分鐘：同時改 `.github/workflows/monitor.yml` 的 cron（例如 `*/10 * * * *`）與控制台「監控頻率」。
-- 控制台用量面板會讀 GitHub 本月真實已用分鐘（唔再係「跑滿 30 日」預估）。要睇成個帳戶，PAT 加 Plan: Read。
+- 控制台用量面板會讀呢個監控倉本月 Actions 真實跑次（唔再係「跑滿 30 日」預估）。
 
 ---
 
