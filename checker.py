@@ -1115,6 +1115,11 @@ def run_self_test() -> int:
     check("模擬模式測試結果" in sim_text and "唔代表官網真係有貨" in sim_text, "測試結果訊息標明係模擬")
     check("🍎" not in sim_text, "測試結果唔好同真實補貨標題混淆")
 
+    from usage import run_self_test as usage_self_test
+
+    print("用量提醒：")
+    failures += usage_self_test()
+
     print("自我測試完成，失敗數：", failures)
     return 1 if failures else 0
 
