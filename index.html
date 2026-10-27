@@ -133,6 +133,7 @@
               <div id="usageBar" class="h-full w-0 bg-apple-orange transition-all"></div>
             </div>
             <p id="usageText" class="mt-3 text-sm leading-relaxed text-zinc-300">計算中…</p>
+            <p id="usageActual" class="mt-2 text-xs text-zinc-400">本月實際累計：尚未有排程紀錄。</p>
             <a class="inline-flex mt-3 text-sm text-sky-400 hover:underline" href="https://github.com/settings/billing" target="_blank" rel="noreferrer">查看真正已用分鐘（GitHub Billing）→</a>
           </div>
         </div>
@@ -616,7 +617,7 @@
         <b>預估</b>（未發生）：每 ${interval} 分鐘 × 每日 ${hours.toFixed(1)} 小時 ≈ ${runsDay} 次/日。<br/>
         若 cron 開住跑滿 30 日，約 <b>${billed.toLocaleString()}</b> 分鐘，對比免費 2,000（${pct}%）${pct > 100 ? " · 會超標，建議改 15 分鐘或平時 Disable workflow" : ""}。<br/>
         呢條 bar <b>唔係</b>你而家已用咗幾多。真正已用量只喺 Billing 頁。<br/>
-        監控清單 ${watchN} 款 Duo × ${storeN} 間門市。真實模式 OFF 都唔會停 cron（仍計分鐘）。
+        監控清單 ${watchN} 款 Duo × ${storeN} 間門市。<b>盯多幾部／幾間門市，每月分鐘數一樣</b>（按「跑幾多次」計，唔係按查幾多款）。真實模式 OFF 都唔會停鬧鐘，仍約 1 分鐘／次。
       `;
     }
 
@@ -953,6 +954,15 @@
           $("simLastRun").textContent = simRun.at
             ? `上次模擬：${simRun.message || ""} · ${simRun.at}`
             : "尚未儲存過模擬狀態。";
+        }
+        const usage = latestState.usage || {};
+        if ($("usageActual")) {
+          if (usage.estimated_minutes != null) {
+            $("usageActual").textContent =
+              `本月（${usage.month || "—"} UTC）本系統已累計約 ${usage.estimated_minutes} 分鐘（每次排程約 1 分鐘）。到 1,800 同 2,000 會 Telegram 提醒。真正已用量仍以 Billing 為準。`;
+          } else {
+            $("usageActual").textContent = "本月實際累計：尚未有排程紀錄。到 1,800 同 2,000 分鐘會 Telegram 提醒。";
+          }
         }
         renderLiveBoard();
       } catch {

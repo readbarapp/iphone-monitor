@@ -107,6 +107,20 @@ python3 -m http.server 8080
 | 測試 Telegram 連線 | `workflow_dispatch` `test_notify` | 只發連線短訊，**唔會**扮 iPhone 有貨 |
 | 儲存模擬狀態 | `workflow_dispatch` `apply_simulation` | 套用每格模擬貨源，有補貨先發測試 Telegram |
 | 儲存設定 | GitHub Contents API | 更新真實模式開關、頻率、監測清單 |
+| 用量提醒 | `state.json` `usage` | 每次排程約 +1 分鐘；到 1,800 同 2,000 發 Telegram |
+
+---
+
+## 用量常見問題
+
+1. **盯多幾部機、幾間門市，15 分鐘一轉，分鐘數會唔會多啲？**  
+   基本上唔會。GitHub 計嘅係「鬧鐘響咗幾多次」，每次大約 1 分鐘，唔係「查咗幾多款」。多幾部機只係同一轉入面多問幾次官網，多數仍然係 1 分鐘。
+
+2. **開啟之後要唔要開住瀏覽器？**  
+   唔需要。鬧鐘喺 GitHub 伺服器行，有貨會直接 Telegram 你。控制台只係改設定用。
+
+3. **超過 2,000 分鐘會唔會自動停？**  
+   唔會優雅停。關「真實模式」都停唔到鬧鐘。要真正停燒分鐘：Actions → `iPhone HK Monitor` → Disable workflow。私人倉庫超額之後 GitHub 可能突然跑唔到，或者開始收費。本系統會喺估計用到 **1,800** 同 **2,000** 分鐘各發一次 Telegram 提醒。公開倉庫通常唔計呢個 2,000 額度。真正已用量只喺 [GitHub Billing](https://github.com/settings/billing)。
 
 ---
 
@@ -203,6 +217,7 @@ GitHub Actions **以整分鐘進位**。即便 `enabled=false`，cron 仍會 che
 .
 ├── index.html                 # Tailwind 控制台（GitHub Pages）
 ├── checker.py                 # 監控、狀態機、聚合通知
+├── usage.py                   # Actions 分鐘累計；1800／2000 Telegram 提醒
 ├── config.json                # 公開設定（真實模式開關 / 模擬貨源 / 優先級）
 ├── catalog.json               # 香港門市與 iPhone Duo SKU
 ├── state.json                 # 防洗版狀態（Actions 會回寫）
