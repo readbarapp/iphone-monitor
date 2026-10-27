@@ -14,7 +14,7 @@ Apple 香港官網 iPhone 庫存監控器。
 - 雙模式：店內取貨（pickup）與送貨上門（delivery）。
 - 防洗版：僅在 unavailable → available 時納入通知；同週期多筆打包成 1 條。
 - 優先級：依 config.priority 的門市 / 容量 / 取貨模式權重排序。
-- 防干擾：隨機延遲、指數退避重試、營業時間窗。
+- 防干擾：隨機延遲、指數退避重試、每日監控時段。
 
 Apple 香港目前會對 /shop/fulfillment-messages 回 541 攔截頁。
 本程式仍會先嘗試該官方路徑（規格要求），失敗後自動改走
@@ -1039,7 +1039,7 @@ def run(args: argparse.Namespace) -> int:
         return 0
 
     if not args.ignore_hours and not within_business_hours(cfg):
-        msg = "目前不在營業時間窗內，略過本輪查詢（不改寫庫存狀態）。"
+        msg = "而家唔喺你設定嘅監控時段內，略過本輪查詢（不改寫庫存狀態）。"
         LOGGER.info(msg)
         print(msg)
         prev = state.get("last_run") or {}
@@ -1140,8 +1140,8 @@ def run_self_test() -> int:
     # 營業時間
     inside = datetime(2026, 10, 26, 12, 0, tzinfo=HK_TZ)
     outside = datetime(2026, 10, 26, 23, 30, tzinfo=HK_TZ)
-    check(within_business_hours(cfg, inside), "營業時間內應通過")
-    check(not within_business_hours(cfg, outside), "營業時間外應過濾")
+    check(within_business_hours(cfg, inside), "監控時段內應通過")
+    check(not within_business_hours(cfg, outside), "監控時段外應過濾")
 
     cfg["check_interval_minutes"] = 15
     fresh = {"last_run": {"status": "ok", "at": inside.isoformat()}}

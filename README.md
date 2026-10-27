@@ -105,6 +105,7 @@ python3 -m http.server 8080
 | 門市多選 | `stores` + `priority.stores` | 六間香港 Apple Store |
 | 優先級 | `priority` | 門市權重 ×10000 + 容量 ×100 + 通路 |
 | 監控頻率 | `check_interval_minutes` + `monitor.yml` cron | 儲存後改排程；真實模式貨源板會自動刷新 |
+| 每日監控時段 | `business_hours` + cron 小時欄 | 你自己定香港時間幾點開始、幾點完。儲存後鬧鐘只喺呢段時間響 |
 | 最近一次官網貨源 | `state.json` `items` | 上次問 Apple 時，每部 Duo × 門市／送貨嘅有貨情況 |
 | 測試 Telegram 連線 | `workflow_dispatch` `test_notify` | 只發連線短訊，**唔會**扮 iPhone 有貨 |
 | 儲存模擬狀態 | `workflow_dispatch` `apply_simulation` | 套用每格模擬貨源，有補貨先發測試 Telegram |
@@ -123,7 +124,10 @@ python3 -m http.server 8080
    唔需要。鬧鐘喺 GitHub 伺服器行，有貨會直接 Telegram 你。控制台只係改設定用。
 
 3. **超過 2,000 分鐘會唔會自動停？**  
-   唔會優雅停。關「真實模式」都停唔到鬧鐘。要真正停燒分鐘：Actions → `iPhone HK Monitor` → Disable workflow。私人倉庫超額之後 GitHub 可能突然跑唔到，或者開始收費。本系統會喺估計用到 **1,800** 同 **2,000** 分鐘各發一次 Telegram 提醒。公開倉庫通常唔計呢個 2,000 額度。控制台「本月 GitHub 用量」會讀 GitHub 真實數字；亦可以打開 [GitHub Billing](https://github.com/settings/billing) 核對。
+   唔會優雅停。關「真實模式」都停唔到鬧鐘。要真正停燒分鐘：Actions → `iPhone HK Monitor` → Disable workflow。私人倉庫超額之後 GitHub 可能突然跑唔到，或者開始收費。本系統會喺估計用到 **1,800** 同 **2,000** 分鐘各發一次 Telegram 提醒。
+
+4. **公開倉係咪即使 1 分鐘查一次都唔計 2,000 分鐘？**  
+   **標準 GitHub-hosted runner（ubuntu-latest）喺公開倉係免費嘅**，唔會扣私人倉嗰 2,000 分鐘。每 1 分鐘跑一次都通常唔使錢。但仍然會打 Apple，太密可能被 541 攔截。如果之後改成私人倉，就會開始計嗰 2,000。更大／付費 runner 即使公開倉都會收費。真正已用量仍以 [GitHub Billing](https://github.com/settings/billing) 為準。
 
 ---
 
@@ -160,7 +164,7 @@ python checker.py   # enabled=false 時應印出「真實模式為 OFF」
 
 workflow 預設 `*/2 * * * *`（每 2 分鐘）。
 
-GitHub Actions **以整分鐘進位**。即便 `enabled=false`，cron 仍會 checkout，通常仍計 **1 分鐘／次**。
+GitHub Actions **以整分鐘進位**。**公開倉**用標準 runner 通常唔計入 2,000。**私人倉**即使 `enabled=false`，只要 cron 響就會 checkout，通常仍計 **1 分鐘／次**。控制台「每日監控時段」儲存後會改 cron 小時欄，出咗時段鬧鐘唔響。
 
 粗估（30 天）：
 
@@ -174,8 +178,8 @@ GitHub Actions **以整分鐘進位**。即便 `enabled=false`，cron 仍會 che
 **建議**
 
 - 平時到 Actions 頁 **Disable** `iPhone HK Monitor`，開售當日再 Enable。
-- 總開關只適合「開售日臨時暫停」，不能省 cron 本身的分鐘。
-- 要把頻率改成 10 分鐘：同時改 `.github/workflows/monitor.yml` 的 cron（例如 `*/10 * * * *`）與控制台「監控頻率」。
+- 總開關只適合「開售日臨時暫停」。要省私人倉分鐘，改「每日監控時段」或到 Actions 頁 Disable workflow。
+- 頻率同每日時段：喺控制台改完撳「儲存設定」，會一齊改 `.github/workflows/monitor.yml` 的 cron。
 - 控制台用量面板會讀呢個監控倉本月 Actions 真實跑次（唔再係「跑滿 30 日」預估）。
 
 ---
@@ -203,8 +207,8 @@ GitHub Actions **以整分鐘進位**。即便 `enabled=false`，cron 仍會 che
 7. **限購與風控**  
    官網對新品常限購。多帳號、自動化下單可能被風控。本系統只做**庫存提醒**，下單仍由你本人完成。
 
-8. **官方營業時間**  
-   香港 Apple Store 多為 10:00–21:00 / 22:00。時間窗外取貨欄位常是無貨，控制台預設過濾此外時段。
+8. **每日監控時段**  
+   控制台可以自己定香港時間幾點開始、幾點完。預設 10:00–22:00。儲存後鬧鐘只喺呢段時間響。
 
 9. **541 / 暫時查不到**  
    同一出口 IP 短時間打太多次會被攔。程式已加 3–7 秒隨機延遲與指數退避。若持續失敗，拉長 cron 間隔。
