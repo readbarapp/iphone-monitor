@@ -63,6 +63,8 @@
     }
     .field:focus { outline: none; border-color: #0071e3; box-shadow: 0 0 0 3px rgba(0,113,227,.25); }
     .chip-on { background: rgba(0,113,227,.2); border-color: rgba(0,113,227,.55); color: #7cc4ff; }
+    .mode-sim { border-color: rgba(245, 158, 11, 0.4); }
+    .mode-live { border-color: rgba(48, 209, 88, 0.32); }
   </style>
 </head>
 <body class="min-h-screen text-zinc-100 font-sans antialiased">
@@ -72,7 +74,7 @@
         <div class="h-10 w-10 rounded-2xl bg-white text-black grid place-items-center font-semibold"></div>
         <div class="min-w-0">
           <p class="text-xs uppercase tracking-[0.2em] text-zinc-400">Hong Kong · Zero-Trust</p>
-          <h1 class="text-lg sm:text-xl font-semibold truncate">iPhone 官網庫存監控控制台</h1>
+          <h1 class="text-lg sm:text-xl font-semibold truncate">iPhone Duo 官網庫存監控</h1>
         </div>
       </div>
       <div id="statusPill" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300">讀取中</div>
@@ -80,59 +82,40 @@
   </header>
 
   <main class="max-w-6xl mx-auto px-4 py-6 sm:py-10 space-y-6">
-    <section class="grid lg:grid-cols-3 gap-4">
-      <article class="glass rounded-3xl p-5 sm:p-6 lg:col-span-2">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h2 class="text-2xl font-semibold">監控總開關</h2>
-            <p class="text-sm text-zinc-400 mt-1">關閉後 checker.py 會印出提示並以 exit(0) 安全退出，不打 Apple API。</p>
-          </div>
-          <button id="enabledToggle" class="toggle" role="switch" aria-checked="false" aria-label="監控總開關"></button>
+    <section class="glass mode-sim rounded-3xl p-5 sm:p-6">
+      <p class="text-xs uppercase tracking-[0.18em] text-amber-200/80">模擬模式</p>
+      <div class="mt-2 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <h2 class="text-xl font-semibold">練習通知（唔問 Apple）</h2>
+          <p class="text-sm text-zinc-400 mt-1">每格自己揀有貨定冇貨。撳「儲存模擬狀態」之後，<b>只有由冇貨變成有貨</b>嘅項目先會收到測試 Telegram。已經有貨、仍然冇貨、或者有貨變冇貨，都唔會再煩你。</p>
         </div>
-        <div class="mt-6 grid sm:grid-cols-2 gap-4">
-          <div class="rounded-2xl bg-white/5 p-4 border border-white/10">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="font-medium">測試模式 Test Mode</p>
-                <p class="text-xs text-zinc-400 mt-1">跳過真實 Apple API，改讀模擬狀態。</p>
-              </div>
-              <button id="testModeToggle" class="toggle" role="switch" aria-checked="true" aria-label="測試模式"></button>
-            </div>
-            <div class="mt-4">
-              <label class="text-xs text-zinc-400">模擬庫存 mock_status（要撳儲存 + 跑 workflow 先生效）</label>
-              <div class="mt-2 flex gap-2">
-                <button data-mock="available" class="mock-btn flex-1 rounded-xl border border-white/10 px-3 py-2 text-sm">有貨 available</button>
-                <button data-mock="unavailable" class="mock-btn flex-1 rounded-xl border border-white/10 px-3 py-2 text-sm chip-on">無貨 unavailable</button>
-              </div>
-              <ol class="mt-3 text-[11px] leading-relaxed text-zinc-400 list-decimal pl-4 space-y-1">
-                <li>下面狀態板會列出邊部機、邊個門市、送貨而家被設成有貨定冇貨</li>
-                <li>只想確認 bot 收唔收到 → 撳「測試 Telegram 連線」（短訊，唔會扮有貨）</li>
-                <li>要睇真實補貨訊息 → 撳「模擬補貨並通知」（只喺冇貨→有貨先發）</li>
-              </ol>
-            </div>
-          </div>
-          <div class="rounded-2xl bg-white/5 p-4 border border-white/10">
-            <p class="font-medium">取貨模式</p>
-            <p class="text-xs text-zinc-400 mt-1">可同時監控門市取貨與送貨上門。</p>
-            <div class="mt-4 space-y-2">
-              <label class="flex items-center justify-between rounded-xl field px-3 py-2">
-                <span>門市取貨 Pick-up</span>
-                <input id="modePickup" type="checkbox" checked class="h-4 w-4 accent-sky-500" />
-              </label>
-              <label class="flex items-center justify-between rounded-xl field px-3 py-2">
-                <span>送貨上門 Delivery</span>
-                <input id="modeDelivery" type="checkbox" checked class="h-4 w-4 accent-sky-500" />
-              </label>
-            </div>
-          </div>
-        </div>
-      </article>
+        <span id="simBadge" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-amber-500/15 text-amber-200">模擬</span>
+      </div>
+      <div id="simBoard" class="mt-4"></div>
+      <p id="simLastRun" class="mt-3 text-xs text-zinc-500">尚未儲存過模擬狀態。</p>
+      <div class="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
+        <button id="saveSimBtn" class="rounded-xl bg-amber-400 text-black px-4 py-2 text-sm font-semibold">儲存模擬狀態</button>
+        <p class="text-xs text-zinc-400">要填 PAT。呢粒掣唔會開真實模式，亦唔會打官網。</p>
+      </div>
+    </section>
 
-      <article class="glass rounded-3xl p-5 sm:p-6">
-        <h2 class="text-lg font-semibold">監控頻率</h2>
-        <p class="text-xs text-zinc-400 mt-1">只係改呢度<strong>未會</strong>即時改 Actions。一定要填 PAT 再撳「儲存設定」，先會改 <code>config.json</code> 同 <code>monitor.yml</code> cron。GitHub 排程可能再慢 1–5 分鐘。</p>
-        <label class="block mt-4 text-xs text-zinc-400">幾耐查一次
-          <select id="intervalInput" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm">
+    <section class="glass mode-live rounded-3xl p-5 sm:p-6">
+      <p class="text-xs uppercase tracking-[0.18em] text-emerald-300/80">真實模式</p>
+      <div class="mt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-semibold">問 Apple 官網（只盯 iPhone Duo）</h2>
+          <p id="liveModeHint" class="text-sm text-zinc-400 mt-1">而家：真實模式已關閉。打開並儲存之後，會按下面頻率查 Duo 貨源；任何一格由冇貨變有貨就即刻 Telegram 通知你。</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-sm text-zinc-300">真實模式</span>
+          <button id="enabledToggle" class="toggle" role="switch" aria-checked="false" aria-label="真實模式"></button>
+        </div>
+      </div>
+      <div class="mt-6 grid lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-1 rounded-2xl bg-white/5 p-4 border border-white/10">
+          <h3 class="font-medium">幾耐查一次</h3>
+          <p class="text-[11px] text-zinc-400 mt-1">儲存設定先會改排程。設咗 15 分鐘，下面貨源板亦會跟住刷新。</p>
+          <select id="intervalInput" class="field mt-3 w-full rounded-xl px-3 py-2 text-sm">
             <option value="2">每 2 分鐘（開售衝刺，額度很兇）</option>
             <option value="5">每 5 分鐘</option>
             <option value="10">每 10 分鐘</option>
@@ -141,40 +124,46 @@
             <option value="30">每 30 分鐘</option>
             <option value="60">每 60 分鐘</option>
           </select>
-        </label>
-        <div class="mt-5">
+          <div class="mt-4">
+            <div class="flex items-start justify-between gap-3">
+              <p class="text-sm font-medium">預估每月消耗</p>
+              <span class="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-zinc-300">不是已用量</span>
+            </div>
+            <div class="mt-3 h-3 rounded-full bg-white/10 overflow-hidden">
+              <div id="usageBar" class="h-full w-0 bg-apple-orange transition-all"></div>
+            </div>
+            <p id="usageText" class="mt-3 text-sm leading-relaxed text-zinc-300">計算中…</p>
+            <a class="inline-flex mt-3 text-sm text-sky-400 hover:underline" href="https://github.com/settings/billing" target="_blank" rel="noreferrer">查看真正已用分鐘（GitHub Billing）→</a>
+          </div>
+        </div>
+        <div class="lg:col-span-2 rounded-2xl bg-white/5 p-4 border border-white/10">
           <div class="flex items-start justify-between gap-3">
-            <p class="text-sm font-medium">預估每月消耗</p>
-            <span class="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-zinc-300">不是已用量</span>
+            <div>
+              <h3 class="font-medium">最近一次官網貨源</h3>
+              <p id="lastRunText" class="text-xs text-zinc-400 mt-1">尚未讀取。真實模式打開並跑過一次之後，呢度會顯示每部 Duo 嘅有貨／冇貨。</p>
+            </div>
+            <span id="liveBadge" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300">尚未查詢</span>
           </div>
-          <div class="mt-3 h-3 rounded-full bg-white/10 overflow-hidden">
-            <div id="usageBar" class="h-full w-0 bg-apple-orange transition-all"></div>
+          <div id="liveBoard" class="mt-4"></div>
+          <div class="mt-4 space-y-2">
+            <p class="text-xs text-zinc-400">真實模式要查邊種通路</p>
+            <label class="flex items-center justify-between rounded-xl field px-3 py-2">
+              <span>門市取貨 Pick-up</span>
+              <input id="modePickup" type="checkbox" checked class="h-4 w-4 accent-sky-500" />
+            </label>
+            <label class="flex items-center justify-between rounded-xl field px-3 py-2">
+              <span>送貨上門 Delivery</span>
+              <input id="modeDelivery" type="checkbox" checked class="h-4 w-4 accent-sky-500" />
+            </label>
           </div>
-          <p id="usageText" class="mt-3 text-sm leading-relaxed text-zinc-300">計算中…</p>
-          <a class="inline-flex mt-3 text-sm text-sky-400 hover:underline" href="https://github.com/settings/billing" target="_blank" rel="noreferrer">查看真正已用分鐘（GitHub Billing）→</a>
         </div>
-      </article>
-    </section>
-
-    <section id="testBoardSection" class="glass rounded-3xl p-5 sm:p-6">
-      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-        <div>
-          <h2 class="text-lg font-semibold">測試模式狀態板</h2>
-          <p class="text-sm text-zinc-400 mt-1">清楚列出而家監測緊邊部機、邊個門市、有冇送貨，以及每一格被設成有貨定冇貨。測試模式用同一把 <code>mock_status</code>，唔係逐項獨立。</p>
-        </div>
-        <span id="testBoardBadge" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300">讀取中</span>
-      </div>
-      <div id="testBoard" class="mt-4"></div>
-      <div class="mt-4 flex flex-col sm:flex-row gap-3 sm:items-center">
-        <button id="simulateRestockBtn" class="rounded-xl bg-amber-400 text-black px-4 py-2 text-sm font-semibold" title="強制冇貨→有貨，先發送真實格式補貨 Telegram">模擬補貨並通知</button>
-        <p class="text-xs text-zinc-400 leading-relaxed">會把狀態板全部由冇貨打成有貨，然後先發一條真實補貨格式 Telegram。只測連線請用「測試 Telegram 連線」。</p>
       </div>
     </section>
 
     <section class="grid lg:grid-cols-2 gap-4">
       <article class="glass rounded-3xl p-5 sm:p-6">
-        <h2 class="text-lg font-semibold">型號、顏色、容量</h2>
-        <p class="text-sm text-zinc-400 mt-1">只保留 iPhone Duo 同 18 Pro Max（預設 Duo）。加入監控清單後可同時盯多款。</p>
+        <h2 class="text-lg font-semibold">監測邊款 Duo</h2>
+        <p class="text-sm text-zinc-400 mt-1">真實模式同模擬模式都只用 iPhone Duo。揀顏色／容量加入清單即可。</p>
         <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
           <label class="text-xs text-zinc-400">型號
             <select id="familySelect" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm"></select>
@@ -224,35 +213,27 @@
       </div>
     </section>
 
-    <section class="grid lg:grid-cols-2 gap-4">
-      <article class="glass rounded-3xl p-5 sm:p-6">
-        <h2 class="text-lg font-semibold">營業時間窗</h2>
-        <p class="text-sm text-zinc-400 mt-1">時間窗外正式模式會略過查詢（測試模式不受限）。星期：一=0 … 日=6。</p>
-        <label class="mt-4 flex items-center justify-between rounded-xl field px-3 py-2">
-          <span>啟用營業時間過濾</span>
-          <input id="hoursEnabled" type="checkbox" checked class="h-4 w-4 accent-sky-500" />
+    <section class="glass rounded-3xl p-5 sm:p-6">
+      <h2 class="text-lg font-semibold">營業時間窗（只限真實模式）</h2>
+      <p class="text-sm text-zinc-400 mt-1">時間窗外真實模式會略過查詢，唔打官網。模擬模式不受限。星期：一=0 … 日=6。</p>
+      <label class="mt-4 flex items-center justify-between rounded-xl field px-3 py-2 max-w-md">
+        <span>啟用營業時間過濾</span>
+        <input id="hoursEnabled" type="checkbox" checked class="h-4 w-4 accent-sky-500" />
+      </label>
+      <div class="mt-3 grid grid-cols-2 gap-3 max-w-md">
+        <label class="text-xs text-zinc-400">開始
+          <input id="hoursStart" type="time" value="10:00" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" />
         </label>
-        <div class="mt-3 grid grid-cols-2 gap-3">
-          <label class="text-xs text-zinc-400">開始
-            <input id="hoursStart" type="time" value="10:00" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" />
-          </label>
-          <label class="text-xs text-zinc-400">結束
-            <input id="hoursEnd" type="time" value="22:00" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" />
-          </label>
-        </div>
-      </article>
-
-      <article class="glass rounded-3xl p-5 sm:p-6">
-        <h2 class="text-lg font-semibold">最近監控狀態</h2>
-        <p id="lastRunText" class="text-sm text-zinc-400 mt-1">尚未讀取 state.json</p>
-        <div id="statePreview" class="mt-4 space-y-2 max-h-56 overflow-auto text-sm"></div>
-      </article>
+        <label class="text-xs text-zinc-400">結束
+          <input id="hoursEnd" type="time" value="22:00" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" />
+        </label>
+      </div>
     </section>
 
     <section class="glass rounded-3xl p-5 sm:p-6">
       <h2 class="text-lg font-semibold">GitHub PAT</h2>
       <p class="text-sm text-zinc-400 mt-1">
-        PAT 只負責控制台改設定、改監控頻率、觸發連線測試同模擬補貨。只留喺呢個分頁，唔會寫進倉庫。
+        PAT 只負責控制台改設定、改監控頻率、儲存模擬狀態、觸發連線測試。只留喺呢個分頁，唔會寫進倉庫。
       </p>
       <ol class="mt-3 text-xs text-zinc-400 list-decimal pl-5 space-y-1">
         <li>開啟 <a class="text-sky-400 hover:underline" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noreferrer">建立 Fine-grained token</a></li>
@@ -303,7 +284,7 @@
     </section>
 
     <section class="glass rounded-3xl p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-      <p id="saveMsg" class="text-sm text-zinc-400">變更後請按儲存，系統會用 GitHub REST API 更新 config.json。</p>
+      <p id="saveMsg" class="text-sm text-zinc-400">「儲存設定」寫入真實模式開關、頻率、監測清單。模擬貨源請用上面「儲存模擬狀態」。</p>
       <div class="flex flex-wrap gap-2">
         <button id="testNotifyBtn" class="rounded-xl border border-white/15 px-4 py-2 text-sm" title="只發連線測試短訊，唔會扮 iPhone 有貨">測試 Telegram 連線</button>
         <button id="reloadBtn" class="rounded-xl border border-white/15 px-4 py-2 text-sm">重新載入</button>
@@ -320,7 +301,7 @@
     const CAP_LABEL = { "256gb": "256GB", "512gb": "512GB", "1tb": "1TB", "2tb": "2TB" };
 
     const DEFAULT_FAMILY = "iphone-duo";
-    const ALLOWED_FAMILIES = new Set(["iphone-duo", "iphone-18-pro-max"]);
+    const ALLOWED_FAMILIES = new Set(["iphone-duo"]);
     const FALLBACK_CATALOG = {
       stores: [
         { id: "R428", name_zh: "中環 ifc mall" },
@@ -332,21 +313,19 @@
       ],
       families: [
         { id: "iphone-duo", label: "iPhone Duo" },
-        { id: "iphone-18-pro-max", label: "iPhone 18 Pro Max" },
       ],
       color_labels: {
-        black: "黑色", silver: "銀色", burgundy: "布根地紅色", glacier: "冰川色",
         starwhite: "星光白", nightsky: "夜空色",
       },
       products: [
         { part: "MK2J4ZA/A", family: "iphone-duo", name: "iPhone Duo 1TB 夜空色", color: "nightsky", capacity: "1tb", price: 22799 },
-        { part: "MJXN4ZA/A", family: "iphone-18-pro-max", name: "iPhone 18 Pro Max 256GB 黑色", color: "black", capacity: "256gb", price: 11499 },
       ],
     };
 
     let catalog = FALLBACK_CATALOG;
     let config = null;
-    let mockStatus = "unavailable";
+    let latestState = { items: {}, simulation: {} };
+    let liveTimer = null;
 
     const $ = (id) => document.getElementById(id);
 
@@ -434,7 +413,8 @@
           config.models.splice(Number(btn.dataset.remove), 1);
           renderWatchList();
           estimateUsage();
-          renderTestBoard();
+          renderSimBoard();
+          renderLiveBoard();
         });
       });
     }
@@ -444,8 +424,12 @@
       return s ? (s.name_zh || s.name) : id;
     }
 
+    function itemKey(mode, storeId, part) {
+      return `${mode}:${storeId}:${part}`;
+    }
+
     function currentWatchTargets() {
-      const models = (config && config.models) || [];
+      const models = ((config && config.models) || []).filter((m) => !m.family || ALLOWED_FAMILIES.has(m.family));
       let stores = [...document.querySelectorAll("[data-store]:checked")].map((el) => el.dataset.store);
       if (!stores.length && config && config.stores) stores = [...config.stores];
       const pickup = $("modePickup") ? $("modePickup").checked : true;
@@ -455,6 +439,7 @@
         if (pickup) {
           for (const sid of stores) {
             rows.push({
+              key: itemKey("pickup", sid, m.part_number),
               name: m.name || m.part_number,
               mode: "門市取貨",
               place: `${storeName(sid)}（${sid}）`,
@@ -463,6 +448,7 @@
         }
         if (delivery) {
           rows.push({
+            key: itemKey("delivery", "DELIVERY", m.part_number),
             name: m.name || m.part_number,
             mode: "送貨上門",
             place: "香港",
@@ -472,27 +458,30 @@
       return rows;
     }
 
-    function renderTestBoard() {
-      if (!$("testBoard")) return;
-      const testOn = isOn($("testModeToggle"));
-      const label = mockStatus === "available" ? "有貨" : "冇貨";
-      const tone = mockStatus === "available" ? "text-emerald-300" : "text-rose-300";
-      const badge = $("testBoardBadge");
-      badge.textContent = testOn ? ("模擬：" + label) : "測試模式 OFF";
-      badge.className = "shrink-0 rounded-full px-3 py-1 text-xs font-medium " + (
-        !testOn ? "bg-zinc-800 text-zinc-300"
-          : mockStatus === "available" ? "bg-emerald-500/20 text-emerald-200"
-            : "bg-rose-500/20 text-rose-200"
-      );
-      $("simulateRestockBtn").disabled = !testOn;
-      $("simulateRestockBtn").classList.toggle("opacity-40", !testOn);
+    function collectSimStatuses() {
+      const statuses = {};
+      document.querySelectorAll("[data-sim-key]").forEach((el) => {
+        statuses[el.dataset.simKey] = el.value === "available" ? "available" : "unavailable";
+      });
+      return statuses;
+    }
+
+    function statusLabel(status) {
+      if (status === "available") return "有貨";
+      if (status === "unavailable") return "冇貨";
+      return "尚未查詢";
+    }
+
+    function renderSimBoard() {
+      if (!$("simBoard")) return;
+      const saved = collectSimStatuses();
+      const fromConfig = (config && config.simulation && config.simulation.statuses) || {};
       const rows = currentWatchTargets();
       if (!rows.length) {
-        $("testBoard").innerHTML = `<p class="text-sm text-zinc-500">尚未加入型號，或未勾選門市／送貨。加入後呢度會列出每一格而家被設成有貨定冇貨。</p>`;
+        $("simBoard").innerHTML = `<p class="text-sm text-zinc-500">請先加入 Duo，並勾選門市或送貨。</p>`;
         return;
       }
-      $("testBoard").innerHTML = `
-        <p class="text-xs text-zinc-400 mb-2">測試模式用<strong>同一把</strong>模擬庫存，下面 ${rows.length} 格而家全部係 <span class="${tone} font-medium">${label}</span>。</p>
+      $("simBoard").innerHTML = `
         <div class="overflow-auto">
           <table class="w-full text-sm">
             <thead class="text-xs text-zinc-500">
@@ -500,17 +489,67 @@
                 <th class="text-left font-medium py-2 pr-3">機型</th>
                 <th class="text-left font-medium py-2 pr-3">通路</th>
                 <th class="text-left font-medium py-2 pr-3">門市／送貨</th>
-                <th class="text-left font-medium py-2">而家模擬</th>
+                <th class="text-left font-medium py-2">模擬貨源</th>
               </tr>
             </thead>
             <tbody>
-              ${rows.map((r) => `
+              ${rows.map((r) => {
+                const current = saved[r.key] || fromConfig[r.key] || "unavailable";
+                return `
                 <tr class="border-t border-white/5">
                   <td class="py-2 pr-3">${r.name}</td>
                   <td class="py-2 pr-3">${r.mode}</td>
                   <td class="py-2 pr-3">${r.place}</td>
-                  <td class="py-2 ${tone} font-medium">${label}</td>
-                </tr>`).join("")}
+                  <td class="py-2">
+                    <select data-sim-key="${r.key}" class="field rounded-lg px-2 py-1 text-sm">
+                      <option value="unavailable" ${current !== "available" ? "selected" : ""}>冇貨</option>
+                      <option value="available" ${current === "available" ? "selected" : ""}>有貨</option>
+                    </select>
+                  </td>
+                </tr>`;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    function renderLiveBoard() {
+      if (!$("liveBoard")) return;
+      const rows = currentWatchTargets();
+      const items = (latestState && latestState.items) || {};
+      if (!rows.length) {
+        $("liveBoard").innerHTML = `<p class="text-sm text-zinc-500">請先加入 Duo 並勾選門市或送貨。</p>`;
+        return;
+      }
+      $("liveBoard").innerHTML = `
+        <div class="overflow-auto">
+          <table class="w-full text-sm">
+            <thead class="text-xs text-zinc-500">
+              <tr>
+                <th class="text-left font-medium py-2 pr-3">機型</th>
+                <th class="text-left font-medium py-2 pr-3">通路</th>
+                <th class="text-left font-medium py-2 pr-3">門市／送貨</th>
+                <th class="text-left font-medium py-2">官網貨源</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map((r) => {
+                const rec = items[r.key] || {};
+                const st = rec.status;
+                const tone = st === "available" ? "text-emerald-300" : st === "unavailable" ? "text-rose-300" : "text-zinc-500";
+                const extra = rec.quote ? `<div class="text-[11px] text-zinc-500 truncate">${rec.quote}</div>` : "";
+                const when = rec.last_checked_at ? `<div class="text-[11px] text-zinc-600">${rec.last_checked_at}</div>` : "";
+                return `
+                <tr class="border-t border-white/5">
+                  <td class="py-2 pr-3">${r.name}</td>
+                  <td class="py-2 pr-3">${r.mode}</td>
+                  <td class="py-2 pr-3">${r.place}</td>
+                  <td class="py-2">
+                    <span class="${tone} font-medium">${statusLabel(st)}</span>
+                    ${extra}${when}
+                  </td>
+                </tr>`;
+              }).join("")}
             </tbody>
           </table>
         </div>`;
@@ -577,7 +616,7 @@
         <b>預估</b>（未發生）：每 ${interval} 分鐘 × 每日 ${hours.toFixed(1)} 小時 ≈ ${runsDay} 次/日。<br/>
         若 cron 開住跑滿 30 日，約 <b>${billed.toLocaleString()}</b> 分鐘，對比免費 2,000（${pct}%）${pct > 100 ? " · 會超標，建議改 15 分鐘或平時 Disable workflow" : ""}。<br/>
         呢條 bar <b>唔係</b>你而家已用咗幾多。真正已用量只喺 Billing 頁。<br/>
-        監控清單 ${watchN} 款 × ${storeN} 間門市。總開關 OFF 都唔會停 cron。
+        監控清單 ${watchN} 款 Duo × ${storeN} 間門市。真實模式 OFF 都唔會停 cron（仍計分鐘）。
       `;
     }
 
@@ -588,12 +627,8 @@
         if (m.family && !ALLOWED_FAMILIES.has(m.family)) return false;
         return !allowedParts.size || allowedParts.has(m.part_number);
       });
-      mockStatus = cfg.mock_status === "available" ? "available" : "unavailable";
+      config.simulation = cfg.simulation || { statuses: {} };
       setToggle($("enabledToggle"), !!cfg.enabled);
-      setToggle($("testModeToggle"), !!cfg.test_mode);
-      document.querySelectorAll(".mock-btn").forEach((b) => {
-        b.classList.toggle("chip-on", b.dataset.mock === mockStatus);
-      });
       const modes = cfg.fulfillment_modes || [];
       $("modePickup").checked = modes.includes("pickup");
       $("modeDelivery").checked = modes.includes("delivery") && (cfg.delivery?.enabled !== false);
@@ -615,22 +650,22 @@
       renderStores();
       renderCapPriority();
       estimateUsage();
-      renderTestBoard();
+      renderSimBoard();
+      renderLiveBoard();
     }
 
     function updatePill() {
       const on = isOn($("enabledToggle"));
-      const test = isOn($("testModeToggle"));
       const pill = $("statusPill");
+      const hint = $("liveModeHint");
       if (!on) {
-        pill.textContent = "已暫停 OFF";
+        pill.textContent = "真實模式 OFF";
         pill.className = "shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300";
-      } else if (test) {
-        pill.textContent = "測試模式 ON";
-        pill.className = "shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-amber-500/20 text-amber-200";
+        if (hint) hint.textContent = "而家：真實模式已關閉。打開並儲存之後，會按下面頻率查 Duo 貨源；任何一格由冇貨變有貨就即刻 Telegram 通知你。";
       } else {
-        pill.textContent = "監控中 ON";
+        pill.textContent = "真實模式 ON";
         pill.className = "shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-emerald-500/20 text-emerald-200";
+        if (hint) hint.textContent = "而家：真實模式已開啟。系統會問 Apple 官網；監測中嘅 Duo 由冇貨變有貨，會即刻 Telegram 通知你。";
       }
     }
 
@@ -649,8 +684,6 @@
       if ($("modeDelivery").checked) modes.push("delivery");
       return {
         enabled: isOn($("enabledToggle")),
-        test_mode: isOn($("testModeToggle")),
-        mock_status: mockStatus,
         check_interval_minutes: snapInterval($("intervalInput").value),
         fulfillment_modes: modes.length ? modes : ["pickup"],
         models: config.models || [],
@@ -679,6 +712,9 @@
           max_retries: 4,
           backoff_base_seconds: 2,
           request_timeout_seconds: 20,
+        },
+        simulation: {
+          statuses: collectSimStatuses(),
         },
         notifications: {
           telegram_enabled: $("tgEnabled").checked,
@@ -822,6 +858,19 @@
       } else {
         toast("已儲存。" + cronNote + " 通訊欄位留空，現有 Secrets 未改動。");
       }
+      if (next.enabled) {
+        try {
+          await ghApi(
+            `/repos/${owner}/${repo}/actions/workflows/monitor.yml/dispatches`,
+            "POST",
+            { ref: branch, inputs: {} },
+            pat
+          );
+          toast(($("saveMsg").textContent || "") + " 已即刻排一次真實查詢。");
+        } catch (err) {
+          toast(($("saveMsg").textContent || "") + " 即刻查詢未能排程：" + err.message, false);
+        }
+      }
       updatePill();
     }
 
@@ -829,7 +878,7 @@
       const ok = window.confirm(
         "呢個只會發送一條「Telegram 連線測試」短訊，確認 bot 收唔收得到。\n\n" +
         "內容唔會寫任何 iPhone 型號、門市或「有貨」，亦唔會改監控狀態。\n\n" +
-        "想睇真實補貨訊息，請用測試模式「模擬補貨並通知」。\n\n確定測連線？"
+        "想練習「冇貨變有貨」通知，請到模擬模式改 dropdown 再撳「儲存模擬狀態」。\n\n確定測連線？"
       );
       if (!ok) return;
       const next = collectConfig();
@@ -847,54 +896,73 @@
       toast("已觸發 Telegram 連線測試（唔係補貨通知）。");
     }
 
-    async function simulateRestock() {
-      if (!isOn($("testModeToggle"))) {
-        throw new Error("請先開啟測試模式，先可以用模擬補貨");
-      }
+    async function saveSimulation() {
       const rows = currentWatchTargets();
-      if (!rows.length) throw new Error("請先加入型號，並勾選門市或送貨");
-      const ok = window.confirm(
-        "呢粒掣會把而家測試模式監測對象全部由「冇貨」轉成「有貨」，然後先發送一條真實格式嘅補貨 Telegram。\n\n" +
-        "而家會影響 " + rows.length + " 格（機型 × 門市／送貨）。\n\n" +
-        "只想確認 Telegram 收唔收到，請撳「測試 Telegram 連線」，唔好撳呢粒。\n\n確定模擬補貨？"
-      );
-      if (!ok) return;
-      setToggle($("testModeToggle"), true);
-      mockStatus = "available";
-      document.querySelectorAll(".mock-btn").forEach((b) => b.classList.toggle("chip-on", b.dataset.mock === "available"));
-      updatePill();
-      renderTestBoard();
-      await saveSettings();
+      if (!rows.length) throw new Error("請先加入 Duo，並勾選門市或送貨");
       const next = collectConfig();
       const pat = $("ghPat").value.trim();
       if (!pat || !next.github.owner || !next.github.repo) {
-        throw new Error("模擬補貨需要 Owner / Repo / PAT");
+        throw new Error("儲存模擬狀態需要 Owner / Repo / PAT");
       }
+      sessionStorage.setItem(PAT_KEY, pat);
+      next.enabled = !!(config && config.enabled);
+      const { owner, repo, branch } = next.github;
+      await putRepoFile(
+        owner, repo, branch, pat, "config.json",
+        JSON.stringify(next, null, 2) + "\n",
+        "chore: update simulation stock from dashboard"
+      );
+      config = next;
       await ghApi(
-        `/repos/${next.github.owner}/${next.github.repo}/actions/workflows/monitor.yml/dispatches`,
+        `/repos/${owner}/${repo}/actions/workflows/monitor.yml/dispatches`,
         "POST",
-        { ref: next.github.branch || "main", inputs: { simulate_restock: "true", ignore_enabled: "true" } },
+        { ref: branch, inputs: { apply_simulation: "true" } },
         pat
       );
-      toast("已儲存並觸發模擬補貨。Telegram 只會喺冇貨→有貨先收到真實格式通知。");
+      toast("已儲存模擬狀態。若有任何一格由冇貨變有貨，Telegram 會收到測試結果；其他情況唔會發訊息。");
     }
 
     async function loadState() {
       try {
-        const state = await loadJSON("state.json");
-        const run = state.last_run || {};
-        $("lastRunText").textContent = `${run.status || "unknown"} · ${run.message || ""} · ${run.at || state.updated_at || ""}`;
-        const items = Object.values(state.items || {});
-        $("statePreview").innerHTML = items.length
-          ? items.slice(0, 20).map((it) => `
-              <div class="flex justify-between gap-3 rounded-xl bg-white/5 px-3 py-2">
-                <span class="truncate">${it.mode === "delivery" ? "送貨" : "門市"} · ${it.name || it.part_number} · ${it.store_name || it.store_id}</span>
-                <span class="${it.status === "available" ? "text-emerald-300" : "text-zinc-400"}">${it.status || "?"}</span>
-              </div>`).join("")
-          : `<p class="text-zinc-500">尚無狀態紀錄。開啟測試模式跑一次即可看到。</p>`;
+        latestState = await loadJSON("state.json");
+        const run = latestState.last_run || {};
+        const liveOn = isOn($("enabledToggle"));
+        if ($("lastRunText")) {
+          if (run.at) {
+            $("lastRunText").textContent = `${liveOn ? "真實模式 ON" : "真實模式 OFF"} · ${run.message || run.status || ""} · ${run.at}`;
+          } else {
+            $("lastRunText").textContent = liveOn
+              ? "真實模式已開啟，尚未完成第一次官網查詢。"
+              : "真實模式已關閉。打開並儲存後先會問 Apple。";
+          }
+        }
+        if ($("liveBadge")) {
+          if (run.status === "ok") {
+            $("liveBadge").textContent = "已更新 " + (run.at || "");
+            $("liveBadge").className = "shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-emerald-500/20 text-emerald-200";
+          } else if (run.status === "disabled") {
+            $("liveBadge").textContent = "真實模式 OFF";
+            $("liveBadge").className = "shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300";
+          } else {
+            $("liveBadge").textContent = run.status ? String(run.status) : "尚未查詢";
+            $("liveBadge").className = "shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300";
+          }
+        }
+        const simRun = (latestState.simulation || {}).last_run || {};
+        if ($("simLastRun")) {
+          $("simLastRun").textContent = simRun.at
+            ? `上次模擬：${simRun.message || ""} · ${simRun.at}`
+            : "尚未儲存過模擬狀態。";
+        }
+        renderLiveBoard();
       } catch {
-        $("lastRunText").textContent = "讀不到 state.json（本地預覽或尚未執行過監控）。";
+        if ($("lastRunText")) $("lastRunText").textContent = "讀不到 state.json（本地預覽或尚未執行過監控）。";
       }
+    }
+
+    function startLiveRefresh() {
+      if (liveTimer) clearInterval(liveTimer);
+      liveTimer = setInterval(loadState, 30000);
     }
 
     function bind() {
@@ -902,18 +970,7 @@
         setToggle($("enabledToggle"), !isOn($("enabledToggle")));
         updatePill();
         estimateUsage();
-      });
-      $("testModeToggle").addEventListener("click", () => {
-        setToggle($("testModeToggle"), !isOn($("testModeToggle")));
-        updatePill();
-        renderTestBoard();
-      });
-      document.querySelectorAll(".mock-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          mockStatus = btn.dataset.mock;
-          document.querySelectorAll(".mock-btn").forEach((b) => b.classList.toggle("chip-on", b === btn));
-          renderTestBoard();
-        });
+        loadState();
       });
       $("familySelect").addEventListener("change", fillColors);
       $("colorSelect").addEventListener("change", fillCaps);
@@ -932,18 +989,20 @@
         });
         renderWatchList();
         estimateUsage();
-        renderTestBoard();
+        renderSimBoard();
+        renderLiveBoard();
         toast("已加入監控清單（記得按儲存設定）");
       });
       ["intervalInput", "hoursEnabled", "hoursStart", "hoursEnd", "modePickup", "modeDelivery"].forEach((id) => {
         $(id).addEventListener("input", estimateUsage);
         $(id).addEventListener("change", estimateUsage);
       });
-      $("modePickup").addEventListener("change", renderTestBoard);
-      $("modeDelivery").addEventListener("change", renderTestBoard);
+      $("modePickup").addEventListener("change", () => { renderSimBoard(); renderLiveBoard(); });
+      $("modeDelivery").addEventListener("change", () => { renderSimBoard(); renderLiveBoard(); });
       $("storeList").addEventListener("change", () => {
         estimateUsage();
-        renderTestBoard();
+        renderSimBoard();
+        renderLiveBoard();
       });
       $("prioPickup").addEventListener("input", () => $("prioPickupVal").textContent = $("prioPickup").value);
       $("prioDelivery").addEventListener("input", () => $("prioDeliveryVal").textContent = $("prioDelivery").value);
@@ -959,11 +1018,11 @@
         catch (err) { toast(String(err.message || err), false); }
         finally { $("testNotifyBtn").disabled = false; }
       });
-      $("simulateRestockBtn").addEventListener("click", async () => {
-        $("simulateRestockBtn").disabled = true;
-        try { await simulateRestock(); }
+      $("saveSimBtn").addEventListener("click", async () => {
+        $("saveSimBtn").disabled = true;
+        try { await saveSimulation(); }
         catch (err) { toast(String(err.message || err), false); }
-        finally { $("simulateRestockBtn").disabled = false; renderTestBoard(); }
+        finally { $("saveSimBtn").disabled = false; }
       });
       $("reloadBtn").addEventListener("click", () => location.reload());
       $("secretStatusBtn").addEventListener("click", async () => {
@@ -985,9 +1044,7 @@
       } catch (err) {
         applyConfigToForm({
           enabled: false,
-          test_mode: true,
-          mock_status: "unavailable",
-          check_interval_minutes: 2,
+          check_interval_minutes: 15,
           fulfillment_modes: ["pickup", "delivery"],
           models: [],
           stores: ["R428", "R409", "R499"],
@@ -1000,6 +1057,7 @@
         toast("讀不到 config.json，已載入預設值：" + err.message, false);
       }
       await loadState();
+      startLiveRefresh();
     }
 
     boot();

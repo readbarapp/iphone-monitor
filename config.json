@@ -1,7 +1,5 @@
 {
   "enabled": false,
-  "test_mode": true,
-  "mock_status": "unavailable",
   "check_interval_minutes": 15,
   "fulfillment_modes": [
     "pickup",
@@ -67,6 +65,13 @@
     "max_retries": 4,
     "backoff_base_seconds": 2,
     "request_timeout_seconds": 20
+  },
+  "simulation": {
+    "statuses": {
+      "pickup:R428:MK2J4ZA/A": "unavailable",
+      "pickup:R409:MK2J4ZA/A": "unavailable",
+      "delivery:DELIVERY:MK2J4ZA/A": "unavailable"
+    }
   },
   "notifications": {
     "telegram_enabled": true

@@ -13,12 +13,12 @@ on:
         description: 只發送 Telegram 連線測試短訊（唔係補貨通知）
         type: boolean
         default: false
-      simulate_restock:
-        description: 測試模式模擬無貨→有貨，先發送補貨格式 Telegram
+      apply_simulation:
+        description: 套用模擬貨源，只有冇貨→有貨先發測試 Telegram
         type: boolean
         default: false
       ignore_enabled:
-        description: 即使總開關為 OFF 也執行查詢
+        description: 即使真實模式為 OFF 也執行官網查詢
         type: boolean
         default: false
 
@@ -39,14 +39,14 @@ jobs:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       TEST_NOTIFY: ${{ github.event.inputs.test_notify }}
-      SIMULATE_RESTOCK: ${{ github.event.inputs.simulate_restock }}
+      APPLY_SIMULATION: ${{ github.event.inputs.apply_simulation }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           persist-credentials: true
 
-      # 總開關關閉且不是連線測試／模擬補貨時，只讀 config 後立刻結束，
+      # 真實模式關閉且不是連線測試／套用模擬時，只讀 config 後立刻結束，
       # 省下 pip / 查詢時間（cron 本身仍會佔用 1 分鐘計費單位）。
       - name: Gate on enabled flag
         id: gate
@@ -55,11 +55,11 @@ jobs:
           import json, os
           cfg = json.load(open("config.json", encoding="utf-8"))
           test_notify = os.environ.get("TEST_NOTIFY", "").lower() in {"true", "1", "yes"}
-          simulate = os.environ.get("SIMULATE_RESTOCK", "").lower() in {"true", "1", "yes"}
+          apply_sim = os.environ.get("APPLY_SIMULATION", "").lower() in {"true", "1", "yes"}
           ignore = "${{ github.event.inputs.ignore_enabled }}" == "true"
           enabled = bool(cfg.get("enabled"))
-          run = enabled or test_notify or simulate or ignore
-          print(f"enabled={enabled} test_notify={test_notify} simulate={simulate} ignore={ignore} run={run}")
+          run = enabled or test_notify or apply_sim or ignore
+          print(f"enabled={enabled} test_notify={test_notify} apply_sim={apply_sim} ignore={ignore} run={run}")
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
               fh.write(f"run={'true' if run else 'false'}\n")
           PY
@@ -82,8 +82,8 @@ jobs:
           if [ "${{ github.event.inputs.test_notify }}" = "true" ]; then
             ARGS="$ARGS --test-notify"
           fi
-          if [ "${{ github.event.inputs.simulate_restock }}" = "true" ]; then
-            ARGS="$ARGS --simulate-restock"
+          if [ "${{ github.event.inputs.apply_simulation }}" = "true" ]; then
+            ARGS="$ARGS --apply-simulation"
           fi
           if [ "${{ github.event.inputs.ignore_enabled }}" = "true" ]; then
             ARGS="$ARGS --ignore-enabled"
@@ -109,7 +109,7 @@ jobs:
           now = datetime.now(tz=ZoneInfo("Asia/Hong_Kong")).isoformat(timespec="seconds")
           state["last_run"] = {
               "status": "disabled",
-              "message": "監控總開關為 OFF（enabled=false），安全退出，不查詢 Apple API。",
+              "message": "真實模式為 OFF（enabled=false），安全退出，不查詢 Apple API。",
               "notified": 0,
               "checked": 0,
               "at": now,

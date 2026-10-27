@@ -57,39 +57,13 @@
       "id": "iphone-duo",
       "label": "iPhone Duo",
       "buy_path": "iphone-duo"
-    },
-    {
-      "id": "iphone-18-pro-max",
-      "label": "iPhone 18 Pro Max",
-      "buy_path": "iphone-18-pro"
     }
   ],
   "color_labels": {
-    "black": "黑色",
-    "silver": "銀色",
-    "burgundy": "布根地紅色",
-    "glacier": "冰川色",
     "starwhite": "星光白",
     "nightsky": "夜空色"
   },
   "products": [
-    {"part": "MJXN4ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 256GB 黑色", "color": "black", "capacity": "256gb", "price": 11499},
-    {"part": "MJXP4ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 256GB 銀色", "color": "silver", "capacity": "256gb", "price": 11499},
-    {"part": "MJXR4ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 256GB 冰川色", "color": "glacier", "capacity": "256gb", "price": 11499},
-    {"part": "MJXQ4ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 256GB 布根地紅色", "color": "burgundy", "capacity": "256gb", "price": 11499},
-    {"part": "MJXT4ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 512GB 黑色", "color": "black", "capacity": "512gb", "price": 13299},
-    {"part": "MJXU4ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 512GB 銀色", "color": "silver", "capacity": "512gb", "price": 13299},
-    {"part": "MJXW4ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 512GB 冰川色", "color": "glacier", "capacity": "512gb", "price": 13299},
-    {"part": "MJXV4ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 512GB 布根地紅色", "color": "burgundy", "capacity": "512gb", "price": 13299},
-    {"part": "MJXX4ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 1TB 黑色", "color": "black", "capacity": "1tb", "price": 16799},
-    {"part": "MJXY4ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 1TB 銀色", "color": "silver", "capacity": "1tb", "price": 16799},
-    {"part": "MJY14ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 1TB 冰川色", "color": "glacier", "capacity": "1tb", "price": 16799},
-    {"part": "MJY04ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 1TB 布根地紅色", "color": "burgundy", "capacity": "1tb", "price": 16799},
-    {"part": "MJY24ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 2TB 黑色", "color": "black", "capacity": "2tb", "price": 21999},
-    {"part": "MJY34ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 2TB 銀色", "color": "silver", "capacity": "2tb", "price": 21999},
-    {"part": "MJY54ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 2TB 冰川色", "color": "glacier", "capacity": "2tb", "price": 21999},
-    {"part": "MJY44ZA/A", "family": "iphone-18-pro-max", "name": "iPhone 18 Pro Max 2TB 布根地紅色", "color": "burgundy", "capacity": "2tb", "price": 21999},
-
     {"part": "MK2D4ZA/A", "family": "iphone-duo", "name": "iPhone Duo 256GB 星光白", "color": "starwhite", "capacity": "256gb", "price": 17499},
     {"part": "MK2E4ZA/A", "family": "iphone-duo", "name": "iPhone Duo 256GB 夜空色", "color": "nightsky", "capacity": "256gb", "price": 17499},
     {"part": "MK2F4ZA/A", "family": "iphone-duo", "name": "iPhone Duo 512GB 星光白", "color": "starwhite", "capacity": "512gb", "price": 19299},
