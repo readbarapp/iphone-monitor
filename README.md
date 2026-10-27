@@ -2,7 +2,7 @@
 
 企業級、Zero-Trust 的香港官網庫存監控系統：GitHub Actions 定時查詢 + GitHub Pages 控制台 + Telegram 智慧聚合通知。
 
-控制台分成兩塊：**模擬模式**（每格自己揀有貨／冇貨，儲存時只有冇貨→有貨先發測試 Telegram）同 **真實模式**（打開之後先問 Apple 官網，只盯 iPhone Duo）。
+控制台分成兩塊：**模擬模式**（預設收起；展開後每格自己揀有貨／冇貨，儲存時只有冇貨→有貨先發測試 Telegram）同 **真實模式**（打開之後先問 Apple 官網，只盯 iPhone Duo）。
 
 ---
 
@@ -106,7 +106,7 @@ python3 -m http.server 8080
 | 優先級 | `priority` | 門市權重 ×10000 + 容量 ×100 + 通路 |
 | 監控頻率 | `check_interval_minutes` | 儲存後由 job 內循環按呢個間隔查；真實模式貨源板會自動刷新 |
 | 每日監控時段 | `business_hours` + watchdog cron 小時欄 | 你自己定香港時間幾點開始、幾點完。Watchdog 只喺呢段時間拉起 loop |
-| 監測心跳 | `state.json` `loop` | 每次查貨寫入時間；控制台列出最近幾轉，用來確認真係按間隔喺跑 |
+| 查貨紀錄 | `state.json` `loop` | 每次查貨寫入時間；控制台只顯示最近 5 轉，連續次數會一直累加 |
 | 最近一次官網貨源 | `state.json` `items` | 上次問 Apple 時，每部 Duo × 門市／送貨嘅有貨情況 |
 | 測試 Telegram 連線 | `workflow_dispatch` `test_notify` | 只發連線短訊，**唔會**扮 iPhone 有貨 |
 | 儲存模擬狀態 | `workflow_dispatch` `apply_simulation` | 套用每格模擬貨源，有補貨先發測試 Telegram |
@@ -135,7 +135,7 @@ python3 -m http.server 8080
 
 6. **點樣先知道真係每一分鐘執行一次？**  
    真實模式 ON 並儲存之後：
-   - 控制台「監測心跳」會列出最近幾次查貨嘅香港時間，同「距上一轉約 X 分鐘」。填咗 PAT 會每 15 秒直接讀 GitHub，唔使等 Pages 刷新。
+   - 控制台「查貨紀錄」會列出最近 5 轉查官網嘅香港時間，同「距上一轉約 X 分鐘」。連續次數會一直累加。填咗 PAT 會每 15 秒直接讀 GitHub，唔使等 Pages 刷新。
    - 兩筆相差應約等於你設嘅間隔（1 分鐘就大約 1；查官網同 commit 可能變成 1–2 分鐘）。疏過設定 +1 分鐘會標 ⚠️。
    - GitHub → Actions → `iPhone HK Monitor` → 最新 **In progress** run，log 會每轉印 `heartbeat … next check in 1 minute(s)`。
    - `state.json` 嘅 `loop.ticks` / `loop.tick_count` 都係同一份紀錄。
@@ -162,7 +162,7 @@ python3 -m http.server 8080
 ### A. 控制台（建議）
 
 1. 填 PAT。可用「測試 Telegram 連線」確認 bot 收得到短訊。
-2. 模擬模式表格：每格用下拉選 **冇貨** 或 **有貨**。
+2. 展開模擬模式。表格：每格用下拉選 **冇貨** 或 **有貨**。
 3. 撳 **儲存模擬狀態**。
    - 全部仍然冇貨／已經有貨：唔會收到 Telegram。
    - 任何一格由冇貨變有貨：收到 **🧪 模擬模式測試結果**，列明邊部機補貨。
@@ -296,7 +296,7 @@ SKU 若隨官網改版，更新 `catalog.json` 即可，控制台會自動讀取
 | 有貨但沒通知 | 看 `state.json`：若上次已是 `available`，屬防洗版。真實同模擬係兩套紀錄 |
 | 永遠 unknown | Apple 541／網路失敗。拉長間隔，或用 `--verbose` 看 log |
 | Actions 分鐘燒太快 | Disable workflow；私人倉唔好開住 1 分鐘長駐 loop |
-| 心跳一直空白 | 真實模式未 ON／未儲存，或 PAT 未填。Actions 確認有 In progress 嘅 `iPhone HK Monitor` |
+| 查貨紀錄一直空白 | 真實模式未 ON／未儲存，或 PAT 未填。Actions 確認有 In progress 嘅 `iPhone HK Monitor` |
 | 收到「監測 loop 中斷」 | GitHub 會自動再拉起。去 Actions 睇失敗原因；Secret 唔齊就唔會收到呢條 |
 | Telegram 沒收到 | Secret 名稱是否 `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID`，以及有冇同 bot 講過話 |
 

@@ -83,19 +83,25 @@
 
   <main class="max-w-6xl mx-auto px-4 py-6 sm:py-10 space-y-6">
     <section class="glass mode-sim rounded-3xl p-5 sm:p-6">
-      <p class="text-xs uppercase tracking-[0.18em] text-amber-200/80">模擬模式</p>
-      <div class="mt-2 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-        <div>
-          <h2 class="text-xl font-semibold">練習通知（唔問 Apple）</h2>
-          <p class="text-sm text-zinc-400 mt-1">每格自己揀有貨定冇貨。撳「儲存模擬狀態」之後，<b>只有由冇貨變成有貨</b>嘅項目先會收到測試 Telegram。已經有貨、仍然冇貨、或者有貨變冇貨，都唔會再煩你。</p>
+      <button id="simToggle" type="button" aria-expanded="false" aria-controls="simPanel" class="w-full flex items-start justify-between gap-3 text-left rounded-2xl -mx-1 px-1 py-1 hover:bg-white/5">
+        <div class="min-w-0">
+          <p class="text-xs uppercase tracking-[0.18em] text-amber-200/80">模擬模式</p>
+          <h2 class="mt-2 text-xl font-semibold">練習通知（唔問 Apple）</h2>
+          <p id="simToggleHint" class="text-sm text-zinc-400 mt-1">預設收起。要試 Telegram「冇貨→有貨」先展開。</p>
         </div>
-        <span id="simBadge" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-amber-500/15 text-amber-200">模擬</span>
-      </div>
-      <div id="simBoard" class="mt-4"></div>
-      <p id="simLastRun" class="mt-3 text-xs text-zinc-500">尚未儲存過模擬狀態。</p>
-      <div class="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
-        <button id="saveSimBtn" class="rounded-xl bg-amber-400 text-black px-4 py-2 text-sm font-semibold">儲存模擬狀態</button>
-        <p class="text-xs text-zinc-400">要填 PAT。呢粒掣唔會開真實模式，亦唔會打官網。</p>
+        <span class="shrink-0 flex items-center gap-2">
+          <span id="simBadge" class="rounded-full px-3 py-1 text-xs font-medium bg-amber-500/15 text-amber-200">模擬</span>
+          <span id="simToggleLabel" class="rounded-full border border-white/15 px-3 py-1 text-xs text-zinc-300">展開</span>
+        </span>
+      </button>
+      <div id="simPanel" class="hidden mt-4" hidden>
+        <p class="text-sm text-zinc-400">每格自己揀有貨定冇貨。撳「儲存模擬狀態」之後，<b>只有由冇貨變成有貨</b>嘅項目先會收到測試 Telegram。已經有貨、仍然冇貨、或者有貨變冇貨，都唔會再煩你。</p>
+        <div id="simBoard" class="mt-4"></div>
+        <p id="simLastRun" class="mt-3 text-xs text-zinc-500">尚未儲存過模擬狀態。</p>
+        <div class="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
+          <button id="saveSimBtn" class="rounded-xl bg-amber-400 text-black px-4 py-2 text-sm font-semibold">儲存模擬狀態</button>
+          <p class="text-xs text-zinc-400">要填 PAT。呢粒掣唔會開真實模式，亦唔會打官網。</p>
+        </div>
       </div>
     </section>
 
@@ -175,8 +181,8 @@
               <h3 class="font-medium">最近一次官網貨源</h3>
               <p id="lastRunText" class="text-xs text-zinc-400 mt-1">尚未讀取。有貨＝設定日數內可送或可取。遲過呢個窗或冇寫日期，一律當冇貨、唔通知。</p>
               <div class="mt-3 rounded-xl bg-black/30 border border-white/10 p-3">
-                <p class="text-xs font-medium text-zinc-200">監測心跳（確認係咪真係按間隔喺跑）</p>
-                <p class="text-[11px] text-zinc-500 mt-1">填咗 PAT 會每 15 秒直接讀 GitHub 嘅 state.json。每轉查貨會加一筆香港時間；兩筆相差應約等於你設嘅分鐘。Loop 死會 Telegram 你。</p>
+                <p class="text-xs font-medium text-zinc-200">查貨紀錄</p>
+                <p class="text-[11px] text-zinc-500 mt-1">只顯示最近 5 轉查官網嘅香港時間。連續次數會一直累加。填咗 PAT 會每 15 秒直接讀 GitHub。兩筆相差應約等於你設嘅分鐘；loop 死會 Telegram 你。</p>
                 <p id="loopTicks" class="mt-2 text-[11px] text-zinc-300 leading-relaxed whitespace-pre-wrap font-mono"></p>
               </div>
             </div>
@@ -1216,9 +1222,9 @@
       const el = $("loopTicks");
       if (!el) return;
       const loop = (state && state.loop) || {};
-      const ticks = (loop.ticks || []).slice(-8);
+      const ticks = (loop.ticks || []).slice(-5);
       if (!ticks.length) {
-        el.textContent = "監測心跳尚未有紀錄。真實模式 ON 並儲存後，呢度會列出最近幾次查貨時間。填咗 PAT 會直接讀 GitHub，唔使等 Pages。";
+        el.textContent = "尚未有查貨紀錄。真實模式 ON 並儲存後，呢度會列出最近 5 轉。填咗 PAT 會直接讀 GitHub，唔使等 Pages。";
         return;
       }
       const interval = Number(loop.interval_minutes) || 0;
@@ -1231,8 +1237,10 @@
         const late = typeof gap === "number" && gap > expected + 1;
         return `${t}（距上一轉約 ${gap} 分鐘${late ? " ⚠️ 疏咗" : ""}）`;
       });
-      const alive = loop.alive ? "loop 運行中" : `loop 已停${loop.stopped ? "：" + loop.stopped : ""}`;
-      el.textContent = `${alive} · 設定 ${interval || "?"} 分鐘一轉 · 已連續 ${loop.tick_count || ticks.length} 次\n最近心跳：\n` + lines.join("\n");
+      const alive = loop.alive ? "監測運行中" : `監測已停${loop.stopped ? "：" + loop.stopped : ""}`;
+      el.textContent =
+        `${alive} · 設定 ${interval || "?"} 分鐘一轉 · 已連續 ${loop.tick_count || ticks.length} 次\n最近 5 轉：\n` +
+        lines.join("\n");
     }
 
     async function loadState() {
@@ -1258,7 +1266,7 @@
         if ($("liveBadge")) {
           const beat = (latestState.loop || {}).heartbeat_at || run.at;
           if (run.status === "ok") {
-            $("liveBadge").textContent = "心跳 " + (beat || "");
+            $("liveBadge").textContent = "查貨 " + (beat || "");
             $("liveBadge").className = "shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-emerald-500/20 text-emerald-200";
           } else if (run.status === "disabled") {
             $("liveBadge").textContent = "真實模式 OFF";
@@ -1285,7 +1293,30 @@
       liveTimer = setInterval(loadState, 15000);
     }
 
+    function setSimExpanded(open) {
+      const panel = $("simPanel");
+      const toggle = $("simToggle");
+      const label = $("simToggleLabel");
+      const hint = $("simToggleHint");
+      if (!panel || !toggle) return;
+      panel.hidden = !open;
+      panel.classList.toggle("hidden", !open);
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      if (label) label.textContent = open ? "收起" : "展開";
+      if (hint) {
+        hint.textContent = open
+          ? "每格自己揀有貨定冇貨，撳儲存模擬狀態先會發測試 Telegram。"
+          : "預設收起。要試 Telegram「冇貨→有貨」先展開。";
+      }
+    }
+
     function bind() {
+      if ($("simToggle")) {
+        $("simToggle").addEventListener("click", () => {
+          setSimExpanded($("simToggle").getAttribute("aria-expanded") !== "true");
+        });
+      }
+      setSimExpanded(false);
       $("enabledToggle").addEventListener("click", () => {
         setToggle($("enabledToggle"), !isOn($("enabledToggle")));
         updatePill();
