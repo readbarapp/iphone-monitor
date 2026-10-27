@@ -1,12 +1,12 @@
 # Apple 香港 iPhone 庫存監控
-# 預設每 2 分鐘執行。GitHub 免費額度每月 2,000 分鐘，
-# 24 小時不間斷每 2 分鐘會遠超額度——平時請到 Actions 頁 Disable，
-# 或把 cron 改成 */10、*/15，開售當日再開。
+# GitHub 嘅 schedule 鬧鐘最短約 5 分鐘，而且會遲、會漏。
+# 真正監測係 job 入面按 check_interval_minutes 循環查；
+# schedule 只負責：如果 loop 死咗，5 分鐘內再拉起。
 name: iPhone HK Monitor
 
 on:
   schedule:
-    - cron: "*/1 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
     inputs:
       test_notify:
@@ -22,10 +22,6 @@ on:
         type: boolean
         default: false
 
-concurrency:
-  group: iphone-hk-monitor
-  cancel-in-progress: true
-
 permissions:
   contents: write
   actions: read
@@ -34,29 +30,65 @@ jobs:
   check:
     name: Check availability
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 360
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       TEST_NOTIFY: ${{ github.event.inputs.test_notify }}
       APPLY_SIMULATION: ${{ github.event.inputs.apply_simulation }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           persist-credentials: true
+          fetch-depth: 0
 
-      # 每次排程（包括真實模式 OFF）都約用 1 分鐘。呢步只計數＋到 1800／2000 提醒，
-      # 唔使 pip。盯多幾部機唔會令「跑幾多次」變多。
+      - name: Skip schedule if a loop is already running
+        id: already
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request
+          event = os.environ.get("GITHUB_EVENT_NAME", "")
+          skip = "false"
+          if event == "schedule":
+              repo = os.environ["GITHUB_REPOSITORY"]
+              run_id = str(os.environ["GITHUB_RUN_ID"])
+              token = os.environ["GH_TOKEN"]
+              url = (
+                  f"https://api.github.com/repos/{repo}/actions/workflows/"
+                  "monitor.yml/runs?status=in_progress&per_page=20"
+              )
+              req = urllib.request.Request(
+                  url,
+                  headers={
+                      "Authorization": f"Bearer {token}",
+                      "Accept": "application/vnd.github+json",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                      "User-Agent": "iphone-monitor",
+                  },
+              )
+              with urllib.request.urlopen(req, timeout=30) as resp:
+                  data = json.load(resp)
+              others = [
+                  r for r in (data.get("workflow_runs") or [])
+                  if str(r.get("id")) != run_id and r.get("status") == "in_progress"
+              ]
+              skip = "true" if others else "false"
+              print("other_in_progress", [r.get("id") for r in others], "skip", skip)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+              fh.write(f"skip={skip}\n")
+          PY
+
       - name: Record usage and warn at 1800 / 2000
+        if: steps.already.outputs.skip != 'true'
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python3 usage.py
 
-      # 真實模式關閉且不是連線測試／套用模擬時，只讀 config 後立刻結束，
-      # 省下 pip / 查詢時間（cron 本身仍會佔用 1 分鐘計費單位）。
       - name: Gate on enabled flag
+        if: steps.already.outputs.skip != 'true'
         id: gate
         run: |
           python3 - <<'PY'
@@ -66,25 +98,28 @@ jobs:
           apply_sim = os.environ.get("APPLY_SIMULATION", "").lower() in {"true", "1", "yes"}
           ignore = "${{ github.event.inputs.ignore_enabled }}" == "true"
           enabled = bool(cfg.get("enabled"))
-          run = enabled or test_notify or apply_sim or ignore
-          print(f"enabled={enabled} test_notify={test_notify} apply_sim={apply_sim} ignore={ignore} run={run}")
+          oneshot = test_notify or apply_sim
+          run = enabled or oneshot or ignore
+          loop = run and not oneshot
+          print(f"enabled={enabled} oneshot={oneshot} ignore={ignore} run={run} loop={loop}")
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
               fh.write(f"run={'true' if run else 'false'}\n")
+              fh.write(f"loop={'true' if loop else 'false'}\n")
           PY
 
       - name: Setup Python
-        if: steps.gate.outputs.run == 'true'
+        if: steps.already.outputs.skip != 'true' && steps.gate.outputs.run == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
 
       - name: Install dependencies
-        if: steps.gate.outputs.run == 'true'
+        if: steps.already.outputs.skip != 'true' && steps.gate.outputs.run == 'true'
         run: pip install -r requirements.txt
 
-      - name: Run checker
-        if: steps.gate.outputs.run == 'true'
+      - name: Run checker once
+        if: steps.already.outputs.skip != 'true' && steps.gate.outputs.run == 'true' && steps.gate.outputs.loop != 'true'
         run: |
           ARGS=""
           if [ "${{ github.event.inputs.test_notify }}" = "true" ]; then
@@ -98,8 +133,42 @@ jobs:
           fi
           python checker.py $ARGS
 
+      - name: Run checker loop
+        if: steps.already.outputs.skip != 'true' && steps.gate.outputs.loop == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          BRANCH="${GITHUB_REF_NAME}"
+          END=$((SECONDS + 330 * 60))
+          commit_state() {
+            git add state.json
+            if git diff --cached --quiet; then
+              echo "state.json unchanged"
+              return 0
+            fi
+            git commit -m "chore: update inventory state" || return 0
+            git push origin "HEAD:${BRANCH}" || {
+              git pull --rebase origin "${BRANCH}" || true
+              git push origin "HEAD:${BRANCH}" || echo "push failed, will retry next round"
+            }
+          }
+          while [ "$SECONDS" -lt "$END" ]; do
+            git pull --rebase origin "${BRANCH}" || true
+            python3 usage.py || true
+            python checker.py --ignore-interval || true
+            commit_state
+            python3 - <<'PY' || break
+          import json, sys
+          cfg = json.load(open("config.json", encoding="utf-8"))
+          sys.exit(0 if cfg.get("enabled") else 1)
+          PY
+            INTERVAL=$(python3 -c "import json; print(max(1, int((json.load(open('config.json')).get('check_interval_minutes') or 5))))")
+            echo "next check in ${INTERVAL} minute(s)"
+            sleep $((INTERVAL * 60))
+          done
+
       - name: Record disabled skip
-        if: steps.gate.outputs.run != 'true'
+        if: steps.already.outputs.skip != 'true' && steps.gate.outputs.run != 'true'
         run: |
           python3 - <<'PY'
           import json
@@ -129,7 +198,7 @@ jobs:
           PY
 
       - name: Commit state.json
-        if: always()
+        if: ${{ always() && steps.already.outputs.skip != 'true' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -139,4 +208,4 @@ jobs:
             exit 0
           fi
           git commit -m "chore: update inventory state"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}" || true
