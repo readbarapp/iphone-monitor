@@ -130,20 +130,24 @@ python3 -m http.server 8080
 4. **公開倉係咪即使 1 分鐘查一次都唔計 2,000 分鐘？**  
    **標準 GitHub-hosted runner（ubuntu-latest）喺公開倉係免費嘅**，唔會扣私人倉嗰 2,000 分鐘。太密仍然會打爆 Apple（541）。如果之後改成私人倉，一條長駐 loop 可以一醒就用幾百分鐘，千祈唔好喺私人倉開住 1 分鐘 loop。
 
-5. **點樣先知道真係每一分鐘執行一次？**  
+5. **點解 set 咗 1 分鐘，控制台仲停喺十幾分鐘前？**  
+   舊做法靠 GitHub `schedule` 鬧鐘。個鬧鐘官方最短約 5 分鐘，繁忙時會遲、甚至漏。而家改成 **job 入面按你設嘅間隔循環查**；鬧鐘只負責 loop 死咗就再拉起。真實模式 ON 並儲存之後，1 分鐘就會約 1 分鐘查一次。
+
+6. **點樣先知道真係每一分鐘執行一次？**  
    真實模式 ON 並儲存之後：
    - 控制台「監測心跳」會列出最近幾次查貨嘅香港時間，同「距上一轉約 X 分鐘」。填咗 PAT 會每 15 秒直接讀 GitHub，唔使等 Pages 刷新。
    - 兩筆相差應約等於你設嘅間隔（1 分鐘就大約 1；查官網同 commit 可能變成 1–2 分鐘）。疏過設定 +1 分鐘會標 ⚠️。
    - GitHub → Actions → `iPhone HK Monitor` → 最新 **In progress** run，log 會每轉印 `heartbeat … next check in 1 minute(s)`。
    - `state.json` 嘅 `loop.ticks` / `loop.tick_count` 都係同一份紀錄。
 
-6. **Loop 死咗會唔會 Telegram 我？**  
+7. **Loop 死咗會唔會 Telegram 我？**  
    會。Job 失敗／被取消會即刻發「⚠️ 監測 loop 中斷」。如果 runner 無聲消失、心跳過期，5 分鐘內 watchdog 再拉起時都會再通知一次。正常跑滿約 5.5 小時自行換班、或者你關掉真實模式，**唔會**當死機嚟煩你。
 
-7. **公開倉建議幾耐查一次？**  
+8. **公開倉建議幾耐查一次？**  
    開售用 1–3 分鐘；日常用 5 分鐘穩陣啲。想少打官網用 10 或 15 分鐘。
 
-8. **想比朋友一齊用？**  
+9. **想比朋友一齊用？**  
+
    - **只係想朋友都收到有貨 Telegram（最簡單）**：開一個 Telegram 群組，加朋友，再加你個 bot 入去。用群組嘅 Chat ID（多數係負數）填 `TELEGRAM_CHAT_ID`。兩個人收同一套通知，朋友唔使碰 GitHub。  
    - **朋友想自己監第二款／另一套門市**：叫佢 fork 呢個 repo，自己開 GitHub Pages、自己整 Fine-grained PAT、自己喺 Secrets 填 Telegram。唔好把你嘅 PAT／bot token 傳畀人。  
    - **朋友想一齊改你呢個控制台**：Repo → Settings → Collaborators 加佢。佢用自己嘅 PAT（要有呢個倉嘅寫入權）。大家共用一份 `config.json`，後儲存嘅會蓋過先儲存嘅。
