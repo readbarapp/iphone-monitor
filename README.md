@@ -104,8 +104,9 @@ python3 -m http.server 8080
 | 型號下拉 | `models[]` | 只保留 iPhone Duo |
 | 門市多選 | `stores` + `priority.stores` | 六間香港 Apple Store |
 | 優先級 | `priority` | 門市權重 ×10000 + 容量 ×100 + 通路 |
-| 監控頻率 | `check_interval_minutes` + `monitor.yml` cron | 儲存後改排程；真實模式貨源板會自動刷新 |
-| 每日監控時段 | `business_hours` + cron 小時欄 | 你自己定香港時間幾點開始、幾點完。儲存後鬧鐘只喺呢段時間響 |
+| 監控頻率 | `check_interval_minutes` | 儲存後由 job 內循環按呢個間隔查；真實模式貨源板會自動刷新 |
+| 每日監控時段 | `business_hours` + watchdog cron 小時欄 | 你自己定香港時間幾點開始、幾點完。Watchdog 只喺呢段時間拉起 loop |
+| 監測心跳 | `state.json` `loop` | 每次查貨寫入時間；控制台列出最近幾轉，用來確認真係按間隔喺跑 |
 | 最近一次官網貨源 | `state.json` `items` | 上次問 Apple 時，每部 Duo × 門市／送貨嘅有貨情況 |
 | 測試 Telegram 連線 | `workflow_dispatch` `test_notify` | 只發連線短訊，**唔會**扮 iPhone 有貨 |
 | 儲存模擬狀態 | `workflow_dispatch` `apply_simulation` | 套用每格模擬貨源，有補貨先發測試 Telegram |
@@ -117,8 +118,8 @@ python3 -m http.server 8080
 
 ## 用量常見問題
 
-1. **盯多幾部機、幾間門市，15 分鐘一轉，分鐘數會唔會多啲？**  
-   基本上唔會。GitHub 計嘅係「鬧鐘響咗幾多次」，每次大約 1 分鐘，唔係「查咗幾多款」。多幾部機只係同一轉入面多問幾次官網，多數仍然係 1 分鐘。
+1. **盯多幾部機、幾間門市，分鐘數會唔會多啲？**  
+   基本上唔會因為多部機。公開倉標準 runner 通常免費。私人倉而家係一條長駐 loop，runner 開住幾耐就計幾多分鐘，唔係「查咗幾多款」。
 
 2. **開啟之後要唔要開住瀏覽器？**  
    唔需要。鬧鐘喺 GitHub 伺服器行，有貨會直接 Telegram 你。控制台只係改設定用。
@@ -132,10 +133,21 @@ python3 -m http.server 8080
 5. **點解 set 咗 1 分鐘，控制台仲停喺十幾分鐘前？**  
    舊做法靠 GitHub `schedule` 鬧鐘。個鬧鐘官方最短約 5 分鐘，繁忙時會遲、甚至漏。而家改成 **job 入面按你設嘅間隔循環查**；鬧鐘只負責 loop 死咗就再拉起。真實模式 ON 並儲存之後，1 分鐘就會約 1 分鐘查一次。
 
-6. **公開倉建議幾耐查一次？**  
+6. **點樣先知道真係每一分鐘執行一次？**  
+   真實模式 ON 並儲存之後：
+   - 控制台「監測心跳」會列出最近幾次查貨嘅香港時間，同「距上一轉約 X 分鐘」。填咗 PAT 會每 15 秒直接讀 GitHub，唔使等 Pages 刷新。
+   - 兩筆相差應約等於你設嘅間隔（1 分鐘就大約 1；查官網同 commit 可能變成 1–2 分鐘）。疏過設定 +1 分鐘會標 ⚠️。
+   - GitHub → Actions → `iPhone HK Monitor` → 最新 **In progress** run，log 會每轉印 `heartbeat … next check in 1 minute(s)`。
+   - `state.json` 嘅 `loop.ticks` / `loop.tick_count` 都係同一份紀錄。
+
+7. **Loop 死咗會唔會 Telegram 我？**  
+   會。Job 失敗／被取消會即刻發「⚠️ 監測 loop 中斷」。如果 runner 無聲消失、心跳過期，5 分鐘內 watchdog 再拉起時都會再通知一次。正常跑滿約 5.5 小時自行換班、或者你關掉真實模式，**唔會**當死機嚟煩你。
+
+8. **公開倉建議幾耐查一次？**  
    開售用 1–3 分鐘；日常用 5 分鐘穩陣啲。想少打官網用 10 或 15 分鐘。
 
-7. **想比朋友一齊用？**  
+9. **想比朋友一齊用？**  
+
    - **只係想朋友都收到有貨 Telegram（最簡單）**：開一個 Telegram 群組，加朋友，再加你個 bot 入去。用群組嘅 Chat ID（多數係負數）填 `TELEGRAM_CHAT_ID`。兩個人收同一套通知，朋友唔使碰 GitHub。  
    - **朋友想自己監第二款／另一套門市**：叫佢 fork 呢個 repo，自己開 GitHub Pages、自己整 Fine-grained PAT、自己喺 Secrets 填 Telegram。唔好把你嘅 PAT／bot token 傳畀人。  
    - **朋友想一齊改你呢個控制台**：Repo → Settings → Collaborators 加佢。佢用自己嘅 PAT（要有呢個倉嘅寫入權）。大家共用一份 `config.json`，後儲存嘅會蓋過先儲存嘅。
@@ -174,7 +186,7 @@ python checker.py   # enabled=false 時應印出「真實模式為 OFF」
 
 ## 用量與 2,000 分鐘額度（必讀）
 
-監測 loop 按控制台「幾耐查一次」喺 runner 入面 sleep；GitHub `schedule` 只係 5 分鐘 watchdog。
+監測 loop 按控制台「幾耐查一次」喺 runner 入面 sleep；GitHub `schedule` 只係每 5 分鐘嘅 watchdog（唔好再把 cron 改成 1 分鐘）。
 
 GitHub Actions **以整分鐘進位**。**公開倉**用標準 runner 通常唔計入 2,000。**私人倉**即使 `enabled=false`，只要 cron 響就會 checkout，通常仍計 **1 分鐘／次**。控制台「每日監控時段」儲存後會改 cron 小時欄，出咗時段鬧鐘唔響。
 
@@ -283,7 +295,9 @@ SKU 若隨官網改版，更新 `catalog.json` 即可，控制台會自動讀取
 | 連線測試／儲存模擬 404 | workflow 檔名必須是 `.github/workflows/monitor.yml`，且 PAT 有 Actions 寫入 |
 | 有貨但沒通知 | 看 `state.json`：若上次已是 `available`，屬防洗版。真實同模擬係兩套紀錄 |
 | 永遠 unknown | Apple 541／網路失敗。拉長間隔，或用 `--verbose` 看 log |
-| Actions 分鐘燒太快 | Disable workflow；不要 24 小時每 2 分鐘空轉 |
+| Actions 分鐘燒太快 | Disable workflow；私人倉唔好開住 1 分鐘長駐 loop |
+| 心跳一直空白 | 真實模式未 ON／未儲存，或 PAT 未填。Actions 確認有 In progress 嘅 `iPhone HK Monitor` |
+| 收到「監測 loop 中斷」 | GitHub 會自動再拉起。去 Actions 睇失敗原因；Secret 唔齊就唔會收到呢條 |
 | Telegram 沒收到 | Secret 名稱是否 `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID`，以及有冇同 bot 講過話 |
 
 ---

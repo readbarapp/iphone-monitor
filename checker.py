@@ -31,7 +31,9 @@ import random
 import re
 import sys
 import time
+import urllib.error
 import urllib.parse
+import urllib.request
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -40,9 +42,8 @@ from zoneinfo import ZoneInfo
 
 try:
     import requests
-except ImportError:  # pragma: no cover - 執行環境缺依賴時給明確提示
-    print("缺少 requests，請先執行: pip install -r requirements.txt", file=sys.stderr)
-    raise
+except ImportError:  # pragma: no cover - 查 Apple 先要；Telegram 心跳用標準庫
+    requests = None  # type: ignore[assignment]
 
 ROOT = Path(__file__).resolve().parent
 CONFIG_PATH = ROOT / "config.json"
@@ -162,6 +163,70 @@ def checkout_url(part_number: str) -> str:
 
 def item_key(mode: str, store_id: str, part_number: str) -> str:
     return f"{mode}:{store_id}:{part_number}"
+
+
+def loop_interval_minutes(cfg: dict[str, Any] | None = None) -> int:
+    try:
+        minutes = int((cfg or {}).get("check_interval_minutes") or 5)
+    except (TypeError, ValueError):
+        minutes = 5
+    return max(1, min(minutes, 60))
+
+
+def touch_loop(state: dict[str, Any], cfg: dict[str, Any] | None = None) -> dict[str, Any]:
+    """記錄一次監測心跳，方便控制台核對係咪真係按間隔喺跑。"""
+    now = iso_now()
+    loop = dict(state.get("loop") or {})
+    ticks = [str(t) for t in (loop.get("ticks") or []) if t]
+    ticks.append(now)
+    loop.update(
+        {
+            "alive": True,
+            "heartbeat_at": now,
+            "interval_minutes": loop_interval_minutes(cfg),
+            "tick_count": int(loop.get("tick_count") or 0) + 1,
+            "ticks": ticks[-12:],
+            "stopped": None,
+        }
+    )
+    state["loop"] = loop
+    return state
+
+
+def mark_loop_stopped(state: dict[str, Any], reason: str) -> dict[str, Any]:
+    loop = dict(state.get("loop") or {})
+    loop["alive"] = False
+    loop["stopped"] = reason
+    loop["stopped_at"] = iso_now()
+    state["loop"] = loop
+    return state
+
+
+def loop_heartbeat_stale(
+    state: dict[str, Any],
+    cfg: dict[str, Any] | None = None,
+    now: datetime | None = None,
+) -> bool:
+    """loop 仍標示 alive，但心跳已超過間隔太多 → 當死咗。已正常停低嘅唔算。"""
+    loop = state.get("loop") or {}
+    if not loop.get("alive"):
+        return False
+    raw = str(loop.get("heartbeat_at") or "")
+    if not raw:
+        return False
+    try:
+        seen = datetime.fromisoformat(raw)
+    except ValueError:
+        return False
+    if seen.tzinfo is None:
+        seen = seen.replace(tzinfo=HK_TZ)
+    moment = now or now_hk()
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=HK_TZ)
+    age = (moment.astimezone(HK_TZ) - seen.astimezone(HK_TZ)).total_seconds()
+    interval = int(loop.get("interval_minutes") or loop_interval_minutes(cfg))
+    limit = max(3, interval) * 60 + 90
+    return age > limit
 
 
 def parse_hhmm(value: str) -> tuple[int, int]:
@@ -370,7 +435,9 @@ def selected_modes(cfg: dict[str, Any]) -> list[str]:
 # Apple API（重試 + 後備端點）
 # ---------------------------------------------------------------------------
 class AppleClient:
-    def __init__(self, cfg: dict[str, Any], session: requests.Session | None = None) -> None:
+    def __init__(self, cfg: dict[str, Any], session: Any = None) -> None:
+        if requests is None:
+            raise RuntimeError("缺少 requests，請先執行: pip install -r requirements.txt")
         anti = cfg.get("anti_abuse") or {}
         self.max_retries = int(anti.get("max_retries") or 4)
         self.backoff_base = float(anti.get("backoff_base_seconds") or 2)
@@ -657,6 +724,21 @@ def apply_state_machine(
 # ---------------------------------------------------------------------------
 # 通知
 # ---------------------------------------------------------------------------
+def format_loop_died_message(*, reason: str = "", heartbeat: str = "", interval: int = 0) -> str:
+    why = reason or "未知"
+    beat = heartbeat or "沒有紀錄"
+    gap = f"{interval} 分鐘" if interval else "未知"
+    return (
+        "⚠️ 監測 loop 中斷\n"
+        "\n"
+        "監控 runner 停止咗循環查貨。GitHub 會嘗試重新拉起。\n"
+        f"原因：{why}\n"
+        f"上次心跳：{beat}（香港）\n"
+        f"設定間隔：{gap}\n"
+        f"時間：{iso_now()}（香港）\n"
+    )
+
+
 def format_connection_test_message() -> str:
     """只測 Telegram 通道，絕不模仿補貨通知。"""
     return (
@@ -716,13 +798,20 @@ def format_simulation_message(hits: list[AvailabilityHit]) -> str:
 
 
 def _post_json(url: str, payload: dict[str, Any], timeout: int = 20) -> bool:
+    body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
     try:
-        resp = requests.post(url, json=payload, timeout=timeout)
-        if resp.status_code >= 400:
-            LOGGER.error("通知失敗 HTTP %s：%s", resp.status_code, resp.text[:240])
-            return False
-        return True
-    except requests.RequestException as exc:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            if not (200 <= resp.status < 300):
+                LOGGER.error("通知失敗 HTTP %s", resp.status)
+                return False
+            return True
+    except urllib.error.URLError as exc:
         LOGGER.error("通知連線失敗：%s", exc)
         return False
 
@@ -1005,7 +1094,8 @@ def run(args: argparse.Namespace) -> int:
         print(msg)
         # 已是 disabled 就不要重寫 state，避免 Actions 每 2 分鐘空 commit。
         prev = state.get("last_run") or {}
-        if prev.get("status") != "disabled":
+        loop = state.get("loop") or {}
+        if prev.get("status") != "disabled" or loop.get("alive"):
             state["last_run"] = {
                 "status": "disabled",
                 "message": msg,
@@ -1013,6 +1103,7 @@ def run(args: argparse.Namespace) -> int:
                 "checked": 0,
                 "at": iso_now(),
             }
+            mark_loop_stopped(state, "disabled")
             save_json(STATE_PATH, state)
         return 0
 
@@ -1051,7 +1142,8 @@ def run(args: argparse.Namespace) -> int:
                 "checked": 0,
                 "at": iso_now(),
             }
-            save_json(STATE_PATH, state)
+        touch_loop(state, cfg)
+        save_json(STATE_PATH, state)
         return 0
 
     maybe_random_delay(cfg, skip=bool(args.no_delay))
@@ -1089,6 +1181,9 @@ def run(args: argparse.Namespace) -> int:
         "checked": len(hits),
         "at": iso_now(),
     }
+    if "loop" in state:
+        new_state["loop"] = state.get("loop")
+    touch_loop(new_state, cfg)
     save_json(STATE_PATH, new_state)
     return 0
 
@@ -1233,6 +1328,18 @@ def run_self_test() -> int:
     check(vague_pick == STATUS_UNAVAILABLE, "取貨無日期當冇貨")
     check(week_pick == STATUS_AVAILABLE, "7 日內門市取貨當有貨")
     check(late_pick == STATUS_UNAVAILABLE, "遲過 7 日門市取貨當冇貨")
+    ticked = touch_loop({"loop": {"tick_count": 1, "ticks": ["a"]}}, {"check_interval_minutes": 1})
+    check(ticked["loop"]["tick_count"] == 2 and ticked["loop"]["alive"], "心跳會累加次數")
+    died = format_loop_died_message(reason="cancelled", heartbeat="2026-10-27T15:00:00+08:00", interval=1)
+    check("監測 loop 中斷" in died and "cancelled" in died, "loop 中斷文案")
+    beat_at = datetime(2026, 10, 27, 15, 0, tzinfo=HK_TZ)
+    later = datetime(2026, 10, 27, 15, 12, tzinfo=HK_TZ)
+    stale_state = {"loop": {"alive": True, "heartbeat_at": beat_at.isoformat(), "interval_minutes": 1}}
+    check(loop_heartbeat_stale(stale_state, now=later), "alive 但心跳過期當 loop 死")
+    stale_state["loop"]["alive"] = False
+    check(not loop_heartbeat_stale(stale_state, now=later), "已標示停低就唔當心跳過期")
+    fresh_state = {"loop": {"alive": True, "heartbeat_at": later.isoformat(), "interval_minutes": 1}}
+    check(not loop_heartbeat_stale(fresh_state, now=later), "新鮮心跳唔當死")
 
     from usage import run_self_test as usage_self_test
 
@@ -1256,8 +1363,49 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--ignore-interval", action="store_true", help="忽略監控頻率間隔")
     parser.add_argument("--no-delay", action="store_true", help="跳過隨機延遲")
     parser.add_argument("--self-test", action="store_true", help="執行不連網的邏輯測試")
+    parser.add_argument("--loop-died", action="store_true", help="監測 loop 中斷時發 Telegram")
+    parser.add_argument("--loop-restart-check", action="store_true", help="拉起 loop 前若心跳過期就發 Telegram")
+    parser.add_argument("--loop-stopped", choices=["timeout", "disabled"], help="正常結束 loop 並寫入原因")
+    parser.add_argument("--loop-died-reason", default="", help="loop 中斷原因")
     parser.add_argument("-v", "--verbose", action="store_true")
     return parser
+
+
+def _handle_loop_admin(args: argparse.Namespace) -> int | None:
+    if not (args.loop_died or args.loop_restart_check or args.loop_stopped):
+        return None
+    cfg = load_json(CONFIG_PATH)
+    state = load_json(STATE_PATH, fallback={"schema_version": 1, "items": {}, "last_run": {}})
+    loop = state.get("loop") or {}
+    if args.loop_stopped:
+        mark_loop_stopped(state, args.loop_stopped)
+        save_json(STATE_PATH, state)
+        print(f"loop stopped: {args.loop_stopped}")
+        return 0
+    if args.loop_restart_check:
+        if not cfg.get("enabled"):
+            return 0
+        if not loop_heartbeat_stale(state, cfg):
+            print("loop heartbeat fresh")
+            return 0
+        text = format_loop_died_message(
+            reason="心跳過期，GitHub 正重新拉起監測 loop",
+            heartbeat=str(loop.get("heartbeat_at") or ""),
+            interval=int(loop.get("interval_minutes") or loop_interval_minutes(cfg)),
+        )
+        print(text)
+        send_telegram(text)
+        return 0
+    mark_loop_stopped(state, "crashed")
+    save_json(STATE_PATH, state)
+    text = format_loop_died_message(
+        reason=args.loop_died_reason or "GitHub job 失敗或被取消",
+        heartbeat=str(loop.get("heartbeat_at") or ""),
+        interval=int(loop.get("interval_minutes") or loop_interval_minutes(cfg)),
+    )
+    print(text)
+    send_telegram(text)
+    return 0
 
 
 def main() -> int:
@@ -1265,6 +1413,9 @@ def main() -> int:
     configure_logging(args.verbose)
     if args.self_test:
         return run_self_test()
+    admin = _handle_loop_admin(args)
+    if admin is not None:
+        return admin
     try:
         return run(args)
     except Exception as exc:  # noqa: BLE001 — 頂層捕捉，避免 Actions 留下半寫入

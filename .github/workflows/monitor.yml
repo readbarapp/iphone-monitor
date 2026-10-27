@@ -80,13 +80,6 @@ jobs:
               fh.write(f"skip={skip}\n")
           PY
 
-      - name: Record usage and warn at 1800 / 2000
-        if: steps.already.outputs.skip != 'true'
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python3 usage.py
-
       - name: Gate on enabled flag
         if: steps.already.outputs.skip != 'true'
         id: gate
@@ -106,6 +99,13 @@ jobs:
               fh.write(f"run={'true' if run else 'false'}\n")
               fh.write(f"loop={'true' if loop else 'false'}\n")
           PY
+
+      - name: Record usage and warn at 1800 / 2000
+        if: steps.already.outputs.skip != 'true' && steps.gate.outputs.loop != 'true'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python3 usage.py
 
       - name: Setup Python
         if: steps.already.outputs.skip != 'true' && steps.gate.outputs.run == 'true'
@@ -133,6 +133,10 @@ jobs:
           fi
           python checker.py $ARGS
 
+      - name: Warn if previous loop heartbeat is stale
+        if: steps.already.outputs.skip != 'true' && steps.gate.outputs.loop == 'true' && github.event_name == 'schedule'
+        run: python3 checker.py --loop-restart-check || true
+
       - name: Run checker loop
         if: steps.already.outputs.skip != 'true' && steps.gate.outputs.loop == 'true'
         run: |
@@ -152,20 +156,34 @@ jobs:
               git push origin "HEAD:${BRANCH}" || echo "push failed, will retry next round"
             }
           }
+          STOPPED=""
           while [ "$SECONDS" -lt "$END" ]; do
             git pull --rebase origin "${BRANCH}" || true
-            python3 usage.py || true
-            python checker.py --ignore-interval || true
+            INTERVAL=$(python3 -c "import json; print(max(1, int((json.load(open('config.json')).get('check_interval_minutes') or 5))))")
+            python3 usage.py --minutes "$INTERVAL" || true
+            python3 checker.py --ignore-interval || true
             commit_state
-            python3 - <<'PY' || break
+            python3 - <<'PY' || { STOPPED=disabled; break; }
           import json, sys
           cfg = json.load(open("config.json", encoding="utf-8"))
           sys.exit(0 if cfg.get("enabled") else 1)
           PY
-            INTERVAL=$(python3 -c "import json; print(max(1, int((json.load(open('config.json')).get('check_interval_minutes') or 5))))")
-            echo "next check in ${INTERVAL} minute(s)"
+            echo "heartbeat $(date -u +%Y-%m-%dT%H:%M:%SZ) next check in ${INTERVAL} minute(s)"
             sleep $((INTERVAL * 60))
           done
+          if [ "$STOPPED" = "disabled" ]; then
+            python3 checker.py --loop-stopped disabled || true
+          else
+            python3 checker.py --loop-stopped timeout || true
+          fi
+          commit_state
+
+      - name: Telegram if loop crashed
+        if: ${{ (failure() || cancelled()) && steps.already.outputs.skip != 'true' && steps.gate.outputs.loop == 'true' }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python3 checker.py --loop-died --loop-died-reason "${{ job.status }}" || true
 
       - name: Record disabled skip
         if: steps.already.outputs.skip != 'true' && steps.gate.outputs.run != 'true'
