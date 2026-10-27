@@ -12,49 +12,49 @@
   "simulation": {
     "items": {
       "pickup:R428:MK2J4ZA/A": {
-        "status": "unavailable",
+        "status": "available",
         "mode": "pickup",
         "part_number": "MK2J4ZA/A",
         "name": "iPhone Duo 1TB 夜空色",
         "store_id": "R428",
         "store_name": "中環 ifc mall",
-        "quote": "模擬：冇貨",
+        "quote": "模擬：有貨",
         "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A",
-        "last_checked_at": "2026-10-27T12:34:15+08:00",
-        "last_available_at": null
+        "last_checked_at": "2026-10-27T12:35:34+08:00",
+        "last_available_at": "2026-10-27T12:35:34+08:00"
       },
       "pickup:R409:MK2J4ZA/A": {
-        "status": "available",
+        "status": "unavailable",
         "mode": "pickup",
         "part_number": "MK2J4ZA/A",
         "name": "iPhone Duo 1TB 夜空色",
         "store_id": "R409",
         "store_name": "銅鑼灣 Causeway Bay",
-        "quote": "模擬：有貨",
+        "quote": "模擬：冇貨",
         "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A",
-        "last_checked_at": "2026-10-27T12:34:15+08:00",
+        "last_checked_at": "2026-10-27T12:35:34+08:00",
         "last_available_at": "2026-10-27T12:34:15+08:00"
       },
       "delivery:DELIVERY:MK2J4ZA/A": {
-        "status": "unavailable",
+        "status": "available",
         "mode": "delivery",
         "part_number": "MK2J4ZA/A",
         "name": "iPhone Duo 1TB 夜空色",
         "store_id": "DELIVERY",
         "store_name": "送貨上門（香港）",
-        "quote": "模擬：冇貨",
+        "quote": "模擬：有貨",
         "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A",
-        "last_checked_at": "2026-10-27T12:34:15+08:00",
-        "last_available_at": null
+        "last_checked_at": "2026-10-27T12:35:34+08:00",
+        "last_available_at": "2026-10-27T12:35:34+08:00"
       }
     },
-    "updated_at": "2026-10-27T12:34:15+08:00",
+    "updated_at": "2026-10-27T12:35:34+08:00",
     "last_run": {
       "status": "ok",
-      "message": "模擬模式：新轉有貨 1（成功通道 1）",
-      "notified": 1,
-      "checked": 1,
-      "at": "2026-10-27T12:34:16+08:00"
+      "message": "模擬模式：新轉有貨 2（成功通道 1）",
+      "notified": 2,
+      "checked": 2,
+      "at": "2026-10-27T12:35:34+08:00"
     }
   }
 }
