@@ -180,6 +180,36 @@ def soon_window_days(cfg: dict[str, Any] | None = None) -> int:
 _WEEKDAY_ZH = {"一": 0, "二": 1, "三": 2, "四": 3, "五": 4, "六": 5, "日": 6, "天": 6}
 
 
+def _safe_date(year: int, month: int, day: int) -> date | None:
+    try:
+        return date(year, month, day)
+    except ValueError:
+        return None
+
+
+def _parse_numbered_date(text: str, today: date) -> date | None:
+    """優先讀明確日曆。香港官網常見 23/01/2027、2027年1月23日／號。"""
+    ymd_zh = re.search(r"(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*[日號]?", text)
+    if ymd_zh:
+        return _safe_date(int(ymd_zh.group(1)), int(ymd_zh.group(2)), int(ymd_zh.group(3)))
+    md_zh = re.search(r"(\d{1,2})\s*月\s*(\d{1,2})\s*[日號]", text)
+    if md_zh:
+        month, day = int(md_zh.group(1)), int(md_zh.group(2))
+        parsed = _safe_date(today.year, month, day)
+        if parsed is None:
+            return None
+        if parsed < today:
+            parsed = _safe_date(today.year + 1, month, day)
+        return parsed
+    iso = re.search(r"\b(\d{4})[/-](\d{1,2})[/-](\d{1,2})\b", text)
+    if iso:
+        return _safe_date(int(iso.group(1)), int(iso.group(2)), int(iso.group(3)))
+    dmy = re.search(r"\b(\d{1,2})[/-](\d{1,2})[/-](\d{4})\b", text)
+    if dmy:
+        return _safe_date(int(dmy.group(3)), int(dmy.group(2)), int(dmy.group(1)))
+    return None
+
+
 def parse_fulfillment_date(quote: str, now: datetime | None = None) -> date | None:
     """從官網貨期句子抽出日期。解唔到就回 None。"""
     text = str(quote or "")
@@ -187,6 +217,9 @@ def parse_fulfillment_date(quote: str, now: datetime | None = None) -> date | No
     if moment.tzinfo is None:
         moment = moment.replace(tzinfo=HK_TZ)
     today = moment.astimezone(HK_TZ).date()
+    numbered = _parse_numbered_date(text, today)
+    if numbered is not None:
+        return numbered
     if re.search(r"今日|今天|即日|即時|\btoday\b", text, re.I):
         return today
     if re.search(r"明天|明日|\btomorrow\b", text, re.I):
@@ -198,21 +231,6 @@ def parse_fulfillment_date(quote: str, now: datetime | None = None) -> date | No
         target = _WEEKDAY_ZH[weekday.group(1)]
         delta = (target - today.weekday()) % 7
         return today + timedelta(days=delta)
-    numbered = re.search(r"(?:(\d{4})\s*年\s*)?(\d{1,2})\s*月\s*(\d{1,2})\s*日", text)
-    if numbered:
-        year_s, month_s, day_s = numbered.group(1), numbered.group(2), numbered.group(3)
-        month, day = int(month_s), int(day_s)
-        year = int(year_s) if year_s else today.year
-        try:
-            parsed = date(year, month, day)
-        except ValueError:
-            return None
-        if year_s is None and parsed < today:
-            try:
-                parsed = date(year + 1, month, day)
-            except ValueError:
-                return None
-        return parsed
     return None
 
 
@@ -235,8 +253,8 @@ def apply_soon_window(
         return STATUS_AVAILABLE, quote
     label = "可送" if mode == "delivery" else "可取"
     if parsed is None:
-        return STATUS_UNAVAILABLE, quote or f"貨期未明（唔當 7 日內{label}）"
-    return STATUS_UNAVAILABLE, quote or f"遲過 7 日（唔當即時{label}）"
+        return STATUS_UNAVAILABLE, quote or f"貨期未明（唔當 {days} 日內{label}）"
+    return STATUS_UNAVAILABLE, quote or f"遲過 {days} 日（唔當即時{label}）"
 
 
 def due_for_interval(cfg: dict[str, Any], state: dict[str, Any], moment: datetime | None = None) -> bool:
@@ -1197,14 +1215,19 @@ def run_self_test() -> int:
     check(parse_fulfillment_date("明天 — 免費", now) == now.date() + timedelta(days=1), "明天")
     check(parse_fulfillment_date("1 月 16 日 — 免費", now) == date(2027, 1, 16), "無年份嘅一月當明年")
     check(parse_fulfillment_date("10 月 28 日可取", now) == date(2026, 10, 28), "本月日期")
+    check(parse_fulfillment_date("周六 23/01/2027 — 免費", now) == date(2027, 1, 23), "DD/MM/YYYY 優先過星期")
+    check(parse_fulfillment_date("2027年1月23號", now) == date(2027, 1, 23), "年號格式")
+    check(parse_fulfillment_date("周六可取", now) == date(2026, 10, 31), "只有星期先當本週")
     soon_today, _ = apply_soon_window(STATUS_AVAILABLE, "今日可取", mode="pickup", cfg=cfg7, now=now)
     later, later_q = apply_soon_window(STATUS_AVAILABLE, "1 月 16 日 — 免費", mode="delivery", cfg=cfg7, now=now)
+    apple_jan, _ = apply_soon_window(STATUS_AVAILABLE, "周六 23/01/2027 — 免費", mode="delivery", cfg=cfg7, now=now)
     vague_del, _ = apply_soon_window(STATUS_AVAILABLE, "可送貨", mode="delivery", cfg=cfg7, now=now)
     vague_pick, _ = apply_soon_window(STATUS_AVAILABLE, "", mode="pickup", cfg=cfg7, now=now)
     week_pick, _ = apply_soon_window(STATUS_AVAILABLE, "10 月 30 日可取", mode="pickup", cfg=cfg7, now=now)
     late_pick, _ = apply_soon_window(STATUS_AVAILABLE, "11 月 20 日可取", mode="pickup", cfg=cfg7, now=now)
     check(soon_today == STATUS_AVAILABLE, "7 日內取貨當有貨")
     check(later == STATUS_UNAVAILABLE, "一月先送到當冇貨")
+    check(apple_jan == STATUS_UNAVAILABLE, "官網周六 23/01/2027 當冇貨")
     check("1 月 16 日" in later_q, "一月貨期句子要留低俾人睇")
     check(vague_del == STATUS_UNAVAILABLE, "送貨無日期當冇貨")
     check(vague_pick == STATUS_UNAVAILABLE, "取貨無日期當冇貨")
