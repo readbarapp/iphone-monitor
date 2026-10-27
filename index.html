@@ -114,12 +114,14 @@
       <div class="mt-6 grid lg:grid-cols-3 gap-4">
         <div class="lg:col-span-1 rounded-2xl bg-white/5 p-4 border border-white/10">
           <h3 class="font-medium">幾耐查一次</h3>
-          <p class="text-[11px] text-zinc-400 mt-1">儲存設定先會改排程同每日時段。設咗 15 分鐘，下面貨源板亦會跟住刷新。</p>
+          <p class="text-[11px] text-zinc-400 mt-1">公開倉唔計 2,000 分鐘。GitHub 鬧鐘<b>實際最快約 5 分鐘</b>；1–3 分鐘可以 set，但多數仍會被收成約 5 分鐘。儲存設定先會改排程。</p>
           <select id="intervalInput" class="field mt-3 w-full rounded-xl px-3 py-2 text-sm">
-            <option value="2">每 2 分鐘（開售衝刺，額度很兇）</option>
-            <option value="5">每 5 分鐘</option>
+            <option value="1">每 1 分鐘（設得最快；GitHub 多數仍約 5 分鐘先跑）</option>
+            <option value="2">每 2 分鐘（開售想快；實際多數約 5 分鐘）</option>
+            <option value="3">每 3 分鐘（開售；實際多數約 5 分鐘）</option>
+            <option value="5">每 5 分鐘（公開倉建議最快，GitHub 官方最短）</option>
             <option value="10">每 10 分鐘</option>
-            <option value="15">每 15 分鐘（建議日常）</option>
+            <option value="15">每 15 分鐘（想鬆啲／少打官網）</option>
             <option value="20">每 20 分鐘</option>
             <option value="30">每 30 分鐘</option>
             <option value="60">每 60 分鐘</option>
@@ -311,7 +313,7 @@
   <script>
     const FREE_MINUTES = 2000;
     const PAT_KEY = "iphone_monitor_pat";
-    const INTERVALS = [2, 5, 10, 15, 20, 30, 60];
+    const INTERVALS = [1, 2, 3, 5, 10, 15, 20, 30, 60];
     const CAPACITIES = ["256gb", "512gb", "1tb", "2tb"];
     const CAP_LABEL = { "256gb": "256GB", "512gb": "512GB", "1tb": "1TB", "2tb": "2TB" };
 
