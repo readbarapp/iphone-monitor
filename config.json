@@ -1,5 +1,5 @@
 {
-  "enabled": false,
+  "enabled": true,
   "soon_window_days": 7,
   "check_interval_minutes": 15,
   "fulfillment_modes": [
@@ -33,6 +33,34 @@
       "family": "iphone-duo",
       "name": "iPhone Duo 2TB 夜空色",
       "color": "nightsky",
+      "capacity": "2tb"
+    },
+    {
+      "part_number": "MK2D4ZA/A",
+      "family": "iphone-duo",
+      "name": "iPhone Duo 256GB 星光白",
+      "color": "starwhite",
+      "capacity": "256gb"
+    },
+    {
+      "part_number": "MK2F4ZA/A",
+      "family": "iphone-duo",
+      "name": "iPhone Duo 512GB 星光白",
+      "color": "starwhite",
+      "capacity": "512gb"
+    },
+    {
+      "part_number": "MK2H4ZA/A",
+      "family": "iphone-duo",
+      "name": "iPhone Duo 1TB 星光白",
+      "color": "starwhite",
+      "capacity": "1tb"
+    },
+    {
+      "part_number": "MK2K4ZA/A",
+      "family": "iphone-duo",
+      "name": "iPhone Duo 2TB 星光白",
+      "color": "starwhite",
       "capacity": "2tb"
     }
   ],
@@ -121,7 +149,35 @@
       "pickup:R485:MK2L4ZA/A": "unavailable",
       "pickup:R673:MK2L4ZA/A": "unavailable",
       "pickup:R610:MK2L4ZA/A": "unavailable",
-      "delivery:DELIVERY:MK2L4ZA/A": "unavailable"
+      "delivery:DELIVERY:MK2L4ZA/A": "unavailable",
+      "pickup:R428:MK2D4ZA/A": "unavailable",
+      "pickup:R409:MK2D4ZA/A": "unavailable",
+      "pickup:R499:MK2D4ZA/A": "unavailable",
+      "pickup:R485:MK2D4ZA/A": "unavailable",
+      "pickup:R673:MK2D4ZA/A": "unavailable",
+      "pickup:R610:MK2D4ZA/A": "unavailable",
+      "delivery:DELIVERY:MK2D4ZA/A": "unavailable",
+      "pickup:R428:MK2F4ZA/A": "unavailable",
+      "pickup:R409:MK2F4ZA/A": "unavailable",
+      "pickup:R499:MK2F4ZA/A": "unavailable",
+      "pickup:R485:MK2F4ZA/A": "unavailable",
+      "pickup:R673:MK2F4ZA/A": "unavailable",
+      "pickup:R610:MK2F4ZA/A": "unavailable",
+      "delivery:DELIVERY:MK2F4ZA/A": "unavailable",
+      "pickup:R428:MK2H4ZA/A": "unavailable",
+      "pickup:R409:MK2H4ZA/A": "unavailable",
+      "pickup:R499:MK2H4ZA/A": "unavailable",
+      "pickup:R485:MK2H4ZA/A": "unavailable",
+      "pickup:R673:MK2H4ZA/A": "unavailable",
+      "pickup:R610:MK2H4ZA/A": "unavailable",
+      "delivery:DELIVERY:MK2H4ZA/A": "unavailable",
+      "pickup:R428:MK2K4ZA/A": "unavailable",
+      "pickup:R409:MK2K4ZA/A": "unavailable",
+      "pickup:R499:MK2K4ZA/A": "unavailable",
+      "pickup:R485:MK2K4ZA/A": "unavailable",
+      "pickup:R673:MK2K4ZA/A": "unavailable",
+      "pickup:R610:MK2K4ZA/A": "unavailable",
+      "delivery:DELIVERY:MK2K4ZA/A": "unavailable"
     }
   },
   "notifications": {
