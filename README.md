@@ -61,6 +61,8 @@ GitHub → Settings → Developer settings → Personal access tokens → Fine-g
   - **Actions: Read and write**（觸發連線測試與儲存模擬狀態）
   - **Workflows: Read and write**（由控制台改監控頻率 cron）
   - **Secrets: Read and write**（可選，只在要覆寫通訊憑證時）
+  - Account permissions **Plan: Read**（可選。� **Secrets: Read and write**（可選，只在要覆寫通訊憑證時）
+  - Account permissions **Plan: Read**（可選。喺 token 頁面向落、Repository permissions 下面；Resource owner 要係你自己先見到。用來讀成個帳戶嘅 GitHub Billing）
 
 PAT **不要** commit 進倉庫。
 

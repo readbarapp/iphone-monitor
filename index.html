@@ -251,6 +251,7 @@
         <li>開啟 <a class="text-sky-400 hover:underline" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noreferrer">建立 Fine-grained token</a></li>
         <li>Repository access 只勾 <code>iphone-monitor</code></li>
         <li>Permissions：Contents、Actions、Workflows 都設 <b>Read and write</b>（Workflows 用來改 cron）</li>
+        <li>若要顯示整個 GitHub 帳戶用量：同一頁向下搵 <b>Account permissions</b>（唔係 Repository permissions）→ <b>Plan</b> 設 <b>Read</b> → 儲存。Resource owner 要係你自己嘅帳戶先見到呢一欄</li>
         <li>若要由控制台覆寫通訊 Secret，再加 Secrets <b>Read and write</b></li>
         <li>把 <code>github_pat_…</code> 貼入下面（唔好用 Telegram bot token）</li>
       </ol>
@@ -489,13 +490,8 @@
       return snapSoonWindow($("soonWindowInput")?.value || config?.soon_window_days || 7);
     }
 
-    function looksLater(quote) {
-      return /月|\d{4}|[/-]\d{1,2}[/-]/.test(String(quote || ""));
-    }
-
-    function statusLabel(status, quote) {
+    function statusLabel(status) {
       if (status === "available") return `有貨（${soonDays()} 日內）`;
-      if (status === "unavailable" && looksLater(quote)) return "稍後先有（唔通知）";
       if (status === "unavailable") return "冇貨";
       return "尚未查詢";
     }
@@ -564,8 +560,7 @@
               ${rows.map((r) => {
                 const rec = items[r.key] || {};
                 const st = rec.status;
-                const later = st === "unavailable" && looksLater(rec.quote);
-                const tone = st === "available" ? "text-emerald-300" : later ? "text-amber-200" : st === "unavailable" ? "text-rose-300" : "text-zinc-500";
+                const tone = st === "available" ? "text-emerald-300" : st === "unavailable" ? "text-rose-300" : "text-zinc-500";
                 const extra = rec.quote ? `<div class="text-[11px] text-zinc-500 truncate">${rec.quote}</div>` : "";
                 const when = rec.last_checked_at ? `<div class="text-[11px] text-zinc-600">${rec.last_checked_at}</div>` : "";
                 return `
@@ -574,7 +569,7 @@
                   <td class="py-2 pr-3">${r.mode}</td>
                   <td class="py-2 pr-3">${r.place}</td>
                   <td class="py-2">
-                    <span class="${tone} font-medium">${statusLabel(st, rec.quote)}</span>
+                    <span class="${tone} font-medium">${statusLabel(st)}</span>
                     ${extra}${when}
                   </td>
                 </tr>`;
