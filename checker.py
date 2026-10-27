@@ -1137,7 +1137,7 @@ def run_self_test() -> int:
     }
     catalog = load_json(CATALOG_PATH)
 
-    # 營業時間
+    # 每日監控時段
     inside = datetime(2026, 10, 26, 12, 0, tzinfo=HK_TZ)
     outside = datetime(2026, 10, 26, 23, 30, tzinfo=HK_TZ)
     check(within_business_hours(cfg, inside), "監控時段內應通過")
@@ -1252,7 +1252,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="套用模擬貨源：只有冇貨→有貨先發測試 Telegram",
     )
     parser.add_argument("--ignore-enabled", action="store_true", help="忽略 enabled 總開關")
-    parser.add_argument("--ignore-hours", action="store_true", help="忽略營業時間窗")
+    parser.add_argument("--ignore-hours", action="store_true", help="忽略每日監控時段")
     parser.add_argument("--ignore-interval", action="store_true", help="忽略監控頻率間隔")
     parser.add_argument("--no-delay", action="store_true", help="跳過隨機延遲")
     parser.add_argument("--self-test", action="store_true", help="執行不連網的邏輯測試")

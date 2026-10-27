@@ -127,7 +127,16 @@ python3 -m http.server 8080
    唔會優雅停。關「真實模式」都停唔到鬧鐘。要真正停燒分鐘：Actions → `iPhone HK Monitor` → Disable workflow。私人倉庫超額之後 GitHub 可能突然跑唔到，或者開始收費。本系統會喺估計用到 **1,800** 同 **2,000** 分鐘各發一次 Telegram 提醒。
 
 4. **公開倉係咪即使 1 分鐘查一次都唔計 2,000 分鐘？**  
-   **標準 GitHub-hosted runner（ubuntu-latest）喺公開倉係免費嘅**，唔會扣私人倉嗰 2,000 分鐘。每 1 分鐘跑一次都通常唔使錢。但仍然會打 Apple，太密可能被 541 攔截。如果之後改成私人倉，就會開始計嗰 2,000。更大／付費 runner 即使公開倉都會收費。真正已用量仍以 [GitHub Billing](https://github.com/settings/billing) 為準。
+   **標準 GitHub-hosted runner（ubuntu-latest）喺公開倉係免費嘅**，唔會扣私人倉嗰 2,000 分鐘。但 GitHub 鬧鐘**實際最快約 5 分鐘**；set 1–3 分鐘多數仍會被收成約 5 分鐘。太密仲會打爆 Apple（541）。如果之後改成私人倉，就會開始計嗰 2,000。更大／付費 runner 即使公開倉都會收費。
+
+5. **公開倉建議幾耐查一次？**  
+   **日常／開售都建議 5 分鐘**。呢個係 GitHub 官方最短、真係會跑到嘅間隔。想鬆啲用 10 或 15 分鐘，少啲機會被官網攔。
+
+6. **想比朋友一齊用？**  
+   - **只係想朋友都收到有貨 Telegram（最簡單）**：開一個 Telegram 群組，加朋友，再加你個 bot 入去。用群組嘅 Chat ID（多數係負數）填 `TELEGRAM_CHAT_ID`。兩個人收同一套通知，朋友唔使碰 GitHub。  
+   - **朋友想自己監第二款／另一套門市**：叫佢 fork 呢個 repo，自己開 GitHub Pages、自己整 Fine-grained PAT、自己喺 Secrets 填 Telegram。唔好把你嘅 PAT／bot token 傳畀人。  
+   - **朋友想一齊改你呢個控制台**：Repo → Settings → Collaborators 加佢。佢用自己嘅 PAT（要有呢個倉嘅寫入權）。大家共用一份 `config.json`，後儲存嘅會蓋過先儲存嘅。
+
 
 ---
 
@@ -162,7 +171,7 @@ python checker.py   # enabled=false 時應印出「真實模式為 OFF」
 
 ## 用量與 2,000 分鐘額度（必讀）
 
-workflow 預設 `*/2 * * * *`（每 2 分鐘）。
+公開倉建議 `*/5 * * * *`（每 5 分鐘）。GitHub 鬧鐘實際最快大約都係 5 分鐘。
 
 GitHub Actions **以整分鐘進位**。**公開倉**用標準 runner 通常唔計入 2,000。**私人倉**即使 `enabled=false`，只要 cron 響就會 checkout，通常仍計 **1 分鐘／次**。控制台「每日監控時段」儲存後會改 cron 小時欄，出咗時段鬧鐘唔響。
 
