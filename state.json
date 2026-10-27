@@ -1036,7 +1036,7 @@
     "warned": []
   },
   "loop": {
-    "alive": true,
+    "alive": false,
     "heartbeat_at": "2026-10-28T03:10:11+08:00",
     "interval_minutes": 1,
     "tick_count": 592,
@@ -1054,7 +1054,7 @@
       "2026-10-28T03:09:01+08:00",
       "2026-10-28T03:10:11+08:00"
     ],
-    "stopped": null,
-    "stopped_at": "2026-10-27T21:24:09+08:00"
+    "stopped": "timeout",
+    "stopped_at": "2026-10-28T03:11:15+08:00"
   }
 }
