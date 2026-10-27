@@ -1,5 +1,6 @@
 {
   "enabled": false,
+  "soon_window_days": 7,
   "check_interval_minutes": 15,
   "fulfillment_modes": [
     "pickup",
