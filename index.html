@@ -489,10 +489,13 @@
       return snapSoonWindow($("soonWindowInput")?.value || config?.soon_window_days || 7);
     }
 
+    function looksLater(quote) {
+      return /月|\d{4}|[/-]\d{1,2}[/-]/.test(String(quote || ""));
+    }
+
     function statusLabel(status, quote) {
-      const q = String(quote || "");
       if (status === "available") return `有貨（${soonDays()} 日內）`;
-      if (status === "unavailable" && /月/.test(q)) return "稍後先有（唔通知）";
+      if (status === "unavailable" && looksLater(quote)) return "稍後先有（唔通知）";
       if (status === "unavailable") return "冇貨";
       return "尚未查詢";
     }
@@ -561,7 +564,7 @@
               ${rows.map((r) => {
                 const rec = items[r.key] || {};
                 const st = rec.status;
-                const later = st === "unavailable" && /月/.test(String(rec.quote || ""));
+                const later = st === "unavailable" && looksLater(rec.quote);
                 const tone = st === "available" ? "text-emerald-300" : later ? "text-amber-200" : st === "unavailable" ? "text-rose-300" : "text-zinc-500";
                 const extra = rec.quote ? `<div class="text-[11px] text-zinc-500 truncate">${rec.quote}</div>` : "";
                 const when = rec.last_checked_at ? `<div class="text-[11px] text-zinc-600">${rec.last_checked_at}</div>` : "";
@@ -818,16 +821,27 @@
       const path = ".github/workflows/monitor.yml";
       const api = `/repos/${owner}/${repo}/contents/${path}`;
       const current = await ghApi(api + "?ref=" + encodeURIComponent(branch), "GET", null, pat);
-      const yaml = decodeB64(current.content);
+      const yaml = decodeB64(current.content || "");
       const cron = "*/" + minutes + " * * * *";
-      const next = yaml.replace(/cron:\s*["'][^"']+["']/, 'cron: "' + cron + '"');
-      if (next === yaml) throw new Error("workflow 找不到 cron 行，未改頻率");
-      await ghApi(api, "PUT", {
-        message: "chore: set monitor interval to every " + minutes + " minutes",
-        content: btoa(unescape(encodeURIComponent(next))),
-        branch,
-        sha: current.sha,
-      }, pat);
+      const cronRe = /cron:\s*["']([^"']+)["']/;
+      const match = yaml.match(cronRe);
+      if (!match) throw new Error("workflow 找不到 cron 行，未改頻率");
+      if (match[1] === cron) return { changed: false, minutes };
+      try {
+        await ghApi(api, "PUT", {
+          message: "chore: set monitor interval to every " + minutes + " minutes",
+          content: btoa(unescape(encodeURIComponent(yaml.replace(cronRe, 'cron: "' + cron + '"')))),
+          branch,
+          sha: current.sha,
+        }, pat);
+      } catch (err) {
+        const msg = String(err.message || err);
+        if (/403|Resource not accessible|workflow/i.test(msg)) {
+          throw new Error("改頻率需要 PAT 的 Workflows 寫入權限。而家頻率未改：" + msg);
+        }
+        throw err;
+      }
+      return { changed: true, minutes };
     }
 
     async function refreshSecretStatus() {
@@ -865,10 +879,12 @@
       );
       let cronNote = "";
       try {
-        await syncWorkflowCron(owner, repo, branch, pat, next.check_interval_minutes);
-        cronNote = "監控頻率已改為每 " + next.check_interval_minutes + " 分鐘。";
+        const cronResult = await syncWorkflowCron(owner, repo, branch, pat, next.check_interval_minutes);
+        cronNote = cronResult.changed
+          ? "監控頻率已改為每 " + cronResult.minutes + " 分鐘。"
+          : "監控頻率維持每 " + cronResult.minutes + " 分鐘。";
       } catch (err) {
-        cronNote = "config 已存，但改 cron 失敗（PAT 需要 Workflows 寫入）：" + err.message;
+        cronNote = "config 已存，但改 cron 失敗：" + err.message;
       }
       const filled = [
         ["TELEGRAM_BOT_TOKEN", $("tgToken").value.trim()],
