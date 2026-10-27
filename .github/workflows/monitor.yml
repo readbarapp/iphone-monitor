@@ -1,7 +1,8 @@
 # Apple 香港 iPhone 庫存監控
 # GitHub 嘅 schedule 鬧鐘最短約 5 分鐘，而且會遲、會漏。
-# 真正監測係 job 入面按 check_interval_minutes 循環查；
-# schedule 只負責：如果 loop 死咗，5 分鐘內再拉起。
+# 真正監測係 job 入面按 check_interval_minutes 循環查。
+# 單條 job 約 5.5 小時正常換班後，會即刻 workflow_dispatch 下一條。
+# schedule 只係後備：dispatch 失敗或者 loop 死咗，先靠鬧鐘再拉起。
 name: iPhone HK Monitor
 
 on:
@@ -24,13 +25,15 @@ on:
 
 permissions:
   contents: write
-  actions: read
+  actions: write
 
 jobs:
   check:
     name: Check availability
     runs-on: ubuntu-latest
     timeout-minutes: 360
+    outputs:
+      loop_reason: ${{ steps.loop.outputs.reason }}
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -138,6 +141,7 @@ jobs:
         run: python3 checker.py --loop-restart-check || true
 
       - name: Run checker loop
+        id: loop
         if: steps.already.outputs.skip != 'true' && steps.gate.outputs.loop == 'true'
         run: |
           git config user.name "github-actions[bot]"
@@ -173,8 +177,10 @@ jobs:
           done
           if [ "$STOPPED" = "disabled" ]; then
             python3 checker.py --loop-stopped disabled || true
+            echo "reason=disabled" >> "$GITHUB_OUTPUT"
           else
             python3 checker.py --loop-stopped timeout || true
+            echo "reason=timeout" >> "$GITHUB_OUTPUT"
           fi
           commit_state
 
@@ -227,3 +233,24 @@ jobs:
           fi
           git commit -m "chore: update inventory state"
           git push origin "HEAD:${GITHUB_REF_NAME}" || true
+
+  chain:
+    name: Start next loop immediately
+    needs: check
+    if: ${{ needs.check.outputs.loop_reason == 'timeout' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Dispatch next monitor loop
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BRANCH="${GITHUB_REF_NAME:-main}"
+          echo "Previous loop hit the 5.5h handoff. Dispatching the next loop on ${BRANCH}."
+          gh api --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "/repos/${GITHUB_REPOSITORY}/actions/workflows/monitor.yml/dispatches" \
+            -f "ref=${BRANCH}"
+          echo "Next loop dispatched."

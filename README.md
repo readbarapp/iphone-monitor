@@ -141,7 +141,7 @@ python3 -m http.server 8080
    - `state.json` 嘅 `loop.ticks` / `loop.tick_count` 都係同一份紀錄。
 
 7. **Loop 死咗會唔會 Telegram 我？**  
-   會。Job 失敗／被取消會即刻發「⚠️ 監測 loop 中斷」。如果 runner 無聲消失、心跳過期，5 分鐘內 watchdog 再拉起時都會再通知一次。正常跑滿約 5.5 小時自行換班、或者你關掉真實模式，**唔會**當死機嚟煩你。
+   會。Job 失敗／被取消會即刻發「⚠️ 監測 loop 中斷」。如果 runner 無聲消失、心跳過期，5 分鐘內 watchdog 再拉起時都會再通知一次。正常跑滿約 5.5 小時會**即刻再開下一條 job**（唔使等鬧鐘），或者你關掉真實模式，**唔會**當死機嚟煩你。鬧鐘只係後備。
 
 8. **公開倉建議幾耐查一次？**  
    開售用 1–3 分鐘；日常用 5 分鐘穩陣啲。想少打官網用 10 或 15 分鐘。
@@ -186,7 +186,7 @@ python checker.py   # enabled=false 時應印出「真實模式為 OFF」
 
 ## 用量與 2,000 分鐘額度（必讀）
 
-監測 loop 按控制台「幾耐查一次」喺 runner 入面 sleep；GitHub `schedule` 只係每 5 分鐘嘅 watchdog（唔好再把 cron 改成 1 分鐘）。
+監測 loop 按控制台「幾耐查一次」喺 runner 入面 sleep。單條 job 約 5.5 小時換班後會即刻自己開下一條；GitHub `schedule` 只係每 5 分鐘後備 watchdog（唔好再把 cron 改成 1 分鐘）。
 
 GitHub Actions **以整分鐘進位**。**公開倉**用標準 runner 通常唔計入 2,000。**私人倉**即使 `enabled=false`，只要 cron 響就會 checkout，通常仍計 **1 分鐘／次**。控制台「每日監控時段」儲存後會改 cron 小時欄，出咗時段鬧鐘唔響。
 
