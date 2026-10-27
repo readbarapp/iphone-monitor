@@ -676,11 +676,11 @@
     }
   },
   "last_run": {
-    "status": "ok",
-    "message": "真實模式：查詢 56 組，新轉有貨 0",
+    "status": "disabled",
+    "message": "真實模式為 OFF（enabled=false），安全退出，不查詢 Apple API。",
     "notified": 0,
-    "checked": 56,
-    "at": "2026-10-27T13:42:11+08:00"
+    "checked": 0,
+    "at": "2026-10-27T14:14:32+08:00"
   },
   "simulation": {
     "items": {
@@ -1032,7 +1032,7 @@
   },
   "usage": {
     "month": "2026-10",
-    "estimated_minutes": 3,
+    "estimated_minutes": 4,
     "warned": []
   }
 }
