@@ -7,8 +7,8 @@ Apple 香港官網 iPhone 庫存監控器。
 - Zero-Trust：Telegram 憑證只從環境變數（GitHub Secrets）讀取，
   絕不寫入 config.json。
 - 真實模式：config.enabled == false 時安全退出（exit 0），不打 Apple API。
-  開啟後只監測 iPhone Duo；只有今個星期內可取／可送先當有貨。
-  一月先送到嘅預訂當冇貨，唔發通知。
+  開啟後只監測 iPhone Duo。送貨／取貨同一規則：
+  7 日內可送到或可取貨先當有貨，其他一律冇貨。
 - 模擬模式：--apply-simulation 讀每格獨立貨源，只寫入 simulation 狀態，
   唔問 Apple；任意一格冇貨 → 有貨先發測試結果 Telegram。
 - 雙模式：店內取貨（pickup）與送貨上門（delivery）。
@@ -224,20 +224,19 @@ def apply_soon_window(
     cfg: dict[str, Any] | None = None,
     now: datetime | None = None,
 ) -> tuple[str, str]:
-    """只有今個星期內可取／可送先當有貨。一月先送到當冇貨。"""
+    """送貨／取貨同一規則：7 日內先當有貨，其他一律冇貨。"""
     if status != STATUS_AVAILABLE:
         return status, quote
     moment = now or now_hk()
     days = soon_window_days(cfg)
     today = (moment if moment.tzinfo else moment.replace(tzinfo=HK_TZ)).astimezone(HK_TZ).date()
     parsed = parse_fulfillment_date(quote, moment)
-    if parsed is not None:
-        if today <= parsed <= today + timedelta(days=days):
-            return STATUS_AVAILABLE, quote
-        return STATUS_UNAVAILABLE, quote or "貨期超過一個星期（唔當即時）"
-    if mode == "pickup":
+    if parsed is not None and today <= parsed <= today + timedelta(days=days):
         return STATUS_AVAILABLE, quote
-    return STATUS_UNAVAILABLE, quote or "貨期未明（唔當即時）"
+    label = "可送" if mode == "delivery" else "可取"
+    if parsed is None:
+        return STATUS_UNAVAILABLE, quote or f"貨期未明（唔當 7 日內{label}）"
+    return STATUS_UNAVAILABLE, quote or f"遲過 7 日（唔當即時{label}）"
 
 
 def due_for_interval(cfg: dict[str, Any], state: dict[str, Any], moment: datetime | None = None) -> bool:
@@ -677,7 +676,7 @@ def format_message(hits: list[AvailabilityHit]) -> str:
     lines = [
         "🍎 Apple 香港有貨通知",
         "",
-        f"共 {len(hits)} 項今個星期內可取／可送（由「稍後／冇貨」轉為即時有貨）：",
+        f"共 {len(hits)} 項 7 日內可取／可送（由「冇貨」轉為有貨）：",
         "",
     ]
     lines.extend(_hit_lines(hits))
@@ -1202,11 +1201,15 @@ def run_self_test() -> int:
     later, later_q = apply_soon_window(STATUS_AVAILABLE, "1 月 16 日 — 免費", mode="delivery", cfg=cfg7, now=now)
     vague_del, _ = apply_soon_window(STATUS_AVAILABLE, "可送貨", mode="delivery", cfg=cfg7, now=now)
     vague_pick, _ = apply_soon_window(STATUS_AVAILABLE, "", mode="pickup", cfg=cfg7, now=now)
-    check(soon_today == STATUS_AVAILABLE, "今個星期內取貨當有貨")
+    week_pick, _ = apply_soon_window(STATUS_AVAILABLE, "10 月 30 日可取", mode="pickup", cfg=cfg7, now=now)
+    late_pick, _ = apply_soon_window(STATUS_AVAILABLE, "11 月 20 日可取", mode="pickup", cfg=cfg7, now=now)
+    check(soon_today == STATUS_AVAILABLE, "7 日內取貨當有貨")
     check(later == STATUS_UNAVAILABLE, "一月先送到當冇貨")
     check("1 月 16 日" in later_q, "一月貨期句子要留低俾人睇")
-    check(vague_del == STATUS_UNAVAILABLE, "送貨無日期唔當即時")
-    check(vague_pick == STATUS_AVAILABLE, "門市顯示有貨但無日期，當可即取")
+    check(vague_del == STATUS_UNAVAILABLE, "送貨無日期當冇貨")
+    check(vague_pick == STATUS_UNAVAILABLE, "取貨無日期當冇貨")
+    check(week_pick == STATUS_AVAILABLE, "7 日內門市取貨當有貨")
+    check(late_pick == STATUS_UNAVAILABLE, "遲過 7 日門市取貨當冇貨")
 
     from usage import run_self_test as usage_self_test
 
