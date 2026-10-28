@@ -2,7 +2,7 @@
 
 企業級、Zero-Trust 的香港官網庫存監控系統：GitHub Actions 定時查詢 + GitHub Pages 控制台 + Telegram 智慧聚合通知。
 
-控制台分成兩塊：**模擬模式**同 **真實模式** 都預設收起，需要時先展開。模擬：每格自己揀有貨／冇貨，儲存時只有冇貨→有貨先發測試 Telegram。真實：打開開關之後先問 Apple 官網，監測清單上嘅型號。
+控制台各區塊（模擬、真實、型號、門市、預覽、優先級、PAT）都預設收起，需要時先展開。頁底儲存列常開。模擬：每格自己揀有貨／冇貨，儲存時只有冇貨→有貨先發測試 Telegram。真實：打開開關之後先問 Apple 官網。
 
 ---
 
@@ -12,7 +12,7 @@
 2. 同時支援 **門市取貨（Pick-up）** 與 **送貨上門（Delivery）**。
 3. 只在狀態從冇貨變成有貨時通知；同一輪多筆有貨會**打包成 1 條訊息**，並依優先級排序。
 4. 訊息標註通路，並附上 [直達結帳連結](https://www.apple.com/hk-zh/shop/buy-iphone)。
-5. 控制台可開關真實模式、改模擬貨源、估 GitHub Actions 用量，並用 GitHub REST API 回寫 `config.json`。
+5. 控制台可開關真實模式、改模擬貨源，並用 GitHub REST API 回寫 `config.json`。各區塊預設收起，有需要先展開。頁底儲存列常開。
 
 ### 架構（Zero-Trust）
 
@@ -61,7 +61,6 @@ GitHub → Settings → Developer settings → Personal access tokens → Fine-g
   - **Actions: Read and write**（觸發連線測試與儲存模擬狀態）
   - **Workflows: Read and write**（由控制台改監控頻率 cron）
   - **Secrets: Read and write**（可選，只在要覆寫通訊憑證時）
-  - Account permissions **Plan: Read**（可選，但 GitHub Billing usage API 官方話唔支援 Fine-grained PAT，多數仍然讀唔到帳戶總用量）
 
 PAT **不要** commit 進倉庫。
 
@@ -112,8 +111,7 @@ python3 -m http.server 8080
 | 測試 Telegram 連線 | `workflow_dispatch` `test_notify` | 只發連線短訊，**唔會**扮 iPhone 有貨 |
 | 儲存模擬狀態 | `workflow_dispatch` `apply_simulation` | 套用每格模擬貨源，有補貨先發測試 Telegram |
 | 儲存設定 | GitHub Contents API | 更新真實模式開關、頻率、監測清單 |
-| 本月 GitHub 用量 | GitHub Actions API | 控制台左邊顯示呢個監控倉本月真實跑咗幾多次。帳戶 Billing 總用量 Fine-grained PAT 通常讀唔到 |
-| 用量提醒 | `state.json` `usage` | 每次排程約 +1 分鐘；到 1,800 同 2,000 發 Telegram |
+| 用量提醒 | `state.json` `usage` | 私人倉先有意義：到 1,800 同 2,000 發 Telegram。公開倉標準 runner 通常免費，控制台已唔再顯示用量 |
 
 ---
 
@@ -217,7 +215,6 @@ GitHub Actions **以整分鐘進位**。**公開倉**用標準 runner 通常唔�
 - 平時到 Actions 頁 **Disable** `iPhone HK Monitor`，開售當日再 Enable。
 - 總開關只適合「開售日臨時暫停」。要省私人倉分鐘，改「每日監控時段」或到 Actions 頁 Disable workflow。
 - 頻率同每日時段：喺控制台改完撳「儲存設定」，會一齊改 `.github/workflows/monitor.yml` 的 cron。
-- 控制台用量面板會讀呢個監控倉本月 Actions 真實跑次（唔再係「跑滿 30 日」預估）。
 
 ---
 
