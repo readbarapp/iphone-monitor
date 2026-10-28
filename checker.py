@@ -69,7 +69,6 @@ REQUEST_HEADERS = {
 
 HK_TZ = ZoneInfo("Asia/Hong_Kong")
 FREE_MINUTES = 2000
-DUO_FAMILY = "iphone-duo"
 STATUS_AVAILABLE = "available"
 STATUS_UNAVAILABLE = "unavailable"
 STATUS_UNKNOWN = "unknown"
@@ -383,6 +382,30 @@ def catalog_index(catalog: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {p["part"]: p for p in catalog.get("products") or [] if p.get("part")}
 
 
+def merge_custom_catalog(cfg: dict[str, Any], catalog: dict[str, Any]) -> dict[str, Any]:
+    """把控制台自訂門市併入 catalog，日後新店唔使改 catalog.json。"""
+    extras = cfg.get("custom_stores") or []
+    if not extras:
+        return catalog
+    merged = dict(catalog)
+    stores = list(catalog.get("stores") or [])
+    seen = {str(s.get("id") or "") for s in stores}
+    for raw in extras:
+        if not isinstance(raw, dict):
+            continue
+        sid = str(raw.get("id") or "").strip().upper()
+        if not sid or sid in seen:
+            continue
+        stores.append({
+            "id": sid,
+            "name_zh": str(raw.get("name_zh") or raw.get("name") or sid),
+            "name": str(raw.get("name") or raw.get("name_zh") or sid),
+        })
+        seen.add(sid)
+    merged["stores"] = stores
+    return merged
+
+
 def store_label(catalog: dict[str, Any], store_id: str) -> str:
     for store in catalog.get("stores") or []:
         if store.get("id") == store_id:
@@ -409,11 +432,8 @@ def resolve_watch_list(cfg: dict[str, Any], catalog: dict[str, Any]) -> list[Wat
             item.family = str(meta.get("family") or "")
         if not item.color:
             item.color = str(meta.get("color") or "")
-        family = item.family or str(meta.get("family") or "")
-        if family != DUO_FAMILY:
-            LOGGER.info("略過非 iPhone Duo 型號：%s", item.part_number)
-            continue
-        item.family = DUO_FAMILY
+        if not item.family:
+            item.family = str(meta.get("family") or "custom")
         seen.add(item.part_number)
         items.append(item)
     return items
@@ -1023,7 +1043,9 @@ def apply_simulation(
 # ---------------------------------------------------------------------------
 def run(args: argparse.Namespace) -> int:
     cfg = load_json(CONFIG_PATH)
-    catalog = load_json(CATALOG_PATH, fallback={"stores": [], "products": []})
+    catalog = merge_custom_catalog(
+        cfg, load_json(CATALOG_PATH, fallback={"stores": [], "products": []})
+    )
     state = load_json(
         STATE_PATH,
         fallback={"updated_at": None, "schema_version": 1, "items": {}, "last_run": {}},
@@ -1302,6 +1324,19 @@ def run_self_test() -> int:
     check(len(two) == 1 and two[0].store_id == "R409", "另一格冇貨→有貨才再通知")
     sim_text = format_simulation_message(one)
     check("模擬模式測試結果" in sim_text and "唔代表官網真係有貨" in sim_text, "測試結果訊息標明係模擬")
+    extra_cfg = json.loads(json.dumps(cfg))
+    extra_cfg["models"] = [{"part_number": "FAKE1ZA/A", "name": "未來機", "family": "custom"}]
+    extra_cfg["stores"] = ["R999"]
+    extra_cfg["custom_stores"] = [{"id": "R999", "name_zh": "未來店"}]
+    extra_cfg["fulfillment_modes"] = ["pickup"]
+    extra_watch = resolve_watch_list(extra_cfg, catalog)
+    check(len(extra_watch) == 1 and extra_watch[0].part_number == "FAKE1ZA/A", "自訂 SKU 應納入監測")
+    extra_cat = merge_custom_catalog(extra_cfg, catalog)
+    extra_hits = mock_hits(extra_cfg, extra_watch, extra_cat, default_status=STATUS_UNAVAILABLE)
+    check(
+        len(extra_hits) == 1 and extra_hits[0].store_id == "R999" and extra_hits[0].store_name == "未來店",
+        "自訂門市應納入監測",
+    )
     check("🍎" not in sim_text, "測試結果唔好同真實補貨標題混淆")
 
     now = datetime(2026, 10, 27, 15, 0, tzinfo=HK_TZ)  # 星期二

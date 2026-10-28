@@ -2,13 +2,13 @@
 
 企業級、Zero-Trust 的香港官網庫存監控系統：GitHub Actions 定時查詢 + GitHub Pages 控制台 + Telegram 智慧聚合通知。
 
-控制台分成兩塊：**模擬模式**（預設收起；展開後每格自己揀有貨／冇貨，儲存時只有冇貨→有貨先發測試 Telegram）同 **真實模式**（打開之後先問 Apple 官網，只盯 iPhone Duo）。
+控制台分成兩塊：**模擬模式**（預設收起；展開後每格自己揀有貨／冇貨，儲存時只有冇貨→有貨先發測試 Telegram）同 **真實模式**（打開之後先問 Apple 官網，監測清單上嘅型號）。
 
 ---
 
 ## 系統做什麼
 
-1. 依 `config.json` 只監測 **iPhone Duo**（香港 SKU，後綴 `ZA/A`）。
+1. 依 `config.json` 監測清單上嘅型號。已內建 **iPhone Duo**（香港 SKU，後綴 `ZA/A`）；日後新品可喺控制台貼官網 SKU／門市 code，唔使改程式。
 2. 同時支援 **門市取貨（Pick-up）** 與 **送貨上門（Delivery）**。
 3. 只在狀態從冇貨變成有貨時通知；同一輪多筆有貨會**打包成 1 條訊息**，並依優先級排序。
 4. 訊息標註通路，並附上 [直達結帳連結](https://www.apple.com/hk-zh/shop/buy-iphone)。
@@ -86,8 +86,8 @@ python3 -m http.server 8080
 ### 5. 在控制台完成設定
 
 1. 填 Owner / Repo / PAT。
-2. 選擇型號、顏色、容量，按「加入監控」。
-3. 多選門市，調整優先級。
+2. 選擇型號、顏色、容量，按「加入監控」。新品未入內建清單時，喺「加自訂型號」貼官網 SKU（例如 `MK2J4ZA/A`）。
+3. 多選門市，調整優先級。新店未入內建清單時，喺「加自訂門市」貼店號（例如 `R428`）。下面「預覽監測 code」可以即時打開產品頁、取貨 JSON、送貨 JSON。
 4. 模擬模式：每格揀有貨／冇貨，撳 **儲存模擬狀態**（只有冇貨→有貨先收到測試 Telegram）。
 5. 真實模式：打開開關，按 **儲存設定**，再到 Actions 確認 `iPhone HK Monitor` workflow 為 Enable。
 
@@ -97,17 +97,18 @@ python3 -m http.server 8080
 
 | 元件 | 寫入欄位 | 作用 |
 | --- | --- | --- |
-| 真實模式 | `enabled` | `false` 時不查 Apple。打開後只盯 Duo |
+| 真實模式 | `enabled` | `false` 時不查 Apple。打開後查監測清單上嘅型號 |
 | 幾耐之內先當有貨 | `soon_window_days` | 真實模式左邊下拉，預設 7 日。送貨／取貨都係：呢個日數內可送或可取先當有貨，其他當冇貨。要撳「儲存設定」先生效 |
 | 模擬貨源 | `simulation.statuses` | 每格獨立有貨／冇貨。儲存時只有冇貨→有貨發測試訊息 |
 | 取貨模式 | `fulfillment_modes` | `pickup`、`delivery` 可並存 |
-| 型號下拉 | `models[]` | 只保留 iPhone Duo |
-| 門市多選 | `stores` + `priority.stores` | 六間香港 Apple Store |
+| 型號下拉 | `models[]` | 內建 iPhone Duo；亦可加任意官網 SKU |
+| 自訂型號／門市 | `models[]` + `custom_stores` + `stores` | 控制台貼 SKU 或 `R` 店號；下面有官網預覽連結 |
+| 門市多選 | `stores` + `priority.stores` | 六間香港 Apple Store，可再加店號 |
 | 優先級 | `priority` | 門市權重 ×10000 + 容量 ×100 + 通路 |
 | 監控頻率 | `check_interval_minutes` | 儲存後由 job 內循環按呢個間隔查；真實模式貨源板會自動刷新 |
 | 每日監控時段 | `business_hours` + watchdog cron 小時欄 | 你自己定香港時間幾點開始、幾點完。Watchdog 只喺呢段時間拉起 loop |
 | 查貨紀錄 | `state.json` `loop` | 每次查貨寫入時間；控制台只顯示最近 5 轉，連續次數會一直累加 |
-| 最近一次官網貨源 | `state.json` `items` | 上次問 Apple 時，每部 Duo × 門市／送貨嘅有貨情況 |
+| 最近一次官網貨源 | `state.json` `items` | 上次問 Apple 時，每部監測機 × 門市／送貨嘅有貨情況 |
 | 測試 Telegram 連線 | `workflow_dispatch` `test_notify` | 只發連線短訊，**唔會**扮 iPhone 有貨 |
 | 儲存模擬狀態 | `workflow_dispatch` `apply_simulation` | 套用每格模擬貨源，有補貨先發測試 Telegram |
 | 儲存設定 | GitHub Contents API | 更新真實模式開關、頻率、監測清單 |
@@ -180,7 +181,19 @@ python checker.py --apply-simulation
 python checker.py   # enabled=false 時應印出「真實模式為 OFF」
 ```
 
-真實模式：控制台打開開關 → **儲存設定** → 系統即刻查一次 Apple，之後按你設嘅頻率更新「最近一次官網貨源」。任何 Duo 由冇貨變有貨就發 🍎 通知。
+真實模式：控制台打開開關 → **儲存設定** → 系統即刻查一次 Apple，之後按你設嘅頻率更新「最近一次官網貨源」。監測清單上任何型號由冇貨變有貨就發 🍎 通知。
+
+---
+
+## 日後新品／新門市點加
+
+唔使改 `catalog.json` 或重新部署程式。控制台「監測邊款 iPhone」同「門市多選」下面有自訂欄：
+
+1. **型號監測 code**：去 [香港官網買 iPhone](https://www.apple.com/hk-zh/shop/buy-iphone) 揀顏色容量，產品頁網址尾段就係 SKU，例如 `https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A` 嘅 `MK2J4ZA/A`。貼入「SKU／監測 code」，可選填顯示名稱，撳「加入呢個 SKU」，再 **儲存設定**。
+2. **門市監測 code**：撳控制台「預覽監測 code」嘅取貨 JSON，入面每間店有 `storeNumber`（香港而家係 `R428`、`R409` 呢類）。貼入「門市 code」，可選填名稱，撳「加入呢間門市」，再 **儲存設定**。
+3. 下面四條連結會跟住你喺 SKU 欄打嘅字更新，方便核對產品頁、取貨 JSON、送貨 JSON。
+
+`checker.py` 唔再略過非 Duo 型號；自訂 SKU 同店號會寫入 `config.json` 嘅 `models`／`stores`／`custom_stores`。
 
 ---
 
