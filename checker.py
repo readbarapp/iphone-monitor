@@ -127,13 +127,60 @@ def iso_now() -> str:
     return now_hk().isoformat(timespec="seconds")
 
 
+_ISO_TS = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
+
+
+def resolve_conflict_text(text: str) -> str:
+    """拆 git 衝突標記。嵌套 3-way 會由最內層拆起，兩邊揀含最新時間嘅一邊。"""
+    if "<<<<<<<" not in text:
+        return text
+
+    def newest_side(left: str, right: str) -> str:
+        times = _ISO_TS.findall(left) + _ISO_TS.findall(right)
+        if not times:
+            return right if len(right) >= len(left) else left
+        latest = max(times)
+        if latest in right and latest not in left:
+            return right
+        if latest in left and latest not in right:
+            return left
+        return right if len(right) >= len(left) else left
+
+    changed = True
+    while changed and "<<<<<<<" in text:
+        changed = False
+        lines = text.splitlines(keepends=True)
+        start = mid = None
+        for i, line in enumerate(lines):
+            if line.startswith("<<<<<<<"):
+                start = i
+                mid = None
+            elif line.startswith("=======") and start is not None and mid is None:
+                mid = i
+            elif line.startswith(">>>>>>>") and start is not None and mid is not None:
+                left = "".join(lines[start + 1 : mid])
+                right = "".join(lines[mid + 1 : i])
+                chosen = newest_side(left, right)
+                lines[start : i + 1] = [chosen] if chosen.endswith("\n") or not chosen else [chosen + "\n"]
+                text = "".join(lines)
+                changed = True
+                break
+    if "<<<<<<<" in text or ">>>>>>>" in text:
+        raise ValueError("無法自動拆 git 衝突標記")
+    return text
+
+
 def load_json(path: Path, fallback: dict[str, Any] | None = None) -> dict[str, Any]:
     if not path.exists():
         if fallback is not None:
             return json.loads(json.dumps(fallback))
         raise FileNotFoundError(f"找不到檔案：{path}")
-    with path.open("r", encoding="utf-8") as fh:
-        data = json.load(fh)
+    raw = path.read_text(encoding="utf-8")
+    if "<<<<<<<" in raw or ">>>>>>>" in raw:
+        LOGGER.warning("%s 含 git 衝突標記，自動拆開後再讀", path.name)
+        raw = resolve_conflict_text(raw)
+        path.write_text(raw, encoding="utf-8")
+    data = json.loads(raw)
     if not isinstance(data, dict):
         raise ValueError(f"{path.name} 必須是 JSON object")
     return data
@@ -1304,6 +1351,17 @@ def run_self_test() -> int:
     check("Telegram 連線測試" in ping, "連線測試標題正確")
     check("唔代表任何 iPhone 有貨" in ping, "連線測試聲明唔係補貨")
     check("直達結帳" not in ping and "有貨通知" not in ping, "連線測試不含補貨版面")
+
+    conflicted = (
+        '{\n<<<<<<< HEAD\n<<<<<<< HEAD\n  "t": "2026-10-28T09:47:00+08:00"\n'
+        "=======\n"
+        '  "t": "2026-10-28T09:48:00+08:00"\n'
+        ">>>>>>> a\n=======\n"
+        '  "t": "2026-10-28T09:49:00+08:00"\n'
+        ">>>>>>> b\n}\n"
+    )
+    healed = json.loads(resolve_conflict_text(conflicted))
+    check(healed.get("t") == "2026-10-28T09:49:00+08:00", "衝突標記應揀最新時間")
 
     duo_cfg = json.loads(json.dumps(cfg))
     duo_cfg["models"] = [cfg["models"][0]]

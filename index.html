@@ -457,6 +457,7 @@
     let catalogStoreIds = new Set((FALLBACK_CATALOG.stores || []).map((s) => s.id));
     let config = null;
     let latestState = { items: {}, simulation: {} };
+    let latestStateError = "";
     let liveTimer = null;
 
     const $ = (id) => document.getElementById(id);
@@ -959,6 +960,22 @@
       renderLiveBoard();
     }
 
+    function liveStateSummary(state) {
+      if (latestStateError) return latestStateError;
+      const loop = (state && state.loop) || {};
+      const run = (state && state.last_run) || {};
+      const items = Object.values((state && state.items) || {});
+      if (!items.length && !loop.tick_count && !(loop.ticks || []).length && !run.at) {
+        return "";
+      }
+      const up = items.filter((i) => i && i.status === "available").length;
+      const ticks = loop.ticks || [];
+      const last = ticks.length ? ticks[ticks.length - 1] : (run.at || "");
+      const n = loop.tick_count || ticks.length || 0;
+      const alive = loop.alive ? "監測中" : (loop.stopped ? "監測已停" : "監測");
+      return `${alive} · 最近 ${last || "—"} · 已連續 ${n} 次 · 有貨 ${up}／${items.length}`;
+    }
+
     function updatePill() {
       const on = $("enabledToggle") ? isOn($("enabledToggle")) : false;
       const pill = $("statusPill");
@@ -966,6 +983,7 @@
       const headerHint = $("liveToggleHint");
       const badge = $("liveSectionBadge");
       const open = $("liveToggle")?.getAttribute("aria-expanded") === "true";
+      const summary = liveStateSummary(latestState);
       if (!on) {
         if (pill) {
           pill.textContent = "真實模式 OFF";
@@ -988,13 +1006,17 @@
         }
       }
       if (headerHint) {
-        headerHint.textContent = open
-          ? (on
+        if (summary && !open) {
+          headerHint.textContent = summary + " · 展開睇完整貨源同設定。";
+        } else if (open) {
+          headerHint.textContent = on
             ? `而家 ON。${soonDays()} 日內可送或可取先 Telegram。`
-            : `而家 OFF。展開後可以改頻率、時段同「幾耐之內先當有貨」。`)
-          : (on
+            : `而家 OFF。展開後可以改頻率、時段同「幾耐之內先當有貨」。`;
+        } else {
+          headerHint.textContent = on
             ? `而家 ON · ${soonDays()} 日窗。要改設定或睇貨源先展開。`
-            : `而家 OFF · 預設收起。要改頻率、時段或睇貨源先展開。`);
+            : `而家 OFF · 預設收起。要改頻率、時段或睇貨源先展開。`;
+        }
       }
     }
 
@@ -1310,6 +1332,7 @@
 
     async function loadState() {
       try {
+        latestStateError = "";
         try {
           latestState = await loadStateFromGithub();
         } catch {
@@ -1348,8 +1371,13 @@
             : "尚未儲存過模擬狀態。";
         }
         renderLiveBoard();
-      } catch {
-        if ($("lastRunText")) $("lastRunText").textContent = "讀不到 state.json（本地預覽或尚未執行過監控）。";
+        updatePill();
+      } catch (err) {
+        latestStateError = "讀唔到查貨紀錄（state.json 損壞或未更新）。展開真實模式再撳重新載入。";
+        if ($("lastRunText")) {
+          $("lastRunText").textContent = "讀不到 state.json：" + (err && err.message ? err.message : "檔案可能有 git 衝突標記");
+        }
+        updatePill();
       }
     }
 
