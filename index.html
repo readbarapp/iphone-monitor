@@ -207,7 +207,7 @@
           </div>
           <div class="mt-3 rounded-xl bg-black/30 border border-white/10 p-3 min-w-0">
             <p class="text-xs font-medium text-zinc-200">查貨紀錄</p>
-            <p class="text-[11px] text-zinc-500 mt-1 break-phone">只顯示最近 5 轉查官網嘅香港時間。連續次數會一直累加。填咗 PAT 會每 15 秒直接讀 GitHub。兩筆相差應約等於你設嘅分鐘；loop 死會 Telegram 你。</p>
+            <p class="text-[11px] text-zinc-500 mt-1 break-phone">只顯示最近 5 轉查官網嘅香港時間。連續次數會一直累加。每 15 秒直接讀 GitHub 最新 state.json，唔使等 Pages。兩筆相差應約等於你設嘅間隔；loop 死會 Telegram 你。</p>
             <p id="loopTicks" class="mt-2 text-[11px] text-zinc-300 leading-relaxed whitespace-pre-wrap break-all font-mono"></p>
           </div>
           <div id="liveBoard" class="mt-4"></div>
@@ -487,6 +487,14 @@
       const res = await fetch(path, { cache: "no-store" });
       if (!res.ok) throw new Error(path + " HTTP " + res.status);
       return res.json();
+    }
+
+    function repoRef() {
+      const detected = detectRepo();
+      const owner = ($("ghOwner") && $("ghOwner").value.trim()) || (config && config.github && config.github.owner) || detected.owner || "";
+      const repo = ($("ghRepo") && $("ghRepo").value.trim()) || (config && config.github && config.github.repo) || detected.repo || "";
+      const branch = ($("ghBranch") && $("ghBranch").value.trim()) || (config && config.github && config.github.branch) || "main";
+      return { owner, repo, branch };
     }
 
     function productsOf(family) {
@@ -1308,10 +1316,8 @@
     }
 
     async function loadStateFromGithub() {
-      const owner = $("ghOwner")?.value.trim();
-      const repo = $("ghRepo")?.value.trim();
+      const { owner, repo, branch } = repoRef();
       const pat = $("ghPat")?.value.trim();
-      const branch = $("ghBranch")?.value.trim() || "main";
       if (!owner || !repo || !pat) return null;
       const file = await ghApi(
         `/repos/${owner}/${repo}/contents/state.json?ref=${encodeURIComponent(branch)}`,
@@ -1322,13 +1328,34 @@
       return JSON.parse(decodeB64(file.content || ""));
     }
 
+    async function loadStateFromPublicGithub() {
+      const { owner, repo, branch } = repoRef();
+      if (!owner || !repo) return null;
+      const url = `https://api.github.com/repos/${owner}/${repo}/contents/state.json?ref=${encodeURIComponent(branch)}`;
+      const res = await fetch(url, {
+        cache: "no-store",
+        headers: { Accept: "application/vnd.github.raw+json" },
+      });
+      if (!res.ok) throw new Error("GitHub state.json HTTP " + res.status);
+      return res.json();
+    }
+
+    async function loadStateFromRawGithub() {
+      const { owner, repo, branch } = repoRef();
+      if (!owner || !repo) return null;
+      const url = `https://raw.githubusercontent.com/${owner}/${repo}/${encodeURIComponent(branch)}/state.json?t=${Date.now()}`;
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) throw new Error("GitHub raw state.json HTTP " + res.status);
+      return res.json();
+    }
+
     function renderLoopTicks(state) {
       const el = $("loopTicks");
       if (!el) return;
       const loop = (state && state.loop) || {};
       const ticks = (loop.ticks || []).slice(-5);
       if (!ticks.length) {
-        el.textContent = "尚未有查貨紀錄。真實模式 ON 並儲存後，呢度會列出最近 5 轉。填咗 PAT 會直接讀 GitHub，唔使等 Pages。";
+        el.textContent = "尚未有查貨紀錄。真實模式 ON 並儲存後，呢度會列出最近 5 轉。紀錄直接讀 GitHub，唔使等 Pages。";
         return;
       }
       const intervalSec = Number(loop.interval_seconds) || (Number(loop.interval_minutes) ? Number(loop.interval_minutes) * 60 : 0);
@@ -1353,17 +1380,39 @@
     async function loadState() {
       try {
         latestStateError = "";
+        latestState = null;
+        let stateSource = "";
         try {
           latestState = await loadStateFromGithub();
+          if (latestState) stateSource = "即時 GitHub";
         } catch {
           latestState = null;
         }
-        if (!latestState) latestState = await loadJSON("state.json");
+        if (!latestState) {
+          try {
+            latestState = await loadStateFromPublicGithub();
+            if (latestState) stateSource = "即時 GitHub";
+          } catch {
+            latestState = null;
+          }
+        }
+        if (!latestState) {
+          try {
+            latestState = await loadStateFromRawGithub();
+            if (latestState) stateSource = "即時 GitHub";
+          } catch {
+            latestState = null;
+          }
+        }
+        if (!latestState) {
+          latestState = await loadJSON("state.json");
+          stateSource = "Pages 副本（可能滯後）";
+        }
         const run = latestState.last_run || {};
         const liveOn = isOn($("enabledToggle"));
         if ($("lastRunText")) {
           if (run.at) {
-            $("lastRunText").textContent = `${liveOn ? "真實模式 ON" : "真實模式 OFF"} · ${run.message || run.status || ""} · ${run.at}`;
+            $("lastRunText").textContent = `${liveOn ? "真實模式 ON" : "真實模式 OFF"} · ${run.message || run.status || ""} · ${run.at} · ${stateSource}`;
           } else {
             $("lastRunText").textContent = liveOn
               ? "真實模式已開啟，尚未完成第一次官網查詢。"
