@@ -1,5 +1,5 @@
 {
-  "enabled": false,
+  "enabled": true,
   "soon_window_days": 7,
   "check_interval_seconds": 30,
   "check_interval_minutes": 1,
