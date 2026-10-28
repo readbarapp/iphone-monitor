@@ -852,8 +852,8 @@ def format_message(hits: list[AvailabilityHit]) -> str:
     lines.extend(_hit_lines(hits))
     lines.extend(
         [
-            "入去後撳「加入購物袋」，再用 Apple Pay。",
-            "Apple 唔提供由 Telegram 直接加車；呢條已幫你揀好呢款。",
+            "入去後順序撳：唔換購 → 唔加 AppleCare+ → 加入購物袋 → Apple Pay。",
+            "顏色／容量已揀好。換購同 AppleCare 唔喺網址，Apple 亦唔俾 Telegram 代你加車。",
             f"時間：{iso_now()}（香港）",
         ]
     )
@@ -1354,6 +1354,7 @@ def run_self_test() -> int:
 
     text = format_message(newly3)
     check("加入購物袋" in text and "門市取貨" in text and "送貨上門" in text, "綜合訊息含通路與加入購物袋連結")
+    check("唔換購" in text and "唔加 AppleCare+" in text, "通知寫明換購同 AppleCare 要入去先揀")
     check("/xc/product/" in text and "MK2E4ZA/A" in text, "加入購物袋連結用 Store App 深層網址")
     check(checkout_url("MK2J4ZA/A") == "https://www.apple.com/hk-zh/xc/product/MK2J4ZA/A", "SKU 購買連結應指向 xc/product")
     check(text.count("🍎") == 1, "同週期只產出 1 條訊息")
