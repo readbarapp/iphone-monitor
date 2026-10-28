@@ -146,9 +146,20 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config merge.ours.driver true
           BRANCH="${GITHUB_REF_NAME}"
           END=$((SECONDS + 330 * 60))
           commit_state() {
+            if grep -qE '^<<<<<<<|^>>>>>>>' state.json 2>/dev/null; then
+              python3 -c "from checker import load_json; load_json('state.json')" || {
+                echo "state.json 有衝突標記而且拆唔開，跳過 commit"
+                return 0
+              }
+            fi
+            if grep -qE '^<<<<<<<|^>>>>>>>' state.json 2>/dev/null; then
+              echo "state.json 仍然有衝突標記，跳過 commit"
+              return 0
+            fi
             git add state.json
             if git diff --cached --quiet; then
               echo "state.json unchanged"
@@ -156,13 +167,27 @@ jobs:
             fi
             git commit -m "chore: update inventory state" || return 0
             git push origin "HEAD:${BRANCH}" || {
-              git pull --rebase origin "${BRANCH}" || true
+              git pull --rebase origin "${BRANCH}" || {
+                echo "rebase 失敗，中止，唔好把衝突推進 main"
+                git rebase --abort || true
+                return 0
+              }
+              if grep -qE '^<<<<<<<|^>>>>>>>' state.json 2>/dev/null; then
+                python3 -c "from checker import load_json; load_json('state.json')" || {
+                  git checkout --ours state.json || true
+                  echo "rebase 後 state.json 仍衝突，跳過 push"
+                  return 0
+                }
+              fi
               git push origin "HEAD:${BRANCH}" || echo "push failed, will retry next round"
             }
           }
           STOPPED=""
           while [ "$SECONDS" -lt "$END" ]; do
-            git pull --rebase origin "${BRANCH}" || true
+            git pull --rebase origin "${BRANCH}" || {
+              echo "pull --rebase 失敗，中止後繼續用而家工作樹"
+              git rebase --abort || true
+            }
             INTERVAL=$(python3 -c "import json; print(max(1, int((json.load(open('config.json')).get('check_interval_minutes') or 5))))")
             python3 usage.py --minutes "$INTERVAL" || true
             python3 checker.py --ignore-interval || true
