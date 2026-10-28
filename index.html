@@ -427,6 +427,7 @@
 
   <script>
     const PAT_KEY = "iphone_monitor_pat";
+    const STATE_BRANCH = "monitor-state";
     const COLLAPSE_SECTIONS = ["sim", "live", "models", "stores", "preview", "priority", "pat"];
     const INTERVALS = [30, 60, 120, 180, 300, 600, 900, 1200, 1800, 3600];
     const CAPACITIES = ["256gb", "512gb", "1tb", "2tb"];
@@ -494,7 +495,7 @@
       const owner = ($("ghOwner") && $("ghOwner").value.trim()) || (config && config.github && config.github.owner) || detected.owner || "";
       const repo = ($("ghRepo") && $("ghRepo").value.trim()) || (config && config.github && config.github.repo) || detected.repo || "";
       const branch = ($("ghBranch") && $("ghBranch").value.trim()) || (config && config.github && config.github.branch) || "main";
-      return { owner, repo, branch };
+      return { owner, repo, branch, stateBranch: STATE_BRANCH };
     }
 
     function productsOf(family) {
@@ -1316,37 +1317,50 @@
     }
 
     async function loadStateFromGithub() {
-      const { owner, repo, branch } = repoRef();
+      const { owner, repo, branch, stateBranch } = repoRef();
       const pat = $("ghPat")?.value.trim();
       if (!owner || !repo || !pat) return null;
-      const file = await ghApi(
-        `/repos/${owner}/${repo}/contents/state.json?ref=${encodeURIComponent(branch)}`,
-        "GET",
-        null,
-        pat
-      );
-      return JSON.parse(decodeB64(file.content || ""));
+      for (const ref of [stateBranch, branch]) {
+        try {
+          const file = await ghApi(
+            `/repos/${owner}/${repo}/contents/state.json?ref=${encodeURIComponent(ref)}`,
+            "GET",
+            null,
+            pat
+          );
+          if (file && file.content) return JSON.parse(decodeB64(file.content));
+        } catch { /* monitor-state 未開就讀 main */ }
+      }
+      return null;
     }
 
-    async function loadStateFromPublicGithub() {
-      const { owner, repo, branch } = repoRef();
-      if (!owner || !repo) return null;
-      const url = `https://api.github.com/repos/${owner}/${repo}/contents/state.json?ref=${encodeURIComponent(branch)}`;
+    async function loadJsonFromGithubRef(owner, repo, ref) {
+      const url = `https://api.github.com/repos/${owner}/${repo}/contents/state.json?ref=${encodeURIComponent(ref)}`;
       const res = await fetch(url, {
         cache: "no-store",
         headers: { Accept: "application/vnd.github.raw+json" },
       });
+      if (res.status === 404) return null;
       if (!res.ok) throw new Error("GitHub state.json HTTP " + res.status);
       return res.json();
     }
 
-    async function loadStateFromRawGithub() {
-      const { owner, repo, branch } = repoRef();
+    async function loadStateFromPublicGithub() {
+      const { owner, repo, branch, stateBranch } = repoRef();
       if (!owner || !repo) return null;
-      const url = `https://raw.githubusercontent.com/${owner}/${repo}/${encodeURIComponent(branch)}/state.json?t=${Date.now()}`;
-      const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) throw new Error("GitHub raw state.json HTTP " + res.status);
-      return res.json();
+      return (await loadJsonFromGithubRef(owner, repo, stateBranch))
+        || (await loadJsonFromGithubRef(owner, repo, branch));
+    }
+
+    async function loadStateFromRawGithub() {
+      const { owner, repo, branch, stateBranch } = repoRef();
+      if (!owner || !repo) return null;
+      for (const ref of [stateBranch, branch]) {
+        const url = `https://raw.githubusercontent.com/${owner}/${repo}/${encodeURIComponent(ref)}/state.json?t=${Date.now()}`;
+        const res = await fetch(url, { cache: "no-store" });
+        if (res.ok) return res.json();
+      }
+      throw new Error("GitHub raw state.json 讀唔到");
     }
 
     function renderLoopTicks(state) {
