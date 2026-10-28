@@ -1,6 +1,7 @@
 # Apple 香港 iPhone 庫存監控
 # GitHub 嘅 schedule 鬧鐘最短約 5 分鐘，而且會遲、會漏。
 # 真正監測係 job 入面按 check_interval_seconds（或分鐘）循環查。最快 30 秒。
+# state.json 推去 monitor-state，唔好 commit 入 main，否則 GitHub Pages 會每轉紅叉。
 # 單條 job 約 5.5 小時正常換班後，會即刻 workflow_dispatch 下一條。
 # schedule 只係後備：dispatch 失敗或者 loop 死咗，先靠鬧鐘再拉起。
 name: iPhone HK Monitor
@@ -150,37 +151,8 @@ jobs:
           BRANCH="${GITHUB_REF_NAME}"
           END=$((SECONDS + 330 * 60))
           commit_state() {
-            if grep -qE '^<<<<<<<|^>>>>>>>' state.json 2>/dev/null; then
-              python3 -c "from checker import load_json; load_json('state.json')" || {
-                echo "state.json 有衝突標記而且拆唔開，跳過 commit"
-                return 0
-              }
-            fi
-            if grep -qE '^<<<<<<<|^>>>>>>>' state.json 2>/dev/null; then
-              echo "state.json 仍然有衝突標記，跳過 commit"
-              return 0
-            fi
-            git add state.json
-            if git diff --cached --quiet; then
-              echo "state.json unchanged"
-              return 0
-            fi
-            git commit -m "chore: update inventory state" || return 0
-            git push origin "HEAD:${BRANCH}" || {
-              git pull --rebase origin "${BRANCH}" || {
-                echo "rebase 失敗，中止，唔好把衝突推進 main"
-                git rebase --abort || true
-                return 0
-              }
-              if grep -qE '^<<<<<<<|^>>>>>>>' state.json 2>/dev/null; then
-                python3 -c "from checker import load_json; load_json('state.json')" || {
-                  git checkout --ours state.json || true
-                  echo "rebase 後 state.json 仍衝突，跳過 push"
-                  return 0
-                }
-              fi
-              git push origin "HEAD:${BRANCH}" || echo "push failed, will retry next round"
-            }
+            python3 push_state.py --push || echo "push monitor-state 失敗，下一轉再試"
+            git checkout -- state.json 2>/dev/null || true
           }
           STOPPED=""
           while [ "$SECONDS" -lt "$END" ]; do
@@ -188,6 +160,7 @@ jobs:
               echo "pull --rebase 失敗，中止後繼續用而家工作樹"
               git rebase --abort || true
             }
+            python3 push_state.py --pull || true
             INTERVAL_SEC=$(python3 -c "import json; from checker import loop_interval_seconds; print(loop_interval_seconds(json.load(open('config.json'))))")
             USAGE_MIN=$(( (INTERVAL_SEC + 59) / 60 ))
             python3 usage.py --minutes "$USAGE_MIN" || true
@@ -247,18 +220,9 @@ jobs:
           print("skipped: enabled=false")
           PY
 
-      - name: Commit state.json
+      - name: Publish state.json to monitor-state
         if: ${{ always() && steps.already.outputs.skip != 'true' }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add state.json
-          if git diff --cached --quiet; then
-            echo "state.json unchanged"
-            exit 0
-          fi
-          git commit -m "chore: update inventory state"
-          git push origin "HEAD:${GITHUB_REF_NAME}" || true
+        run: python3 push_state.py --push || true
 
   chain:
     name: Start next loop immediately
