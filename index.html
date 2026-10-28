@@ -31,10 +31,38 @@
         radial-gradient(900px 500px at 100% 0%, rgba(48, 209, 88, 0.08), transparent 45%),
         #05060a;
     }
+    html, body {
+      max-width: 100%;
+      overflow-x: clip;
+    }
     .glass {
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid rgba(255, 255, 255, 0.08);
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+      border-radius: 1rem;
+      padding: 1rem;
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+    }
+    @media (min-width: 640px) {
+      .glass {
+        border-radius: 1.5rem;
+        padding: 1.5rem;
+      }
+    }
+    .inner-card {
+      min-width: 0;
+      max-width: 100%;
+    }
+    code, .break-phone {
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .table-scroll {
+      max-width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .toggle {
       width: 56px;
@@ -69,27 +97,27 @@
 </head>
 <body class="min-h-screen text-zinc-100 font-sans antialiased">
   <header class="sticky top-0 z-30 backdrop-blur-xl bg-black/40 border-b border-white/10">
-    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
-      <div class="flex items-center gap-3 min-w-0">
-        <div class="h-10 w-10 rounded-2xl bg-white text-black grid place-items-center font-semibold"></div>
+    <div class="max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-2 min-w-0">
+      <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div class="h-9 w-9 sm:h-10 sm:w-10 shrink-0 rounded-2xl bg-white text-black grid place-items-center font-semibold"></div>
         <div class="min-w-0">
-          <p class="text-xs uppercase tracking-[0.2em] text-zinc-400">Hong Kong · Zero-Trust</p>
-          <h1 class="text-lg sm:text-xl font-semibold truncate">iPhone Duo 官網庫存監控</h1>
+          <p class="text-[10px] sm:text-xs uppercase tracking-[0.14em] sm:tracking-[0.2em] text-zinc-400">Hong Kong · Zero-Trust</p>
+          <h1 class="text-base sm:text-xl font-semibold truncate">iPhone Duo 官網庫存監控</h1>
         </div>
       </div>
-      <div id="statusPill" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300">讀取中</div>
+      <div id="statusPill" class="shrink-0 max-w-[42%] truncate rounded-full px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-medium bg-zinc-800 text-zinc-300">讀取中</div>
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-4 py-6 sm:py-10 space-y-6">
-    <section class="glass mode-sim rounded-3xl p-5 sm:p-6">
-      <button id="simToggle" type="button" aria-expanded="false" aria-controls="simPanel" class="w-full flex items-start justify-between gap-3 text-left rounded-2xl -mx-1 px-1 py-1 hover:bg-white/5">
+  <main class="max-w-6xl mx-auto px-3 sm:px-4 py-5 sm:py-10 space-y-4 sm:space-y-6 min-w-0">
+    <section class="glass mode-sim">
+      <button id="simToggle" type="button" aria-expanded="false" aria-controls="simPanel" class="w-full flex items-start justify-between gap-3 text-left rounded-2xl py-1 hover:bg-white/5">
         <div class="min-w-0">
-          <p class="text-xs uppercase tracking-[0.18em] text-amber-200/80">模擬模式</p>
-          <h2 class="mt-2 text-xl font-semibold">練習通知（唔問 Apple）</h2>
+          <p class="text-xs uppercase tracking-[0.14em] sm:tracking-[0.18em] text-amber-200/80">模擬模式</p>
+          <h2 class="mt-2 text-lg sm:text-xl font-semibold">練習通知（唔問 Apple）</h2>
           <p id="simToggleHint" class="text-sm text-zinc-400 mt-1">預設收起。要試 Telegram「冇貨→有貨」先展開。</p>
         </div>
-        <span class="shrink-0 flex items-center gap-2">
+        <span class="shrink-0 flex flex-col items-end gap-2 sm:flex-row sm:items-center">
           <span id="simBadge" class="rounded-full px-3 py-1 text-xs font-medium bg-amber-500/15 text-amber-200">模擬</span>
           <span id="simToggleLabel" class="rounded-full border border-white/15 px-3 py-1 text-xs text-zinc-300">展開</span>
         </span>
@@ -105,20 +133,28 @@
       </div>
     </section>
 
-    <section class="glass mode-live rounded-3xl p-5 sm:p-6">
-      <p class="text-xs uppercase tracking-[0.18em] text-emerald-300/80">真實模式</p>
-      <div class="mt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 class="text-xl font-semibold">問 Apple 官網（監測清單上嘅型號）</h2>
-          <p id="liveModeHint" class="text-sm text-zinc-400 mt-1">而家：真實模式已關閉。左邊「幾耐之內先當有貨」可以改日數。送貨同取貨同一規則。</p>
+    <section class="glass mode-live">
+      <button id="liveToggle" type="button" aria-expanded="false" aria-controls="livePanel" class="w-full flex items-start justify-between gap-3 text-left rounded-2xl py-1 hover:bg-white/5">
+        <div class="min-w-0">
+          <p class="text-xs uppercase tracking-[0.14em] sm:tracking-[0.18em] text-emerald-300/80">真實模式</p>
+          <h2 class="mt-2 text-lg sm:text-xl font-semibold break-phone">問 Apple 官網（監測清單上嘅型號）</h2>
+          <p id="liveToggleHint" class="text-sm text-zinc-400 mt-1 break-phone">預設收起。要改頻率、時段或睇貨源先展開。</p>
         </div>
-        <div class="flex items-center gap-3">
+        <span class="shrink-0 flex flex-col items-end gap-2">
+          <span id="liveSectionBadge" class="rounded-full px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300">OFF</span>
+          <span id="liveToggleLabel" class="rounded-full border border-white/15 px-3 py-1 text-xs text-zinc-300">展開</span>
+        </span>
+      </button>
+      <div id="livePanel" class="hidden mt-4" hidden>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <p id="liveModeHint" class="text-sm text-zinc-400 min-w-0 break-phone">而家：真實模式已關閉。左邊「幾耐之內先當有貨」可以改日數。送貨同取貨同一規則。</p>
+        <div class="flex items-center justify-between sm:justify-end gap-3 shrink-0">
           <span class="text-sm text-zinc-300">真實模式</span>
           <button id="enabledToggle" class="toggle" role="switch" aria-checked="false" aria-label="真實模式"></button>
         </div>
       </div>
-      <div class="mt-6 grid lg:grid-cols-3 gap-4">
-        <div class="lg:col-span-1 rounded-2xl bg-white/5 p-4 border border-white/10">
+      <div class="mt-4 sm:mt-6 grid lg:grid-cols-3 gap-3 sm:gap-4 min-w-0">
+        <div class="inner-card lg:col-span-1 rounded-2xl bg-white/5 p-3 sm:p-4 border border-white/10">
           <h3 class="font-medium">幾耐查一次</h3>
           <p class="text-[11px] text-zinc-400 mt-1">監測喺 runner 入面按呢個間隔循環查，唔再靠 GitHub 鬧鐘。1 分鐘會真係約 1 分鐘查一次。儲存並保持真實模式 ON 先會開住條 loop。</p>
           <select id="intervalInput" class="field mt-3 w-full rounded-xl px-3 py-2 text-sm">
@@ -159,34 +195,19 @@
               <option value="14">14 日內可送／可取</option>
             </select>
           </label>
-          <div class="mt-4">
-            <div class="flex items-start justify-between gap-3">
-              <p class="text-sm font-medium">本月 GitHub 用量</p>
-              <span id="usageBadge" class="shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-zinc-300">未讀取</span>
-            </div>
-            <div class="mt-3 h-3 rounded-full bg-white/10 overflow-hidden">
-              <div id="usageBar" class="h-full w-0 bg-apple-orange transition-all"></div>
-            </div>
-            <p id="usageText" class="mt-3 text-sm leading-relaxed text-zinc-300">填好 Owner／PAT 之後會讀 GitHub 本月真實用量。</p>
-            <p id="usageActual" class="mt-2 text-xs text-zinc-400"></p>
-            <div class="mt-3 flex flex-wrap items-center gap-3">
-              <button type="button" id="usageRefreshBtn" class="text-sm text-sky-400 hover:underline">重新讀取用量</button>
-              <a class="inline-flex text-sm text-sky-400 hover:underline" href="https://github.com/settings/billing" target="_blank" rel="noreferrer">打開 GitHub Billing →</a>
-            </div>
-          </div>
         </div>
-        <div class="lg:col-span-2 rounded-2xl bg-white/5 p-4 border border-white/10">
-          <div class="flex items-start justify-between gap-3">
-            <div>
+        <div class="inner-card lg:col-span-2 rounded-2xl bg-white/5 p-3 sm:p-4 border border-white/10">
+          <div class="flex items-start justify-between gap-2 min-w-0">
+            <div class="min-w-0">
               <h3 class="font-medium">最近一次官網貨源</h3>
-              <p id="lastRunText" class="text-xs text-zinc-400 mt-1">尚未讀取。有貨＝設定日數內可送或可取。遲過呢個窗或冇寫日期，一律當冇貨、唔通知。</p>
-              <div class="mt-3 rounded-xl bg-black/30 border border-white/10 p-3">
-                <p class="text-xs font-medium text-zinc-200">查貨紀錄</p>
-                <p class="text-[11px] text-zinc-500 mt-1">只顯示最近 5 轉查官網嘅香港時間。連續次數會一直累加。填咗 PAT 會每 15 秒直接讀 GitHub。兩筆相差應約等於你設嘅分鐘；loop 死會 Telegram 你。</p>
-                <p id="loopTicks" class="mt-2 text-[11px] text-zinc-300 leading-relaxed whitespace-pre-wrap font-mono"></p>
-              </div>
+              <p id="lastRunText" class="text-xs text-zinc-400 mt-1 break-phone">尚未讀取。有貨＝設定日數內可送或可取。遲過呢個窗或冇寫日期，一律當冇貨、唔通知。</p>
             </div>
-            <span id="liveBadge" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300">尚未查詢</span>
+            <span id="liveBadge" class="shrink-0 rounded-full px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-medium bg-zinc-800 text-zinc-300">尚未查詢</span>
+          </div>
+          <div class="mt-3 rounded-xl bg-black/30 border border-white/10 p-3 min-w-0">
+            <p class="text-xs font-medium text-zinc-200">查貨紀錄</p>
+            <p class="text-[11px] text-zinc-500 mt-1 break-phone">只顯示最近 5 轉查官網嘅香港時間。連續次數會一直累加。填咗 PAT 會每 15 秒直接讀 GitHub。兩筆相差應約等於你設嘅分鐘；loop 死會 Telegram 你。</p>
+            <p id="loopTicks" class="mt-2 text-[11px] text-zinc-300 leading-relaxed whitespace-pre-wrap break-all font-mono"></p>
           </div>
           <div id="liveBoard" class="mt-4"></div>
           <div class="mt-4 space-y-2">
@@ -202,12 +223,20 @@
           </div>
         </div>
       </div>
+      </div>
     </section>
 
-    <section class="grid lg:grid-cols-2 gap-4">
-      <article class="glass rounded-3xl p-5 sm:p-6">
-        <h2 class="text-lg font-semibold">監測邊款 iPhone</h2>
-        <p class="text-sm text-zinc-400 mt-1">已內建 iPhone Duo。日後新品可喺下面貼官網 SKU，唔使改程式。</p>
+    <section class="glass">
+      <button id="modelsToggle" type="button" aria-expanded="false" aria-controls="modelsPanel" class="w-full flex items-start justify-between gap-3 text-left rounded-2xl py-1 hover:bg-white/5">
+        <div class="min-w-0">
+          <p class="text-xs uppercase tracking-[0.14em] sm:tracking-[0.18em] text-sky-300/80">型號</p>
+          <h2 class="mt-2 text-lg sm:text-xl font-semibold">監測邊款 iPhone</h2>
+          <p id="modelsToggleHint" class="text-sm text-zinc-400 mt-1">預設收起。要加型號先展開。</p>
+        </div>
+        <span id="modelsToggleLabel" class="shrink-0 rounded-full border border-white/15 px-3 py-1 text-xs text-zinc-300">展開</span>
+      </button>
+      <div id="modelsPanel" class="hidden mt-4" hidden>
+        <p class="text-sm text-zinc-400">已內建 iPhone Duo。日後新品可喺下面貼官網 SKU，唔使改程式。</p>
         <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
           <label class="text-xs text-zinc-400">型號
             <select id="familySelect" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm"></select>
@@ -219,13 +248,13 @@
             <select id="capacitySelect" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm"></select>
           </label>
         </div>
-        <div class="mt-3 flex items-center justify-between gap-3">
-          <p id="skuPreview" class="text-sm text-zinc-300 truncate">—</p>
-          <button id="addModelBtn" class="shrink-0 rounded-xl bg-apple-blue px-4 py-2 text-sm font-medium">加入監控</button>
+        <div class="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
+          <p id="skuPreview" class="text-sm text-zinc-300 break-phone min-w-0">—</p>
+          <button id="addModelBtn" class="shrink-0 w-full sm:w-auto rounded-xl bg-apple-blue px-4 py-2 text-sm font-medium">加入監控</button>
         </div>
         <div id="watchList" class="mt-4 flex flex-wrap gap-2"></div>
 
-        <div class="mt-5 rounded-2xl bg-white/5 border border-white/10 p-4">
+        <div class="inner-card mt-5 rounded-2xl bg-white/5 border border-white/10 p-3 sm:p-4">
           <h3 class="text-sm font-medium">加自訂型號（新品 SKU）</h3>
           <p class="text-[11px] text-zinc-500 mt-1">官網產品頁網址尾段就係監測 code，例如 <code>MK2J4ZA/A</code>。</p>
           <div class="mt-3 grid sm:grid-cols-2 gap-3">
@@ -236,15 +265,24 @@
               <input id="customSkuName" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" placeholder="iPhone 未來機 256GB" />
             </label>
           </div>
-          <button type="button" id="addCustomSkuBtn" class="mt-3 rounded-xl bg-apple-blue px-4 py-2 text-sm font-medium">加入呢個 SKU</button>
+          <button type="button" id="addCustomSkuBtn" class="mt-3 w-full sm:w-auto rounded-xl bg-apple-blue px-4 py-2 text-sm font-medium">加入呢個 SKU</button>
         </div>
-      </article>
+      </div>
+    </section>
 
-      <article class="glass rounded-3xl p-5 sm:p-6">
-        <h2 class="text-lg font-semibold">門市多選（Pick-up）</h2>
-        <p class="text-sm text-zinc-400 mt-1">只查你勾選的 Apple Store；權重愈高，通知排序愈前。</p>
-        <div id="storeList" class="mt-4 space-y-2"></div>
-        <div class="mt-5 rounded-2xl bg-white/5 border border-white/10 p-4">
+    <section class="glass">
+      <button id="storesToggle" type="button" aria-expanded="false" aria-controls="storesPanel" class="w-full flex items-start justify-between gap-3 text-left rounded-2xl py-1 hover:bg-white/5">
+        <div class="min-w-0">
+          <p class="text-xs uppercase tracking-[0.14em] sm:tracking-[0.18em] text-sky-300/80">門市</p>
+          <h2 class="mt-2 text-lg sm:text-xl font-semibold">門市多選（Pick-up）</h2>
+          <p id="storesToggleHint" class="text-sm text-zinc-400 mt-1">預設收起。要勾選或加店先展開。</p>
+        </div>
+        <span id="storesToggleLabel" class="shrink-0 rounded-full border border-white/15 px-3 py-1 text-xs text-zinc-300">展開</span>
+      </button>
+      <div id="storesPanel" class="hidden mt-4" hidden>
+        <p class="text-sm text-zinc-400">只查你勾選的 Apple Store；權重愈高，通知排序愈前。</p>
+        <div id="storeList" class="mt-4 space-y-2 min-w-0"></div>
+        <div class="inner-card mt-5 rounded-2xl bg-white/5 border border-white/10 p-3 sm:p-4">
           <h3 class="text-sm font-medium">加自訂門市（店號）</h3>
           <p class="text-[11px] text-zinc-500 mt-1">取貨 JSON 入面 <code>storeNumber</code> 就係門市 code，香港而家係 <code>R428</code> 呢類。</p>
           <div class="mt-3 grid sm:grid-cols-2 gap-3">
@@ -255,26 +293,43 @@
               <input id="customStoreName" class="field mt-1 w-full rounded-xl px-3 py-2 text-sm" placeholder="中環 ifc mall" />
             </label>
           </div>
-          <button type="button" id="addCustomStoreBtn" class="mt-3 rounded-xl bg-apple-blue px-4 py-2 text-sm font-medium">加入呢間門市</button>
+          <button type="button" id="addCustomStoreBtn" class="mt-3 w-full sm:w-auto rounded-xl bg-apple-blue px-4 py-2 text-sm font-medium">加入呢間門市</button>
         </div>
-      </article>
+      </div>
     </section>
 
-    <section class="glass rounded-3xl p-5 sm:p-6">
-      <h2 class="text-lg font-semibold">預覽監測 code</h2>
-      <p class="text-sm text-zinc-400 mt-1">撳下面連結睇官網點寫型號同門市。上面「SKU」欄有字就跟嗰個；冇字就用而家下拉揀中嘅 Duo。</p>
-      <div class="mt-4 grid sm:grid-cols-2 gap-3 text-sm">
-        <a id="previewBuyLink" class="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 hover:bg-white/10" href="https://www.apple.com/hk-zh/shop/buy-iphone" target="_blank" rel="noreferrer">香港官網買 iPhone →<br /><span class="text-[11px] text-zinc-500">揀顏色容量之後，網址／結帳頁會見到 SKU</span></a>
-        <a id="previewProductLink" class="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 hover:bg-white/10" href="https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A" target="_blank" rel="noreferrer">呢款產品頁 →<br /><span class="text-[11px] text-zinc-500">網址 <code>/product/XXXXZA/A</code> 就係監測 code</span></a>
-        <a id="previewPickupLink" class="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 hover:bg-white/10" href="https://www.apple.com/hk-zh/shop/retail/pickup-message?pl=true&mts.0=regular&location=Hong%20Kong&parts.0=MK2J4ZA%2FA" target="_blank" rel="noreferrer">取貨 JSON（睇 SKU 同店號）→<br /><span class="text-[11px] text-zinc-500">搵 <code>storeNumber</code>（R409）同 <code>partsAvailability</code></span></a>
-        <a id="previewDeliveryLink" class="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 hover:bg-white/10" href="https://www.apple.com/hk-zh/shop/delivery-message?little=false&mts.0=regular&location=Hong%20Kong&parts.0=MK2J4ZA%2FA" target="_blank" rel="noreferrer">送貨 JSON（睇貨期）→<br /><span class="text-[11px] text-zinc-500">搵 <code>displayName</code>，例如「周六 23/01/2027」</span></a>
+    <section class="glass">
+      <button id="previewToggle" type="button" aria-expanded="false" aria-controls="previewPanel" class="w-full flex items-start justify-between gap-3 text-left rounded-2xl py-1 hover:bg-white/5">
+        <div class="min-w-0">
+          <p class="text-xs uppercase tracking-[0.14em] sm:tracking-[0.18em] text-sky-300/80">預覽</p>
+          <h2 class="mt-2 text-lg sm:text-xl font-semibold">預覽監測 code</h2>
+          <p id="previewToggleHint" class="text-sm text-zinc-400 mt-1">預設收起。要睇官網連結先展開。</p>
+        </div>
+        <span id="previewToggleLabel" class="shrink-0 rounded-full border border-white/15 px-3 py-1 text-xs text-zinc-300">展開</span>
+      </button>
+      <div id="previewPanel" class="hidden mt-4" hidden>
+      <p class="text-sm text-zinc-400 break-phone">撳下面連結睇官網點寫型號同門市。上面「SKU」欄有字就跟嗰個；冇字就用而家下拉揀中嘅 Duo。</p>
+      <div class="mt-4 grid sm:grid-cols-2 gap-3 text-sm min-w-0">
+        <a id="previewBuyLink" class="inner-card rounded-2xl bg-white/5 border border-white/10 px-3 sm:px-4 py-3 hover:bg-white/10 break-phone" href="https://www.apple.com/hk-zh/shop/buy-iphone" target="_blank" rel="noreferrer">香港官網買 iPhone →<br /><span class="text-[11px] text-zinc-500">揀顏色容量之後，網址／結帳頁會見到 SKU</span></a>
+        <a id="previewProductLink" class="inner-card rounded-2xl bg-white/5 border border-white/10 px-3 sm:px-4 py-3 hover:bg-white/10 break-phone" href="https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A" target="_blank" rel="noreferrer">呢款產品頁 →<br /><span class="text-[11px] text-zinc-500">網址 <code>/product/XXXXZA/A</code> 就係監測 code</span></a>
+        <a id="previewPickupLink" class="inner-card rounded-2xl bg-white/5 border border-white/10 px-3 sm:px-4 py-3 hover:bg-white/10 break-phone" href="https://www.apple.com/hk-zh/shop/retail/pickup-message?pl=true&mts.0=regular&location=Hong%20Kong&parts.0=MK2J4ZA%2FA" target="_blank" rel="noreferrer">取貨 JSON（睇 SKU 同店號）→<br /><span class="text-[11px] text-zinc-500">搵 <code>storeNumber</code>（R409）同 <code>partsAvailability</code></span></a>
+        <a id="previewDeliveryLink" class="inner-card rounded-2xl bg-white/5 border border-white/10 px-3 sm:px-4 py-3 hover:bg-white/10 break-phone" href="https://www.apple.com/hk-zh/shop/delivery-message?little=false&mts.0=regular&location=Hong%20Kong&parts.0=MK2J4ZA%2FA" target="_blank" rel="noreferrer">送貨 JSON（睇貨期）→<br /><span class="text-[11px] text-zinc-500">搵 <code>displayName</code>，例如「周六 23/01/2027」</span></a>
       </div>
       <p class="mt-3 text-[11px] text-zinc-500">JSON 係俾程式睇嘅。人用購物頁：<a class="text-sky-400 hover:underline" href="https://www.apple.com/hk-zh/retail/" target="_blank" rel="noreferrer">香港 Apple Store 一覽</a>。</p>
+      </div>
     </section>
 
-    <section class="glass rounded-3xl p-5 sm:p-6">
-      <h2 class="text-lg font-semibold">優先級設定 Priority Settings</h2>
-      <p class="text-sm text-zinc-400 mt-1">同週期多筆有貨會合成 1 條訊息，並依門市 → 容量 → 通路權重排序。</p>
+    <section class="glass">
+      <button id="priorityToggle" type="button" aria-expanded="false" aria-controls="priorityPanel" class="w-full flex items-start justify-between gap-3 text-left rounded-2xl py-1 hover:bg-white/5">
+        <div class="min-w-0">
+          <p class="text-xs uppercase tracking-[0.14em] sm:tracking-[0.18em] text-sky-300/80">優先級</p>
+          <h2 class="mt-2 text-lg sm:text-xl font-semibold break-phone">優先級設定</h2>
+          <p id="priorityToggleHint" class="text-sm text-zinc-400 mt-1">預設收起。要調容量／通路權重先展開。</p>
+        </div>
+        <span id="priorityToggleLabel" class="shrink-0 rounded-full border border-white/15 px-3 py-1 text-xs text-zinc-300">展開</span>
+      </button>
+      <div id="priorityPanel" class="hidden mt-4" hidden>
+      <p class="text-sm text-zinc-400">同週期多筆有貨會合成 1 條訊息，並依門市 → 容量 → 通路權重排序。</p>
       <div class="mt-5 grid md:grid-cols-2 gap-6">
         <div>
           <p class="text-sm font-medium mb-3">容量優先級</p>
@@ -294,18 +349,26 @@
           </div>
         </div>
       </div>
+      </div>
     </section>
 
-    <section class="glass rounded-3xl p-5 sm:p-6">
-      <h2 class="text-lg font-semibold">GitHub PAT</h2>
-      <p class="text-sm text-zinc-400 mt-1">
-        PAT 只負責控制台改設定、改監控頻率、讀 GitHub 用量、儲存模擬狀態、觸發連線測試。只留喺呢個分頁，唔會寫進倉庫。
+    <section class="glass">
+      <button id="patToggle" type="button" aria-expanded="false" aria-controls="patPanel" class="w-full flex items-start justify-between gap-3 text-left rounded-2xl py-1 hover:bg-white/5">
+        <div class="min-w-0">
+          <p class="text-xs uppercase tracking-[0.14em] sm:tracking-[0.18em] text-sky-300/80">連線</p>
+          <h2 class="mt-2 text-lg sm:text-xl font-semibold">GitHub PAT</h2>
+          <p id="patToggleHint" class="text-sm text-zinc-400 mt-1">預設收起。要填 PAT 或查 Secrets 先展開。</p>
+        </div>
+        <span id="patToggleLabel" class="shrink-0 rounded-full border border-white/15 px-3 py-1 text-xs text-zinc-300">展開</span>
+      </button>
+      <div id="patPanel" class="hidden mt-4" hidden>
+      <p class="text-sm text-zinc-400 break-phone">
+        PAT 只負責控制台改設定、改監控頻率、儲存模擬狀態、觸發連線測試。只留喺呢個分頁，唔會寫進倉庫。
       </p>
-      <ol class="mt-3 text-xs text-zinc-400 list-decimal pl-5 space-y-1">
+      <ol class="mt-3 text-xs text-zinc-400 list-decimal pl-5 space-y-1 break-phone">
         <li>開啟 <a class="text-sky-400 hover:underline" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noreferrer">建立 Fine-grained token</a></li>
         <li>Repository access 只勾 <code>iphone-monitor</code></li>
         <li>Permissions：Contents、Actions、Workflows 都設 <b>Read and write</b>（Workflows 用來改 watchdog 時段）</li>
-        <li>用量會讀呢個倉庫本月 Actions 跑咗幾多次（要有 Actions 讀取）。GitHub 官方 Billing API 唔支援 Fine-grained PAT，所以即使 Plan 設咗 Read，帳戶總用量多數仍然讀唔到</li>
         <li>若要由控制台覆寫通訊 Secret，再加 Secrets <b>Read and write</b></li>
         <li>把 <code>github_pat_…</code> 貼入下面（唔好用 Telegram bot token）</li>
       </ol>
@@ -348,21 +411,22 @@
           </label>
         </div>
       </details>
+      </div>
     </section>
 
-    <section class="glass rounded-3xl p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-      <p id="saveMsg" class="text-sm text-zinc-400">「儲存設定」寫入真實模式開關、頻率、幾耐之內先當有貨、監測清單。模擬貨源請用上面「儲存模擬狀態」。</p>
-      <div class="flex flex-wrap gap-2">
-        <button id="testNotifyBtn" class="rounded-xl border border-white/15 px-4 py-2 text-sm" title="只發連線測試短訊，唔會扮 iPhone 有貨">測試 Telegram 連線</button>
-        <button id="reloadBtn" class="rounded-xl border border-white/15 px-4 py-2 text-sm">重新載入</button>
-        <button id="saveBtn" class="rounded-xl bg-white text-black px-5 py-2 text-sm font-semibold">儲存設定</button>
+    <section class="glass flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+      <p id="saveMsg" class="text-sm text-zinc-400 min-w-0 break-phone">「儲存設定」寫入真實模式開關、頻率、幾耐之內先當有貨、監測清單。模擬貨源請用上面「儲存模擬狀態」。</p>
+      <div class="flex flex-col xs:flex-row flex-wrap gap-2 w-full sm:w-auto">
+        <button id="testNotifyBtn" class="rounded-xl border border-white/15 px-4 py-2 text-sm w-full sm:w-auto" title="只發連線測試短訊，唔會扮 iPhone 有貨">測試 Telegram 連線</button>
+        <button id="reloadBtn" class="rounded-xl border border-white/15 px-4 py-2 text-sm w-full sm:w-auto">重新載入</button>
+        <button id="saveBtn" class="rounded-xl bg-white text-black px-5 py-2 text-sm font-semibold w-full sm:w-auto">儲存設定</button>
       </div>
     </section>
   </main>
 
   <script>
-    const FREE_MINUTES = 2000;
     const PAT_KEY = "iphone_monitor_pat";
+    const COLLAPSE_SECTIONS = ["sim", "live", "models", "stores", "preview", "priority", "pat"];
     const INTERVALS = [1, 2, 3, 5, 10, 15, 20, 30, 60];
     const CAPACITIES = ["256gb", "512gb", "1tb", "2tb"];
     const CAP_LABEL = { "256gb": "256GB", "512gb": "512GB", "1tb": "1TB", "2tb": "2TB" };
@@ -394,9 +458,6 @@
     let config = null;
     let latestState = { items: {}, simulation: {} };
     let liveTimer = null;
-    let liveUsage = null;
-    let usageTimer = null;
-    let usageInFlight = false;
 
     const $ = (id) => document.getElementById(id);
 
@@ -557,7 +618,6 @@
       if ($("customSku")) $("customSku").value = "";
       if ($("customSkuName")) $("customSkuName").value = "";
       renderWatchList();
-      estimateUsage();
       renderSimBoard();
       renderLiveBoard();
       toast("已加入監控清單（記得按儲存設定）");
@@ -575,7 +635,6 @@
       if ($("customStoreId")) $("customStoreId").value = "";
       if ($("customStoreName")) $("customStoreName").value = "";
       renderStores();
-      estimateUsage();
       renderSimBoard();
       renderLiveBoard();
       toast("已加入門市（記得按儲存設定）");
@@ -589,11 +648,11 @@
               ${escapeHtml(m.name || m.part_number)} ✕
             </button>`).join("")
         : `<p class="text-sm text-zinc-500">尚未加入任何型號</p>`;
+      updateModelsHint();
       $("watchList").querySelectorAll("[data-remove]").forEach((btn) => {
         btn.addEventListener("click", () => {
           config.models.splice(Number(btn.dataset.remove), 1);
           renderWatchList();
-          estimateUsage();
           renderSimBoard();
           renderLiveBoard();
         });
@@ -674,8 +733,8 @@
         return;
       }
       $("simBoard").innerHTML = `
-        <div class="overflow-auto">
-          <table class="w-full text-sm">
+        <div class="table-scroll">
+          <table class="w-full min-w-[28rem] text-sm">
             <thead class="text-xs text-zinc-500">
               <tr>
                 <th class="text-left font-medium py-2 pr-3">機型</th>
@@ -689,9 +748,9 @@
                 const current = saved[r.key] || fromConfig[r.key] || "unavailable";
                 return `
                 <tr class="border-t border-white/5">
-                  <td class="py-2 pr-3">${r.name}</td>
-                  <td class="py-2 pr-3">${r.mode}</td>
-                  <td class="py-2 pr-3">${r.place}</td>
+                  <td class="py-2 pr-3 align-top break-phone">${r.name}</td>
+                  <td class="py-2 pr-3 align-top break-phone">${r.mode}</td>
+                  <td class="py-2 pr-3 align-top break-phone">${r.place}</td>
                   <td class="py-2">
                     <select data-sim-key="${r.key}" class="field rounded-lg px-2 py-1 text-sm">
                       <option value="unavailable" ${current !== "available" ? "selected" : ""}>冇貨</option>
@@ -714,8 +773,8 @@
         return;
       }
       $("liveBoard").innerHTML = `
-        <div class="overflow-auto">
-          <table class="w-full text-sm">
+        <div class="table-scroll">
+          <table class="w-full min-w-[28rem] text-sm">
             <thead class="text-xs text-zinc-500">
               <tr>
                 <th class="text-left font-medium py-2 pr-3">機型</th>
@@ -733,9 +792,9 @@
                 const when = rec.last_checked_at ? `<div class="text-[11px] text-zinc-600">${rec.last_checked_at}</div>` : "";
                 return `
                 <tr class="border-t border-white/5">
-                  <td class="py-2 pr-3">${r.name}</td>
-                  <td class="py-2 pr-3">${r.mode}</td>
-                  <td class="py-2 pr-3">${r.place}</td>
+                  <td class="py-2 pr-3 align-top break-phone">${r.name}</td>
+                  <td class="py-2 pr-3 align-top break-phone">${r.mode}</td>
+                  <td class="py-2 pr-3 align-top break-phone">${r.place}</td>
                   <td class="py-2">
                     <span class="${tone} font-medium">${statusLabel(st)}</span>
                     ${extra}${when}
@@ -751,15 +810,39 @@
       const selected = new Set(config.stores || []);
       const weights = (config.priority && config.priority.stores) || {};
       $("storeList").innerHTML = (catalog.stores || []).map((s) => `
-        <div class="flex items-center gap-3 rounded-xl field px-3 py-2">
-          <input type="checkbox" data-store="${escapeHtml(s.id)}" ${selected.has(s.id) ? "checked" : ""} class="accent-sky-500" />
+        <div class="flex items-center gap-2 sm:gap-3 rounded-xl field px-2.5 sm:px-3 py-2 min-w-0">
+          <input type="checkbox" data-store="${escapeHtml(s.id)}" ${selected.has(s.id) ? "checked" : ""} class="accent-sky-500 shrink-0" />
           <div class="flex-1 min-w-0">
             <p class="text-sm truncate">${escapeHtml(s.name_zh || s.name)}${catalogStoreIds.has(s.id) ? "" : ' <span class="text-[10px] text-sky-400">自訂</span>'}</p>
             <p class="text-[11px] text-zinc-500">${escapeHtml(s.id)}</p>
           </div>
-          <input type="number" min="0" max="100" value="${weights[s.id] ?? 50}" data-store-weight="${escapeHtml(s.id)}" class="field w-20 rounded-lg px-2 py-1 text-sm" />
+          <input type="number" min="0" max="100" value="${weights[s.id] ?? 50}" data-store-weight="${escapeHtml(s.id)}" class="field w-14 sm:w-20 shrink-0 rounded-lg px-1.5 sm:px-2 py-1 text-sm" />
         </div>
       `).join("");
+      updateStoresHint();
+    }
+
+    function sectionIsOpen(name) {
+      return $(name + "Toggle")?.getAttribute("aria-expanded") === "true";
+    }
+
+    function updateModelsHint() {
+      const hint = $("modelsToggleHint");
+      if (!hint) return;
+      const n = ((config && config.models) || []).length;
+      hint.textContent = sectionIsOpen("models")
+        ? "下拉加入 Duo，或者貼官網 SKU。"
+        : (n ? `已監測 ${n} 款。要加／刪先展開。` : "預設收起。要加型號先展開。");
+    }
+
+    function updateStoresHint() {
+      const hint = $("storesToggleHint");
+      if (!hint) return;
+      let n = document.querySelectorAll("[data-store]:checked").length;
+      if (!n && config && config.stores) n = config.stores.length;
+      hint.textContent = sectionIsOpen("stores")
+        ? "勾選要查嘅店，或者貼新店號。"
+        : (n ? `已選 ${n} 間門市。要改先展開。` : "預設收起。要勾選或加店先展開。");
     }
 
     function renderCapPriority() {
@@ -792,15 +875,6 @@
         if ($(id)) $(id).disabled = allDay;
       });
       if ($("hoursFields")) $("hoursFields").style.opacity = allDay ? "0.45" : "1";
-    }
-
-    function hoursPerDay() {
-      if (!hoursWindowEnabled()) return 24;
-      const [sh, sm] = ($("hoursStart").value || "00:00").split(":").map(Number);
-      const [eh, em] = ($("hoursEnd").value || "23:59").split(":").map(Number);
-      let mins = (eh * 60 + em) - (sh * 60 + sm);
-      if (mins <= 0) mins += 24 * 60;
-      return mins / 60;
     }
 
     function parseHm(value) {
@@ -852,186 +926,6 @@
       return "*/5 " + hourField + " * * *";
     }
 
-    function estimateUsage() {
-      paintUsage();
-    }
-
-    function utcMonthNow() {
-      const d = new Date();
-      return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1 };
-    }
-
-    function actionsMinutesFromItems(items) {
-      let minutes = 0;
-      for (const item of items || []) {
-        const label = `${item.product || ""} ${item.sku || ""}`;
-        if (!/action/i.test(label)) continue;
-        const unit = String(item.unitType || item.unit_type || "").toLowerCase();
-        let qty = Number(item.netQuantity ?? item.grossQuantity ?? item.quantity ?? 0);
-        if (!Number.isFinite(qty)) continue;
-        if (/ms/.test(unit)) qty /= 60000;
-        else if (/hour/.test(unit)) qty *= 60;
-        minutes += qty;
-      }
-      return Math.round(minutes);
-    }
-
-    function paintUsageBar(used, quota) {
-      const pct = quota > 0 ? Math.min(999, Math.round((used / quota) * 100)) : 0;
-      const bar = $("usageBar");
-      if (!bar) return pct;
-      bar.style.width = Math.min(100, pct) + "%";
-      bar.className = "h-full transition-all " + (pct > 100 ? "bg-apple-red" : pct > 70 ? "bg-apple-orange" : "bg-apple-green");
-      return pct;
-    }
-
-    function projectionNote() {
-      const interval = snapInterval($("intervalInput").value);
-      const hours = hoursPerDay();
-      return `若維持每 ${interval} 分鐘、每日 ${hours.toFixed(1)} 小時：公開倉標準 runner 通常免費。私人倉 runner 會長駐，大約一日 ${Math.round(hours * 60)} 分鐘（滿月約 ${Math.round(hours * 60) * 30}）。盯多幾部機都唔會加分鐘。`;
-    }
-
-    function paintUsage() {
-      const badge = $("usageBadge");
-      const text = $("usageText");
-      const extra = $("usageActual");
-      if (!text) return;
-      if (!liveUsage) {
-        if (badge) {
-          badge.textContent = $("ghPat")?.value.trim() ? "讀取中" : "未讀取";
-          badge.className = "shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-zinc-300";
-        }
-        paintUsageBar(0, FREE_MINUTES);
-        text.textContent = $("ghPat")?.value.trim()
-          ? "正在向 GitHub 讀本倉本月 Actions 跑次…"
-          : "填好 Owner／Repo／PAT 之後，呢度會顯示呢個監控倉本月真實跑咗幾多分鐘。";
-        if (extra) extra.textContent = projectionNote();
-        return;
-      }
-      const used = Number(liveUsage.used) || 0;
-      const quota = Number(liveUsage.quota) || FREE_MINUTES;
-      const pct = paintUsageBar(used, quota);
-      if (badge) {
-        badge.textContent = liveUsage.isPrivate ? "本倉真實用量" : "本倉真實用量 · 公開倉通常唔計額度";
-        badge.className = "shrink-0 rounded-full px-2 py-0.5 text-[11px] bg-emerald-500/15 text-emerald-200";
-      }
-      const month = liveUsage.month || "本月";
-      const quotaLine = liveUsage.isPrivate
-        ? `對比免費 ${quota.toLocaleString()}（${pct}%）${pct > 100 ? " · 已超免費額度" : ""}。`
-        : "呢個倉庫係公開嘅，通常唔計入 2,000 免費額度，但下面係真實跑次。";
-      let billingLine = "";
-      if (liveUsage.billingMinutes != null) {
-        billingLine = `<br/>帳戶 Billing 本月 Actions：${liveUsage.billingMinutes.toLocaleString()} 分鐘。`;
-      } else if (liveUsage.billingNote) {
-        billingLine = `<br/>${liveUsage.billingNote}`;
-      }
-      text.innerHTML = `
-        <b>${month} UTC</b> 監控 workflow 已跑 <b>${used.toLocaleString()}</b> 次，約 <b>${used.toLocaleString()}</b> 分鐘。${quotaLine}
-        ${billingLine}
-      `;
-      if (extra) extra.textContent = projectionNote();
-    }
-
-    async function tryBillingActionsMinutes(owner, pat, year, month) {
-      let login = owner;
-      try {
-        const me = await ghApi("/user", "GET", null, pat);
-        if (me && me.login) login = me.login;
-      } catch {
-        /* Fine-grained PAT 有時讀唔到 /user，改用 Owner 欄 */
-      }
-      const qs = `year=${year}&month=${month}`;
-      const paths = [
-        `/users/${encodeURIComponent(login)}/settings/billing/usage?${qs}`,
-        `/users/${encodeURIComponent(login)}/settings/billing/usage/summary?${qs}&product=actions`,
-        `/users/${encodeURIComponent(owner)}/settings/billing/usage?${qs}`,
-        `/orgs/${encodeURIComponent(owner)}/settings/billing/usage?${qs}`,
-      ];
-      let lastErr = "";
-      for (const path of paths) {
-        for (const ver of ["2022-11-28", "2026-03-10"]) {
-          try {
-            const data = await ghApi(path, "GET", null, pat, ver);
-            const items = data.usageItems || data.usage_items;
-            if (!Array.isArray(items)) continue;
-            return { minutes: actionsMinutesFromItems(items), error: "" };
-          } catch (err) {
-            lastErr = String(err.message || err);
-          }
-        }
-      }
-      return { minutes: null, error: lastErr };
-    }
-
-    async function fetchMonitorRuns(owner, repo, pat, year, month) {
-      const start = `${year}-${String(month).padStart(2, "0")}-01`;
-      const end = month === 12 ? `${year + 1}-01-01` : `${year}-${String(month + 1).padStart(2, "0")}-01`;
-      const created = encodeURIComponent(`${start}..${end}`);
-      const encOwner = encodeURIComponent(owner);
-      const encRepo = encodeURIComponent(repo);
-      const paths = [
-        `/repos/${encOwner}/${encRepo}/actions/workflows/monitor.yml/runs?per_page=1&created=${created}`,
-        `/repos/${encOwner}/${encRepo}/actions/runs?per_page=1&created=${created}`,
-      ];
-      let lastErr;
-      for (const path of paths) {
-        try {
-          const data = await ghApi(path, "GET", null, pat);
-          return Number(data.total_count) || 0;
-        } catch (err) {
-          lastErr = err;
-        }
-      }
-      throw lastErr || new Error("讀唔到 Actions 跑次");
-    }
-
-    async function refreshGitHubUsage() {
-      const owner = $("ghOwner")?.value.trim();
-      const repo = $("ghRepo")?.value.trim();
-      const pat = $("ghPat")?.value.trim();
-      if (pat) sessionStorage.setItem(PAT_KEY, pat);
-      if (!owner || !repo || !pat) {
-        liveUsage = null;
-        paintUsage();
-        return;
-      }
-      if (usageInFlight) return;
-      usageInFlight = true;
-      if ($("usageBadge")) $("usageBadge").textContent = "讀取中";
-      try {
-        const { year, month } = utcMonthNow();
-        const monthLabel = `${year}-${String(month).padStart(2, "0")}`;
-        let isPrivate = false;
-        try {
-          const info = await ghApi(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`, "GET", null, pat);
-          isPrivate = !!info.private;
-        } catch {
-          isPrivate = false;
-        }
-        const billing = await tryBillingActionsMinutes(owner, pat, year, month);
-        const repoRuns = await fetchMonitorRuns(owner, repo, pat, year, month);
-        liveUsage = {
-          used: repoRuns,
-          quota: FREE_MINUTES,
-          billingMinutes: billing.minutes,
-          billingNote: billing.minutes == null
-            ? "帳戶 Billing 總用量讀唔到：GitHub 官方話呢個 API 唔支援 Fine-grained PAT（Plan: Read 都唔得）。上面數字係本倉監控真實跑次。"
-            : "",
-          isPrivate,
-          month: monthLabel,
-        };
-        paintUsage();
-      } catch (err) {
-        liveUsage = null;
-        paintUsage();
-        if ($("usageText")) {
-          $("usageText").textContent = "讀唔到 GitHub 用量：" + (err.message || err) + "。確認已貼 PAT，而且有 Actions 讀取權限，然後撳「重新讀取用量」。";
-        }
-      } finally {
-        usageInFlight = false;
-      }
-    }
-
     function applyConfigToForm(cfg) {
       config = structuredClone(cfg);
       config.models = (config.models || []).filter((m) => m && m.part_number);
@@ -1061,23 +955,46 @@
       renderWatchList();
       renderStores();
       renderCapPriority();
-      estimateUsage();
       renderSimBoard();
       renderLiveBoard();
     }
 
     function updatePill() {
-      const on = isOn($("enabledToggle"));
+      const on = $("enabledToggle") ? isOn($("enabledToggle")) : false;
       const pill = $("statusPill");
       const hint = $("liveModeHint");
+      const headerHint = $("liveToggleHint");
+      const badge = $("liveSectionBadge");
+      const open = $("liveToggle")?.getAttribute("aria-expanded") === "true";
       if (!on) {
-        pill.textContent = "真實模式 OFF";
-        pill.className = "shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300";
+        if (pill) {
+          pill.textContent = "真實模式 OFF";
+          pill.className = "shrink-0 max-w-[42%] truncate rounded-full px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-medium bg-zinc-800 text-zinc-300";
+        }
         if (hint) hint.textContent = `而家：真實模式已關閉。送貨同取貨都係：${soonDays()} 日內可送到／可取先當有貨，其他當冇貨。`;
+        if (badge) {
+          badge.textContent = "OFF";
+          badge.className = "rounded-full px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300";
+        }
       } else {
-        pill.textContent = "真實模式 ON";
-        pill.className = "shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-emerald-500/20 text-emerald-200";
+        if (pill) {
+          pill.textContent = "真實模式 ON";
+          pill.className = "shrink-0 max-w-[42%] truncate rounded-full px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-medium bg-emerald-500/20 text-emerald-200";
+        }
         if (hint) hint.textContent = `而家：真實模式已開啟。${soonDays()} 日內可送或可取先 Telegram；遲過呢個窗、冇寫日期都當冇貨。`;
+        if (badge) {
+          badge.textContent = "ON";
+          badge.className = "rounded-full px-3 py-1 text-xs font-medium bg-emerald-500/20 text-emerald-200";
+        }
+      }
+      if (headerHint) {
+        headerHint.textContent = open
+          ? (on
+            ? `而家 ON。${soonDays()} 日內可送或可取先 Telegram。`
+            : `而家 OFF。展開後可以改頻率、時段同「幾耐之內先當有貨」。`)
+          : (on
+            ? `而家 ON · ${soonDays()} 日窗。要改設定或睇貨源先展開。`
+            : `而家 OFF · 預設收起。要改頻率、時段或睇貨源先展開。`);
       }
     }
 
@@ -1300,7 +1217,6 @@
           toast(($("saveMsg").textContent || "") + " 即刻查詢未能排程：" + err.message, false);
         }
       }
-      refreshGitHubUsage();
       updatePill();
     }
 
@@ -1442,34 +1358,55 @@
       liveTimer = setInterval(loadState, 15000);
     }
 
-    function setSimExpanded(open) {
-      const panel = $("simPanel");
-      const toggle = $("simToggle");
-      const label = $("simToggleLabel");
-      const hint = $("simToggleHint");
+    function setSectionOpen(name, open) {
+      const panel = $(name + "Panel");
+      const toggle = $(name + "Toggle");
+      const label = $(name + "ToggleLabel");
       if (!panel || !toggle) return;
       panel.hidden = !open;
       panel.classList.toggle("hidden", !open);
       toggle.setAttribute("aria-expanded", open ? "true" : "false");
       if (label) label.textContent = open ? "收起" : "展開";
-      if (hint) {
-        hint.textContent = open
-          ? "每格自己揀有貨定冇貨，撳儲存模擬狀態先會發測試 Telegram。"
-          : "預設收起。要試 Telegram「冇貨→有貨」先展開。";
+      if (name === "sim") {
+        const hint = $("simToggleHint");
+        if (hint) {
+          hint.textContent = open
+            ? "每格自己揀有貨定冇貨，撳儲存模擬狀態先會發測試 Telegram。"
+            : "預設收起。要試 Telegram「冇貨→有貨」先展開。";
+        }
+      }
+      if (name === "live") updatePill();
+      if (name === "models") updateModelsHint();
+      if (name === "stores") updateStoresHint();
+      if (name === "preview") {
+        const hint = $("previewToggleHint");
+        if (hint) hint.textContent = open ? "撳連結核對產品頁、取貨同送貨 JSON。" : "預設收起。要睇官網連結先展開。";
+      }
+      if (name === "priority") {
+        const hint = $("priorityToggleHint");
+        if (hint) hint.textContent = open ? "權重愈高，同週期通知排序愈前。" : "預設收起。要調容量／通路權重先展開。";
+      }
+      if (name === "pat") {
+        const hint = $("patToggleHint");
+        if (hint) hint.textContent = open ? "PAT 只留喺呢個分頁，唔會寫進倉庫。" : "預設收起。要填 PAT 或查 Secrets 先展開。";
       }
     }
 
+    function setSimExpanded(open) { setSectionOpen("sim", open); }
+    function setLiveExpanded(open) { setSectionOpen("live", open); }
+
     function bind() {
-      if ($("simToggle")) {
-        $("simToggle").addEventListener("click", () => {
-          setSimExpanded($("simToggle").getAttribute("aria-expanded") !== "true");
+      COLLAPSE_SECTIONS.forEach((name) => {
+        const toggle = $(name + "Toggle");
+        if (!toggle) return;
+        toggle.addEventListener("click", () => {
+          setSectionOpen(name, toggle.getAttribute("aria-expanded") !== "true");
         });
-      }
-      setSimExpanded(false);
+        setSectionOpen(name, false);
+      });
       $("enabledToggle").addEventListener("click", () => {
         setToggle($("enabledToggle"), !isOn($("enabledToggle")));
         updatePill();
-        estimateUsage();
         loadState();
       });
       $("familySelect").addEventListener("change", fillColors);
@@ -1488,7 +1425,6 @@
           capacity: p.capacity,
         });
         renderWatchList();
-        estimateUsage();
         renderSimBoard();
         renderLiveBoard();
         toast("已加入監控清單（記得按儲存設定）");
@@ -1508,10 +1444,9 @@
           if (ev.key === "Enter") { ev.preventDefault(); addCustomStore(); }
         });
       });
-      ["intervalInput", "hoursAllDay", "hoursStart", "hoursEnd", "modePickup", "modeDelivery"].forEach((id) => {
+      ["intervalInput", "hoursAllDay", "hoursStart", "hoursEnd"].forEach((id) => {
         if (!$(id)) return;
-        $(id).addEventListener("input", estimateUsage);
-        $(id).addEventListener("change", estimateUsage);
+        $(id).addEventListener("change", syncHoursFields);
       });
       if ($("hoursAllDay")) {
         $("hoursAllDay").addEventListener("change", syncHoursFields);
@@ -1525,7 +1460,7 @@
       $("modePickup").addEventListener("change", () => { renderSimBoard(); renderLiveBoard(); });
       $("modeDelivery").addEventListener("change", () => { renderSimBoard(); renderLiveBoard(); });
       $("storeList").addEventListener("change", () => {
-        estimateUsage();
+        updateStoresHint();
         renderSimBoard();
         renderLiveBoard();
       });
@@ -1549,18 +1484,10 @@
         catch (err) { toast(String(err.message || err), false); }
         finally { $("saveSimBtn").disabled = false; }
       });
-      if ($("usageRefreshBtn")) {
-        $("usageRefreshBtn").addEventListener("click", () => refreshGitHubUsage());
-      }
-      ["ghPat", "ghOwner", "ghRepo"].forEach((id) => {
-        if (!$(id)) return;
-        $(id).addEventListener("change", () => refreshGitHubUsage());
-      });
       if ($("ghPat")) {
-        let patTimer = null;
         $("ghPat").addEventListener("input", () => {
-          clearTimeout(patTimer);
-          patTimer = setTimeout(() => refreshGitHubUsage(), 800);
+          const pat = $("ghPat").value.trim();
+          if (pat) sessionStorage.setItem(PAT_KEY, pat);
         });
       }
       $("reloadBtn").addEventListener("click", () => location.reload());
@@ -1600,9 +1527,6 @@
       }
       await loadState();
       startLiveRefresh();
-      await refreshGitHubUsage();
-      if (usageTimer) clearInterval(usageTimer);
-      usageTimer = setInterval(refreshGitHubUsage, 5 * 60 * 1000);
     }
 
     boot();
