@@ -19,7 +19,7 @@
 | 層 | 位置 | 放什麼 |
 | --- | --- | --- |
 | 公開設定 | `config.json` | 開關、型號、門市、優先級。**不含任何 token** |
-| 執行狀態 | `state.json` | 每個「型號 × 通路」上次庫存，供防洗版 |
+| 執行狀態 | `monitor-state` 上嘅 `state.json` | 每個「型號 × 通路」上次庫存，供防洗版。唔寫入 `main`，以免打爆 Pages |
 | 機密 | GitHub Secrets | `TELEGRAM_BOT_TOKEN`、`TELEGRAM_CHAT_ID` |
 | 控制台 PAT | 瀏覽器 `sessionStorage` | 只在當次分頁有效，關分頁即消失 |
 
@@ -70,6 +70,8 @@ Repo → Settings → Pages → Build and deployment：
 
 - Source: **Deploy from a branch**
 - Branch: `main` / folder: `/ (root)`
+
+查貨紀錄 `state.json` 寫喺 `monitor-state` 分支，**唔會**每次查貨都 rebuild Pages。你喺 Environments 見到大量 `github-pages` 紅叉，係舊做法 30 秒 commit 一次 `main` 所致。
 
 數分鐘後開啟：
 
@@ -131,7 +133,7 @@ python3 -m http.server 8080
 
 5. **點解 set 咗 1 分鐘，控制台仲停喺十幾分鐘前？**  
    舊做法靠 GitHub `schedule` 鬧鐘。個鬧鐘官方最短約 5 分鐘，繁忙時會遲、甚至漏。而家改成 **job 入面按你設嘅間隔循環查**；鬧鐘只負責 loop 死咗就再拉起。真實模式 ON 並儲存之後，1 分鐘就會約 1 分鐘查一次。  
-   另外：30 秒一轉會令 GitHub Pages 跟唔到 `state.json`，控制台如果只讀 Pages 就會停喺舊時間。而家控制台每 15 秒直接讀 GitHub 最新 `state.json`（有 PAT 用 API，冇就用公開 API／raw），唔使等 Pages。
+   另外：舊做法每轉都把 `state.json` 推進 `main`，GitHub Pages 會跟唔到、Environments 出現大量紅叉。而家紀錄寫去 `monitor-state`，控制台每 15 秒直接讀嗰度（有 PAT 用 API，冇就用公開 API／raw），唔使等 Pages。
 
 6. **點樣先知道真係每一分鐘執行一次？**  
    真實模式 ON 並儲存之後：
@@ -262,7 +264,8 @@ GitHub Actions **以整分鐘進位**。**公開倉**用標準 runner 通常唔�
 ├── usage.py                   # Actions 分鐘累計；1800／2000 Telegram 提醒
 ├── config.json                # 公開設定（真實模式開關 / 模擬貨源 / 優先級）
 ├── catalog.json               # 香港門市與 iPhone Duo SKU
-├── state.json                 # 防洗版狀態（Actions 會回寫）
+├── state.json                 # 倉內快照；即時紀錄喺 monitor-state 分支
+├── push_state.py              # 把查貨狀態推去 monitor-state，唔觸發 Pages
 ├── requirements.txt
 ├── .github/workflows/monitor.yml
 └── README.md
@@ -308,7 +311,8 @@ SKU 若隨官網改版，更新 `catalog.json` 即可，控制台會自動讀取
 | 永遠 unknown | Apple 541／網路失敗。拉長間隔，或用 `--verbose` 看 log |
 | Actions 分鐘燒太快 | Disable workflow；私人倉唔好開住 1 分鐘長駐 loop |
 | 查貨紀錄一直空白 | 真實模式未 ON／未儲存。Actions 確認有 In progress 嘅 `iPhone HK Monitor` |
-| 查貨紀錄停咗但 Actions 仲跑 | Pages 滯後（30 秒一轉時常見）。重新載入控制台；應顯示「即時 GitHub」。要改設定先需要 PAT |
+| Environments 大量 github-pages 紅叉 | 舊 loop 仲喺每 30 秒 commit `main`。呢個 PR merge 後 cancel 舊嘅 In progress job；之後紀錄改寫 `monitor-state` |
+| 查貨紀錄停咗但 Actions 仲跑 | 控制台應讀 `monitor-state`。重新載入；應顯示「即時 GitHub」。要改設定先需要 PAT |
 | 收到「監測 loop 中斷」 | GitHub 會自動再拉起。去 Actions 睇失敗原因；Secret 唔齊就唔會收到呢條 |
 | Telegram 沒收到 | Secret 名稱是否 `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID`，以及有冇同 bot 講過話 |
 
