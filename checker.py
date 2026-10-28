@@ -69,7 +69,6 @@ REQUEST_HEADERS = {
 
 HK_TZ = ZoneInfo("Asia/Hong_Kong")
 FREE_MINUTES = 2000
-DUO_FAMILY = "iphone-duo"
 STATUS_AVAILABLE = "available"
 STATUS_UNAVAILABLE = "unavailable"
 STATUS_UNKNOWN = "unknown"

@@ -480,7 +480,7 @@
 
     function normalizeSku(raw) {
       let s = String(raw || "").trim();
-      const url = s.match(/apple\.com\/[^/]+\/shop\/product\/([^/?#]+)/i);
+      const url = s.match(/apple\.com\/[^/?#]+\/shop\/product\/([^/?#]+(?:\/[^/?#]+)?)/i);
       if (url) s = decodeURIComponent(url[1]);
       return s.replace(/\s+/g, "").toUpperCase();
     }
