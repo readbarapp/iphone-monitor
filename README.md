@@ -130,13 +130,14 @@ python3 -m http.server 8080
    **標準 GitHub-hosted runner（ubuntu-latest）喺公開倉係免費嘅**，唔會扣私人倉嗰 2,000 分鐘。太密仍然會打爆 Apple（541）。如果之後改成私人倉，一條長駐 loop 可以一醒就用幾百分鐘，千祈唔好喺私人倉開住 1 分鐘 loop。
 
 5. **點解 set 咗 1 分鐘，控制台仲停喺十幾分鐘前？**  
-   舊做法靠 GitHub `schedule` 鬧鐘。個鬧鐘官方最短約 5 分鐘，繁忙時會遲、甚至漏。而家改成 **job 入面按你設嘅間隔循環查**；鬧鐘只負責 loop 死咗就再拉起。真實模式 ON 並儲存之後，1 分鐘就會約 1 分鐘查一次。
+   舊做法靠 GitHub `schedule` 鬧鐘。個鬧鐘官方最短約 5 分鐘，繁忙時會遲、甚至漏。而家改成 **job 入面按你設嘅間隔循環查**；鬧鐘只負責 loop 死咗就再拉起。真實模式 ON 並儲存之後，1 分鐘就會約 1 分鐘查一次。  
+   另外：30 秒一轉會令 GitHub Pages 跟唔到 `state.json`，控制台如果只讀 Pages 就會停喺舊時間。而家控制台每 15 秒直接讀 GitHub 最新 `state.json`（有 PAT 用 API，冇就用 raw），唔使等 Pages。
 
 6. **點樣先知道真係每一分鐘執行一次？**  
    真實模式 ON 並儲存之後：
-   - 控制台「查貨紀錄」會列出最近 5 轉查官網嘅香港時間，同「距上一轉約 X 分鐘」。連續次數會一直累加。填咗 PAT 會每 15 秒直接讀 GitHub，唔使等 Pages 刷新。
+   - 控制台「查貨紀錄」會列出最近 5 轉查官網嘅香港時間，同「距上一轉約 X 分鐘／秒」。連續次數會一直累加。每 15 秒直接讀 GitHub 最新 `state.json`，唔使等 Pages 刷新。
    - 兩筆相差應約等於你設嘅間隔（1 分鐘就大約 1；查官網同 commit 可能變成 1–2 分鐘）。疏過設定 +1 分鐘會標 ⚠️。
-   - GitHub → Actions → `iPhone HK Monitor` → 最新 **In progress** run，log 會每轉印 `heartbeat … next check in 1 minute(s)`。
+   - GitHub → Actions → `iPhone HK Monitor` → 最新 **In progress** run，log 會每轉印 `heartbeat … next check in …`。
    - `state.json` 嘅 `loop.ticks` / `loop.tick_count` 都係同一份紀錄。
 
 7. **Loop 死咗會唔會 Telegram 我？**  
@@ -306,7 +307,8 @@ SKU 若隨官網改版，更新 `catalog.json` 即可，控制台會自動讀取
 | 有貨但沒通知 | 看 `state.json`：若上次已是 `available`，屬防洗版。真實同模擬係兩套紀錄 |
 | 永遠 unknown | Apple 541／網路失敗。拉長間隔，或用 `--verbose` 看 log |
 | Actions 分鐘燒太快 | Disable workflow；私人倉唔好開住 1 分鐘長駐 loop |
-| 查貨紀錄一直空白 | 真實模式未 ON／未儲存，或 PAT 未填。Actions 確認有 In progress 嘅 `iPhone HK Monitor` |
+| 查貨紀錄一直空白 | 真實模式未 ON／未儲存。Actions 確認有 In progress 嘅 `iPhone HK Monitor` |
+| 查貨紀錄停咗但 Actions 仲跑 | Pages 滯後（30 秒一轉時常見）。重新載入控制台；應顯示「即時 GitHub」。要改設定先需要 PAT |
 | 收到「監測 loop 中斷」 | GitHub 會自動再拉起。去 Actions 睇失敗原因；Secret 唔齊就唔會收到呢條 |
 | Telegram 沒收到 | Secret 名稱是否 `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID`，以及有冇同 bot 講過話 |
 
