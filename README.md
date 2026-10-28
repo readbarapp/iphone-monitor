@@ -11,7 +11,7 @@
 1. 依 `config.json` 監測清單上嘅型號。已內建 **iPhone Duo**（香港 SKU，後綴 `ZA/A`）；日後新品可喺控制台貼官網 SKU／門市 code，唔使改程式。
 2. 同時支援 **門市取貨（Pick-up）** 與 **送貨上門（Delivery）**。
 3. 只在狀態從冇貨變成有貨時通知；同一輪多筆有貨會**打包成 1 條訊息**，並依優先級排序。
-4. 訊息標註通路，並附上 [直達結帳連結](https://www.apple.com/hk-zh/shop/buy-iphone)。
+4. 訊息標註通路，並附上已揀呢款嘅 [加入購物袋連結](https://www.apple.com/hk-zh/xc/product/MK2J4ZA/A)（iPhone 多數開 Apple Store App；入去仍要撳「加入購物袋」再 Apple Pay。Apple 冇公開一鍵入袋網址）。
 5. 控制台可開關真實模式、改模擬貨源，並用 GitHub REST API 回寫 `config.json`。各區塊預設收起，有需要先展開。頁底儲存列常開。
 
 ### 架構（Zero-Trust）
@@ -226,8 +226,8 @@ GitHub Actions **以整分鐘進位**。**公開倉**用標準 runner 通常唔�
 2. **先走完結帳頁到付款前一步**  
    開售前用同型號走一次流程到「確認付款」前（不要真的下單），熟悉地址、取貨店、支付方式。
 
-3. **點通知裡的直達結帳，不要從首頁再選一次**  
-   連結是 `https://www.apple.com/hk-zh/shop/product/<SKU>`，會進對應顏色／容量頁。
+3. **點通知裡的「加入購物袋」，不要從首頁再選一次**  
+   連結是 `https://www.apple.com/hk-zh/xc/product/<SKU>`（Apple Store App 深層網址；網頁會轉去已揀顏色／容量嘅購買頁）。入去後撳「加入購物袋」，再用 Apple Pay。Apple 唔提供由 Telegram 直接加車。
 
 4. **5G / 穩定網路，必要時切換**  
    開售瞬間 Wi-Fi 可能擠爆。準備好手機 5G 熱點，結帳失敗就切網路再送一次，不要狂連點。

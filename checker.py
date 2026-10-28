@@ -55,6 +55,8 @@ FULFILLMENT_URL = f"{APPLE_ORIGIN}/hk-zh/shop/fulfillment-messages"
 PICKUP_URL = f"{APPLE_ORIGIN}/hk-zh/shop/retail/pickup-message"
 DELIVERY_URL = f"{APPLE_ORIGIN}/hk-zh/shop/delivery-message"
 CHECKOUT_URL = f"{APPLE_ORIGIN}/hk-zh/shop/product/"
+# /xc/product 係 Apple Store App universal link；瀏覽器會轉去已揀呢款嘅購買頁。
+STORE_APP_PRODUCT_URL = f"{APPLE_ORIGIN}/hk-zh/xc/product/"
 
 USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -203,8 +205,9 @@ def configure_logging(verbose: bool) -> None:
 
 
 def checkout_url(part_number: str) -> str:
-    """一鍵直達官網對應型號購買頁（會 301 到完整 PDP）。"""
-    return CHECKOUT_URL + urllib.parse.quote(part_number, safe="/")
+    """已揀呢個 SKU 嘅加入購物袋頁（Apple Store App／官網購買頁）。"""
+    part = urllib.parse.quote(str(part_number or "").strip(), safe="/")
+    return STORE_APP_PRODUCT_URL + part
 
 
 def item_key(mode: str, store_id: str, part_number: str) -> str:
@@ -831,7 +834,7 @@ def _hit_lines(hits: list[AvailabilityHit]) -> list[str]:
                 f"{idx}. [{mode_label}] {hit.name}",
                 f"   📍 {place}",
                 f"   💬 {hit.quote or '可立即購買'}",
-                f"   🔗 直達結帳：{hit.checkout_url}",
+                f"   🛒 加入購物袋（已揀呢款）：{hit.checkout_url}",
                 "",
             ]
         )
@@ -847,7 +850,13 @@ def format_message(hits: list[AvailabilityHit]) -> str:
         "",
     ]
     lines.extend(_hit_lines(hits))
-    lines.append(f"時間：{iso_now()}（香港）")
+    lines.extend(
+        [
+            "入去後撳「加入購物袋」，再用 Apple Pay。",
+            "Apple 唔提供由 Telegram 直接加車；呢條已幫你揀好呢款。",
+            f"時間：{iso_now()}（香港）",
+        ]
+    )
     return "\n".join(lines).strip() + "\n"
 
 
@@ -1344,13 +1353,15 @@ def run_self_test() -> int:
     )
 
     text = format_message(newly3)
-    check("直達結帳" in text and "門市取貨" in text and "送貨上門" in text, "綜合訊息含通路與結帳連結")
+    check("加入購物袋" in text and "門市取貨" in text and "送貨上門" in text, "綜合訊息含通路與加入購物袋連結")
+    check("/xc/product/" in text and "MK2E4ZA/A" in text, "加入購物袋連結用 Store App 深層網址")
+    check(checkout_url("MK2J4ZA/A") == "https://www.apple.com/hk-zh/xc/product/MK2J4ZA/A", "SKU 購買連結應指向 xc/product")
     check(text.count("🍎") == 1, "同週期只產出 1 條訊息")
 
     ping = format_connection_test_message()
     check("Telegram 連線測試" in ping, "連線測試標題正確")
     check("唔代表任何 iPhone 有貨" in ping, "連線測試聲明唔係補貨")
-    check("直達結帳" not in ping and "有貨通知" not in ping, "連線測試不含補貨版面")
+    check("加入購物袋" not in ping and "有貨通知" not in ping, "連線測試不含補貨版面")
 
     conflicted = (
         '{\n<<<<<<< HEAD\n<<<<<<< HEAD\n  "t": "2026-10-28T09:47:00+08:00"\n'
