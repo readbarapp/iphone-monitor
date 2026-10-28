@@ -62,8 +62,16 @@
       "name": "iPhone Duo 2TB 星光白",
       "color": "starwhite",
       "capacity": "2tb"
+    },
+    {
+      "part_number": "MJXQ4ZA/A",
+      "family": "custom",
+      "name": "iPhone 18 Pro Max 256GB 酒紅色",
+      "color": "",
+      "capacity": ""
     }
   ],
+  "custom_stores": [],
   "stores": [
     "R428",
     "R409",
@@ -177,7 +185,14 @@
       "pickup:R485:MK2K4ZA/A": "unavailable",
       "pickup:R673:MK2K4ZA/A": "unavailable",
       "pickup:R610:MK2K4ZA/A": "unavailable",
-      "delivery:DELIVERY:MK2K4ZA/A": "unavailable"
+      "delivery:DELIVERY:MK2K4ZA/A": "unavailable",
+      "pickup:R428:MJXQ4ZA/A": "unavailable",
+      "pickup:R409:MJXQ4ZA/A": "unavailable",
+      "pickup:R499:MJXQ4ZA/A": "unavailable",
+      "pickup:R485:MJXQ4ZA/A": "unavailable",
+      "pickup:R673:MJXQ4ZA/A": "unavailable",
+      "pickup:R610:MJXQ4ZA/A": "unavailable",
+      "delivery:DELIVERY:MJXQ4ZA/A": "unavailable"
     }
   },
   "notifications": {
