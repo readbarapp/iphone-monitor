@@ -131,7 +131,7 @@ python3 -m http.server 8080
 
 5. **點解 set 咗 1 分鐘，控制台仲停喺十幾分鐘前？**  
    舊做法靠 GitHub `schedule` 鬧鐘。個鬧鐘官方最短約 5 分鐘，繁忙時會遲、甚至漏。而家改成 **job 入面按你設嘅間隔循環查**；鬧鐘只負責 loop 死咗就再拉起。真實模式 ON 並儲存之後，1 分鐘就會約 1 分鐘查一次。  
-   另外：30 秒一轉會令 GitHub Pages 跟唔到 `state.json`，控制台如果只讀 Pages 就會停喺舊時間。而家控制台每 15 秒直接讀 GitHub 最新 `state.json`（有 PAT 用 API，冇就用 raw），唔使等 Pages。
+   另外：30 秒一轉會令 GitHub Pages 跟唔到 `state.json`，控制台如果只讀 Pages 就會停喺舊時間。而家控制台每 15 秒直接讀 GitHub 最新 `state.json`（有 PAT 用 API，冇就用公開 API／raw），唔使等 Pages。
 
 6. **點樣先知道真係每一分鐘執行一次？**  
    真實模式 ON 並儲存之後：

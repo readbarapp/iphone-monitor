@@ -1328,12 +1328,24 @@
       return JSON.parse(decodeB64(file.content || ""));
     }
 
+    async function loadStateFromPublicGithub() {
+      const { owner, repo, branch } = repoRef();
+      if (!owner || !repo) return null;
+      const url = `https://api.github.com/repos/${owner}/${repo}/contents/state.json?ref=${encodeURIComponent(branch)}`;
+      const res = await fetch(url, {
+        cache: "no-store",
+        headers: { Accept: "application/vnd.github.raw+json" },
+      });
+      if (!res.ok) throw new Error("GitHub state.json HTTP " + res.status);
+      return res.json();
+    }
+
     async function loadStateFromRawGithub() {
       const { owner, repo, branch } = repoRef();
       if (!owner || !repo) return null;
       const url = `https://raw.githubusercontent.com/${owner}/${repo}/${encodeURIComponent(branch)}/state.json?t=${Date.now()}`;
       const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) throw new Error("GitHub state.json HTTP " + res.status);
+      if (!res.ok) throw new Error("GitHub raw state.json HTTP " + res.status);
       return res.json();
     }
 
@@ -1375,6 +1387,14 @@
           if (latestState) stateSource = "即時 GitHub";
         } catch {
           latestState = null;
+        }
+        if (!latestState) {
+          try {
+            latestState = await loadStateFromPublicGithub();
+            if (latestState) stateSource = "即時 GitHub";
+          } catch {
+            latestState = null;
+          }
         }
         if (!latestState) {
           try {
