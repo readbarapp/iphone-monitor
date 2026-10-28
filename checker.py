@@ -210,12 +210,40 @@ def item_key(mode: str, store_id: str, part_number: str) -> str:
     return f"{mode}:{store_id}:{part_number}"
 
 
-def loop_interval_minutes(cfg: dict[str, Any] | None = None) -> int:
+MIN_INTERVAL_SECONDS = 30
+MAX_INTERVAL_SECONDS = 3600
+
+
+def loop_interval_seconds(cfg: dict[str, Any] | None = None) -> int:
+    """查貨間隔（秒）。有 check_interval_seconds 就用佢，否則用分鐘 × 60。最快 30 秒。"""
+    data = cfg or {}
+    raw_sec = data.get("check_interval_seconds")
+    if raw_sec not in (None, ""):
+        try:
+            sec = int(raw_sec)
+        except (TypeError, ValueError):
+            sec = 0
+        if sec > 0:
+            return max(MIN_INTERVAL_SECONDS, min(sec, MAX_INTERVAL_SECONDS))
     try:
-        minutes = int((cfg or {}).get("check_interval_minutes") or 5)
+        minutes = int(data.get("check_interval_minutes") or 5)
     except (TypeError, ValueError):
         minutes = 5
-    return max(1, min(minutes, 60))
+    return max(60, min(max(1, minutes), 60) * 60)
+
+
+def loop_interval_minutes(cfg: dict[str, Any] | None = None) -> int:
+    return max(1, (loop_interval_seconds(cfg) + 59) // 60)
+
+
+def format_interval_label(seconds: int) -> str:
+    sec = max(0, int(seconds))
+    if sec < 60:
+        return f"{sec} 秒"
+    minutes, rem = divmod(sec, 60)
+    if rem:
+        return f"{minutes} 分 {rem} 秒"
+    return f"{minutes} 分鐘"
 
 
 def touch_loop(state: dict[str, Any], cfg: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -229,6 +257,7 @@ def touch_loop(state: dict[str, Any], cfg: dict[str, Any] | None = None) -> dict
             "alive": True,
             "heartbeat_at": now,
             "interval_minutes": loop_interval_minutes(cfg),
+            "interval_seconds": loop_interval_seconds(cfg),
             "tick_count": int(loop.get("tick_count") or 0) + 1,
             "ticks": ticks[-12:],
             "stopped": None,
@@ -269,8 +298,13 @@ def loop_heartbeat_stale(
     if moment.tzinfo is None:
         moment = moment.replace(tzinfo=HK_TZ)
     age = (moment.astimezone(HK_TZ) - seen.astimezone(HK_TZ)).total_seconds()
-    interval = int(loop.get("interval_minutes") or loop_interval_minutes(cfg))
-    limit = max(3, interval) * 60 + 90
+    if loop.get("interval_seconds"):
+        interval_sec = int(loop["interval_seconds"])
+    elif loop.get("interval_minutes"):
+        interval_sec = int(loop["interval_minutes"]) * 60
+    else:
+        interval_sec = loop_interval_seconds(cfg)
+    limit = max(90, interval_sec * 3 + 30)
     return age > limit
 
 
@@ -368,11 +402,8 @@ def apply_soon_window(
 
 
 def due_for_interval(cfg: dict[str, Any], state: dict[str, Any], moment: datetime | None = None) -> bool:
-    """距離上次成功查詢未滿 check_interval_minutes 則略過（cron 未改到時的保險）。"""
-    try:
-        interval = max(1, int(cfg.get("check_interval_minutes") or 2))
-    except (TypeError, ValueError):
-        interval = 2
+    """距離上次成功查詢未滿設定間隔則略過（cron 未改到時的保險）。"""
+    interval = loop_interval_seconds(cfg)
     last = state.get("last_run") or {}
     if last.get("status") != "ok":
         return True
@@ -387,7 +418,7 @@ def due_for_interval(cfg: dict[str, Any], state: dict[str, Any], moment: datetim
         prev = prev.replace(tzinfo=HK_TZ)
     moment = moment or now_hk()
     elapsed = (moment - prev).total_seconds()
-    return elapsed >= (interval - 0.2) * 60
+    return elapsed >= max(1, interval - 2)
 
 
 def within_business_hours(cfg: dict[str, Any], moment: datetime | None = None) -> bool:
@@ -774,7 +805,7 @@ def apply_state_machine(
 def format_loop_died_message(*, reason: str = "", heartbeat: str = "", interval: int = 0) -> str:
     why = reason or "未知"
     beat = heartbeat or "沒有紀錄"
-    gap = f"{interval} 分鐘" if interval else "未知"
+    gap = format_interval_label(interval) if interval else "未知"
     return (
         "⚠️ 監測 loop 中斷\n"
         "\n"
@@ -1166,8 +1197,8 @@ def run(args: argparse.Namespace) -> int:
 
     is_manual = os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch"
     if not is_manual and not args.ignore_interval and not due_for_interval(cfg, state):
-        interval = cfg.get("check_interval_minutes") or 2
-        msg = f"距離上次查詢未滿 {interval} 分鐘，略過本輪（不改寫狀態）。"
+        interval = format_interval_label(loop_interval_seconds(cfg))
+        msg = f"距離上次查詢未滿 {interval}，略過本輪（不改寫狀態）。"
         LOGGER.info(msg)
         print(msg)
         return 0
@@ -1288,6 +1319,15 @@ def run_self_test() -> int:
     check(not due_for_interval(cfg, fresh, later), "未滿間隔不應再查")
     check(due_for_interval(cfg, fresh, much_later), "滿間隔應再查")
     check(due_for_interval(cfg, {"last_run": {"status": "disabled", "at": inside.isoformat()}}, later), "非成功查詢不套用間隔")
+    check(loop_interval_seconds({"check_interval_seconds": 30}) == 30, "可設 30 秒一轉")
+    check(loop_interval_seconds({"check_interval_minutes": 1}) == 60, "舊設定 1 分鐘＝60 秒")
+    check(format_interval_label(30) == "30 秒", "30 秒文案")
+    fast_cfg = {"check_interval_seconds": 30}
+    just = inside
+    soon = inside.replace(second=min(inside.second + 10, 59))
+    after = inside.replace(minute=inside.minute, second=0) + timedelta(seconds=31)
+    check(not due_for_interval(fast_cfg, {"last_run": {"status": "ok", "at": just.isoformat()}}, soon), "未滿 30 秒不應再查")
+    check(due_for_interval(fast_cfg, {"last_run": {"status": "ok", "at": just.isoformat()}}, after), "滿 30 秒應再查")
 
     watch = resolve_watch_list(cfg, catalog)
     hits = mock_hits(cfg, watch, catalog, default_status=STATUS_AVAILABLE)
@@ -1479,7 +1519,7 @@ def _handle_loop_admin(args: argparse.Namespace) -> int | None:
         text = format_loop_died_message(
             reason="心跳過期，GitHub 正重新拉起監測 loop",
             heartbeat=str(loop.get("heartbeat_at") or ""),
-            interval=int(loop.get("interval_minutes") or loop_interval_minutes(cfg)),
+            interval=int(loop.get("interval_seconds") or loop_interval_seconds(cfg)),
         )
         print(text)
         send_telegram(text)
@@ -1489,7 +1529,7 @@ def _handle_loop_admin(args: argparse.Namespace) -> int | None:
     text = format_loop_died_message(
         reason=args.loop_died_reason or "GitHub job 失敗或被取消",
         heartbeat=str(loop.get("heartbeat_at") or ""),
-        interval=int(loop.get("interval_minutes") or loop_interval_minutes(cfg)),
+        interval=int(loop.get("interval_seconds") or loop_interval_seconds(cfg)),
     )
     print(text)
     send_telegram(text)

@@ -156,17 +156,18 @@
       <div class="mt-4 sm:mt-6 grid lg:grid-cols-3 gap-3 sm:gap-4 min-w-0">
         <div class="inner-card lg:col-span-1 rounded-2xl bg-white/5 p-3 sm:p-4 border border-white/10">
           <h3 class="font-medium">幾耐查一次</h3>
-          <p class="text-[11px] text-zinc-400 mt-1">監測喺 runner 入面按呢個間隔循環查，唔再靠 GitHub 鬧鐘。1 分鐘會真係約 1 分鐘查一次。儲存並保持真實模式 ON 先會開住條 loop。</p>
+          <p class="text-[11px] text-zinc-400 mt-1">監測喺 runner 入面按呢個間隔循環查，唔再靠 GitHub 鬧鐘。30 秒最快，較易被 Apple 攔。儲存並保持真實模式 ON 先會開住條 loop。</p>
           <select id="intervalInput" class="field mt-3 w-full rounded-xl px-3 py-2 text-sm">
-            <option value="1">每 1 分鐘（最快；較易被 Apple 攔）</option>
-            <option value="2">每 2 分鐘</option>
-            <option value="3">每 3 分鐘</option>
-            <option value="5">每 5 分鐘（建議）</option>
-            <option value="10">每 10 分鐘</option>
-            <option value="15">每 15 分鐘（少打官網）</option>
-            <option value="20">每 20 分鐘</option>
-            <option value="30">每 30 分鐘</option>
-            <option value="60">每 60 分鐘</option>
+            <option value="30">每 30 秒（最快；較易被 Apple 攔）</option>
+            <option value="60">每 1 分鐘</option>
+            <option value="120">每 2 分鐘</option>
+            <option value="180">每 3 分鐘</option>
+            <option value="300">每 5 分鐘（建議）</option>
+            <option value="600">每 10 分鐘</option>
+            <option value="900">每 15 分鐘（少打官網）</option>
+            <option value="1200">每 20 分鐘</option>
+            <option value="1800">每 30 分鐘</option>
+            <option value="3600">每 60 分鐘</option>
           </select>
           <div class="mt-4">
             <h3 class="font-medium">每日監控時段（香港時間）</h3>
@@ -427,7 +428,7 @@
   <script>
     const PAT_KEY = "iphone_monitor_pat";
     const COLLAPSE_SECTIONS = ["sim", "live", "models", "stores", "preview", "priority", "pat"];
-    const INTERVALS = [1, 2, 3, 5, 10, 15, 20, 30, 60];
+    const INTERVALS = [30, 60, 120, 180, 300, 600, 900, 1200, 1800, 3600];
     const CAPACITIES = ["256gb", "512gb", "1tb", "2tb"];
     const CAP_LABEL = { "256gb": "256GB", "512gb": "512GB", "1tb": "1TB", "2tb": "2TB" };
 
@@ -861,8 +862,23 @@
       });
     }
 
+    function intervalSecondsFromConfig(cfg) {
+      const sec = Number(cfg && cfg.check_interval_seconds);
+      if (Number.isFinite(sec) && sec > 0) return snapInterval(sec);
+      const minutes = Number(cfg && cfg.check_interval_minutes);
+      if (Number.isFinite(minutes) && minutes > 0) return snapInterval(minutes * 60);
+      return 300;
+    }
+
+    function intervalLabel(seconds) {
+      const n = Number(seconds) || 0;
+      if (n > 0 && n < 60) return n + " 秒";
+      const minutes = Math.round(n / 60);
+      return (minutes || "?") + " 分鐘";
+    }
+
     function snapInterval(raw) {
-      const n = Number(raw) || 15;
+      const n = Number(raw) || 300;
       return INTERVALS.reduce((best, x) => Math.abs(x - n) < Math.abs(best - n) ? x : best, INTERVALS[0]);
     }
 
@@ -937,7 +953,7 @@
       const modes = cfg.fulfillment_modes || [];
       $("modePickup").checked = modes.includes("pickup");
       $("modeDelivery").checked = modes.includes("delivery") && (cfg.delivery?.enabled !== false);
-      $("intervalInput").value = String(snapInterval(cfg.check_interval_minutes || 15));
+      $("intervalInput").value = String(intervalSecondsFromConfig(cfg));
       if ($("soonWindowInput")) $("soonWindowInput").value = String(snapSoonWindow(cfg.soon_window_days || 7));
       if ($("hoursAllDay")) $("hoursAllDay").checked = !(cfg.business_hours && cfg.business_hours.enabled);
       $("hoursStart").value = cfg.business_hours?.start || "10:00";
@@ -1036,7 +1052,8 @@
       return {
         enabled: isOn($("enabledToggle")),
         soon_window_days: soonDays(),
-        check_interval_minutes: snapInterval($("intervalInput").value),
+        check_interval_seconds: snapInterval($("intervalInput").value),
+        check_interval_minutes: Math.max(1, Math.round(snapInterval($("intervalInput").value) / 60)),
         fulfillment_modes: modes.length ? modes : ["pickup"],
         models: config.models || [],
         custom_stores: persistCustomStores(),
@@ -1205,7 +1222,7 @@
         const windowNote = next.business_hours?.enabled
           ? "香港時間 " + (next.business_hours.start || "10:00") + "–" + (next.business_hours.end || "22:00")
           : "全日 24 小時";
-        cronNote = "查貨間隔 " + next.check_interval_minutes + " 分鐘（job 內循環）。Watchdog 每 5 分鐘檢查 loop。"
+        cronNote = "查貨間隔 " + intervalLabel(next.check_interval_seconds) + "（job 內循環）。Watchdog 每 5 分鐘檢查 loop。"
           + (cronResult.changed ? " 已更新時段：" : " 時段：") + windowNote + "。";
       } catch (err) {
         cronNote = "config 已存，但改 watchdog 失敗：" + err.message;
@@ -1314,19 +1331,22 @@
         el.textContent = "尚未有查貨紀錄。真實模式 ON 並儲存後，呢度會列出最近 5 轉。填咗 PAT 會直接讀 GitHub，唔使等 Pages。";
         return;
       }
-      const interval = Number(loop.interval_minutes) || 0;
+      const intervalSec = Number(loop.interval_seconds) || (Number(loop.interval_minutes) ? Number(loop.interval_minutes) * 60 : 0);
+      const useSeconds = intervalSec > 0 && intervalSec < 60;
       const lines = ticks.map((t, i) => {
         if (i === 0) return t;
         const prev = Date.parse(ticks[i - 1]);
         const cur = Date.parse(t);
-        const gap = Number.isFinite(prev) && Number.isFinite(cur) ? Math.round((cur - prev) / 60000) : "?";
-        const expected = interval || 1;
-        const late = typeof gap === "number" && gap > expected + 1;
-        return `${t}（距上一轉約 ${gap} 分鐘${late ? " ⚠️ 疏咗" : ""}）`;
+        const gapSec = Number.isFinite(prev) && Number.isFinite(cur) ? Math.round((cur - prev) / 1000) : null;
+        const gap = gapSec == null ? "?" : (useSeconds ? gapSec : Math.round(gapSec / 60));
+        const expected = useSeconds ? (intervalSec || 30) : Math.max(1, Math.round((intervalSec || 60) / 60));
+        const late = typeof gap === "number" && gap > expected + (useSeconds ? 15 : 1);
+        const unit = useSeconds ? "秒" : "分鐘";
+        return `${t}（距上一轉約 ${gap} ${unit}${late ? " ⚠️ 疏咗" : ""}）`;
       });
       const alive = loop.alive ? "監測運行中" : `監測已停${loop.stopped ? "：" + loop.stopped : ""}`;
       el.textContent =
-        `${alive} · 設定 ${interval || "?"} 分鐘一轉 · 已連續 ${loop.tick_count || ticks.length} 次\n最近 5 轉：\n` +
+        `${alive} · 設定 ${intervalLabel(intervalSec) || "?"} 一轉 · 已連續 ${loop.tick_count || ticks.length} 次\n最近 5 轉：\n` +
         lines.join("\n");
     }
 
