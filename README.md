@@ -23,7 +23,7 @@
 | 機密 | GitHub Secrets | `TELEGRAM_BOT_TOKEN`、`TELEGRAM_CHAT_ID` |
 | 控制台 PAT | 瀏覽器 `sessionStorage` | 只在當次分頁有效，關分頁即消失 |
 
-官方路徑 `https://www.apple.com/hk-zh/shop/fulfillment-messages` 目前常回 **HTTP 541** 攔截頁。`checker.py` 仍會先嘗試該端點，失敗後自動改走：
+官方路徑 `https://www.apple.com/hk-zh/shop/fulfillment-messages` 喺香港長期回 **HTTP 541**，`checker.py` **唔再打**呢條。每轉直接查：
 
 - 取貨：`/hk-zh/shop/retail/pickup-message`
 - 送貨：`/hk-zh/shop/delivery-message`
@@ -104,7 +104,7 @@ python3 -m http.server 8080
 | 自訂型號／門市 | `models[]` + `custom_stores` + `stores` | 控制台貼 SKU 或 `R` 店號；下面有官網預覽連結 |
 | 門市多選 | `stores` + `priority.stores` | 六間香港 Apple Store，可再加店號 |
 | 優先級 | `priority` | 門市權重 ×10000 + 容量 ×100 + 通路 |
-| 監控頻率 | `check_interval_minutes` | 儲存後由 job 內循環按呢個間隔查；真實模式貨源板會自動刷新 |
+| 監控頻率 | `check_interval_seconds`（舊欄 `check_interval_minutes` 仍有效） | 最快 30 秒。儲存後由 job 內循環按呢個間隔查。30 秒較易被 Apple 攔 |
 | 每日監控時段 | `business_hours` + watchdog cron 小時欄 | 你自己定香港時間幾點開始、幾點完。Watchdog 只喺呢段時間拉起 loop |
 | 查貨紀錄 | `state.json` `loop` | 每次查貨寫入時間；控制台只顯示最近 5 轉，連續次數會一直累加 |
 | 最近一次官網貨源 | `state.json` `items` | 上次問 Apple 時，每部監測機 × 門市／送貨嘅有貨情況 |

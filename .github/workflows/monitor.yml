@@ -1,6 +1,6 @@
 # Apple 香港 iPhone 庫存監控
 # GitHub 嘅 schedule 鬧鐘最短約 5 分鐘，而且會遲、會漏。
-# 真正監測係 job 入面按 check_interval_minutes 循環查。
+# 真正監測係 job 入面按 check_interval_seconds（或分鐘）循環查。最快 30 秒。
 # 單條 job 約 5.5 小時正常換班後，會即刻 workflow_dispatch 下一條。
 # schedule 只係後備：dispatch 失敗或者 loop 死咗，先靠鬧鐘再拉起。
 name: iPhone HK Monitor
@@ -188,8 +188,9 @@ jobs:
               echo "pull --rebase 失敗，中止後繼續用而家工作樹"
               git rebase --abort || true
             }
-            INTERVAL=$(python3 -c "import json; print(max(1, int((json.load(open('config.json')).get('check_interval_minutes') or 5))))")
-            python3 usage.py --minutes "$INTERVAL" || true
+            INTERVAL_SEC=$(python3 -c "import json; from checker import loop_interval_seconds; print(loop_interval_seconds(json.load(open('config.json'))))")
+            USAGE_MIN=$(( (INTERVAL_SEC + 59) / 60 ))
+            python3 usage.py --minutes "$USAGE_MIN" || true
             python3 checker.py --ignore-interval || true
             commit_state
             python3 - <<'PY' || { STOPPED=disabled; break; }
@@ -197,8 +198,8 @@ jobs:
           cfg = json.load(open("config.json", encoding="utf-8"))
           sys.exit(0 if cfg.get("enabled") else 1)
           PY
-            echo "heartbeat $(date -u +%Y-%m-%dT%H:%M:%SZ) next check in ${INTERVAL} minute(s)"
-            sleep $((INTERVAL * 60))
+            echo "heartbeat $(date -u +%Y-%m-%dT%H:%M:%SZ) next check in ${INTERVAL_SEC} second(s)"
+            sleep "$INTERVAL_SEC"
           done
           if [ "$STOPPED" = "disabled" ]; then
             python3 checker.py --loop-stopped disabled || true
