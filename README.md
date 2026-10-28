@@ -23,7 +23,7 @@
 | 機密 | GitHub Secrets | `TELEGRAM_BOT_TOKEN`、`TELEGRAM_CHAT_ID` |
 | 控制台 PAT | 瀏覽器 `sessionStorage` | 只在當次分頁有效，關分頁即消失 |
 
-官方路徑 `https://www.apple.com/hk-zh/shop/fulfillment-messages` 目前常回 **HTTP 541** 攔截頁。`checker.py` 仍會先嘗試該端點，失敗後自動改走：
+官方路徑 `https://www.apple.com/hk-zh/shop/fulfillment-messages` 喺香港長期回 **HTTP 541**，`checker.py` **唔再打**呢條。每轉直接查：
 
 - 取貨：`/hk-zh/shop/retail/pickup-message`
 - 送貨：`/hk-zh/shop/delivery-message`

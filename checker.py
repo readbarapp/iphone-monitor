@@ -16,9 +16,9 @@ Apple 香港官網 iPhone 庫存監控器。
 - 優先級：依 config.priority 的門市 / 容量 / 取貨模式權重排序。
 - 防干擾：隨機延遲、指數退避重試、每日監控時段。
 
-Apple 香港目前會對 /shop/fulfillment-messages 回 541 攔截頁。
-本程式仍會先嘗試該官方路徑（規格要求），失敗後自動改走
-/shop/retail/pickup-message 與 /shop/delivery-message，避免把攔截誤判成無貨。
+Apple 香港對 /shop/fulfillment-messages 長期回 541 攔截頁，
+所以唔再打呢條。真實查貨直接走
+/shop/retail/pickup-message 與 /shop/delivery-message。
 """
 
 from __future__ import annotations
@@ -51,7 +51,6 @@ STATE_PATH = ROOT / "state.json"
 CATALOG_PATH = ROOT / "catalog.json"
 
 APPLE_ORIGIN = "https://www.apple.com"
-FULFILLMENT_URL = f"{APPLE_ORIGIN}/hk-zh/shop/fulfillment-messages"
 PICKUP_URL = f"{APPLE_ORIGIN}/hk-zh/shop/retail/pickup-message"
 DELIVERY_URL = f"{APPLE_ORIGIN}/hk-zh/shop/delivery-message"
 CHECKOUT_URL = f"{APPLE_ORIGIN}/hk-zh/shop/product/"
@@ -511,8 +510,7 @@ class AppleClient:
         self.timeout = float(anti.get("request_timeout_seconds") or 20)
         self.session = session or requests.Session()
         self.session.headers.update(REQUEST_HEADERS)
-        # 香港目前對 fulfillment-messages 固定回 541。同一輪記住後就改走後備端點，
-        # 避免指數退避把 GitHub Actions 分鐘與官網頻率額度一起燒光。
+        # pickup／delivery 若被 541，同一輪記住後唔好再打同一 URL。
         self._dead_hosts: set[str] = set()
 
     def _sleep_backoff(self, attempt: int) -> None:
@@ -548,7 +546,7 @@ class AppleClient:
                     return None
                 ctype = resp.headers.get("content-type", "")
                 if "json" not in ctype.lower():
-                    # fulfillment-messages 被 541/HTML 攔截時會走到這裡。
+                    # pickup／delivery 被 HTML 攔截頁擋住時會走到這裡。
                     LOGGER.info(
                         "端點未回 JSON（content-type=%s），稍後改走後備 API",
                         ctype or "unknown",
@@ -571,24 +569,6 @@ class AppleClient:
         if last_error:
             LOGGER.error("重試耗盡：%s", last_error)
         return None
-
-    def try_fulfillment(
-        self, parts: list[str], store_id: str | None, location: str
-    ) -> dict[str, Any] | None:
-        """規格要求的官方路徑；香港目前常回 541，失敗屬預期。"""
-        params: dict[str, Any] = {
-            "pl": "true",
-            "fae": "true",
-            "mts.0": "regular",
-            "searchNearby": "true",
-            "little": "false",
-            "location": location,
-        }
-        for idx, part in enumerate(parts):
-            params[f"parts.{idx}"] = part
-        if store_id:
-            params["store"] = store_id
-        return self.get_json(FULFILLMENT_URL, params)
 
     def pickup(self, parts: list[str], location: str = "Hong Kong") -> dict[str, Any] | None:
         params: dict[str, Any] = {
@@ -988,12 +968,9 @@ def live_hits(
     hits: list[AvailabilityHit] = []
 
     if "pickup" in modes:
-        payload = client.try_fulfillment(parts, next(iter(stores), None), location)
+        LOGGER.info("直接查 pickup-message（跳過 fulfillment-messages）")
+        payload = client.pickup(parts, location="Hong Kong")
         parsed = parse_pickup_payload(payload, watch, stores, catalog, cfg) if payload else []
-        if not parsed:
-            LOGGER.info("fulfillment-messages 無可用取貨資料，改查 pickup-message")
-            payload = client.pickup(parts, location="Hong Kong")
-            parsed = parse_pickup_payload(payload, watch, stores, catalog, cfg) if payload else []
         if not parsed:
             LOGGER.error("取貨查詢失敗，本輪門市狀態維持上次結果（不改寫）")
             # 補 unknown，讓狀態機略過
@@ -1017,12 +994,9 @@ def live_hits(
             hits.extend(parsed)
 
     if "delivery" in modes:
-        payload = client.try_fulfillment(parts, None, location)
+        LOGGER.info("直接查 delivery-message（跳過 fulfillment-messages）")
+        payload = client.delivery(parts, location=location)
         parsed = parse_delivery_payload(payload, watch, cfg) if payload else []
-        if not parsed:
-            LOGGER.info("fulfillment-messages 無可用送貨資料，改查 delivery-message")
-            payload = client.delivery(parts, location=location)
-            parsed = parse_delivery_payload(payload, watch, cfg) if payload else []
         if not parsed:
             LOGGER.error("送貨查詢失敗，本輪送貨狀態維持上次結果（不改寫）")
             for item in watch:
@@ -1396,6 +1370,27 @@ def run_self_test() -> int:
         "自訂門市應納入監測",
     )
     check("🍎" not in sim_text, "測試結果唔好同真實補貨標題混淆")
+
+    class ProbeClient:
+        def __init__(self) -> None:
+            self.calls: list[str] = []
+
+        def try_fulfillment(self, *args: Any, **kwargs: Any) -> dict[str, Any] | None:
+            self.calls.append("fulfillment")
+            return {"should_not": True}
+
+        def pickup(self, *args: Any, **kwargs: Any) -> dict[str, Any] | None:
+            self.calls.append("pickup")
+            return None
+
+        def delivery(self, *args: Any, **kwargs: Any) -> dict[str, Any] | None:
+            self.calls.append("delivery")
+            return None
+
+    probe = ProbeClient()
+    live_hits(cfg, watch, catalog, probe)  # type: ignore[arg-type]
+    check("fulfillment" not in probe.calls, "唔好再打 fulfillment-messages")
+    check("pickup" in probe.calls and "delivery" in probe.calls, "直接查 pickup 同 delivery")
 
     now = datetime(2026, 10, 27, 15, 0, tzinfo=HK_TZ)  # 星期二
     cfg7 = {"soon_window_days": 7}
