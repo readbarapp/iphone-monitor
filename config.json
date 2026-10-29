@@ -37,20 +37,6 @@
       "capacity": "2tb"
     },
     {
-      "part_number": "MK2D4ZA/A",
-      "family": "iphone-duo",
-      "name": "iPhone Duo 256GB 星光白",
-      "color": "starwhite",
-      "capacity": "256gb"
-    },
-    {
-      "part_number": "MK2H4ZA/A",
-      "family": "iphone-duo",
-      "name": "iPhone Duo 1TB 星光白",
-      "color": "starwhite",
-      "capacity": "1tb"
-    },
-    {
       "part_number": "MK2K4ZA/A",
       "family": "iphone-duo",
       "name": "iPhone Duo 2TB 星光白",
@@ -152,20 +138,6 @@
       "pickup:R673:MK2L4ZA/A": "unavailable",
       "pickup:R610:MK2L4ZA/A": "unavailable",
       "delivery:DELIVERY:MK2L4ZA/A": "unavailable",
-      "pickup:R428:MK2D4ZA/A": "unavailable",
-      "pickup:R409:MK2D4ZA/A": "unavailable",
-      "pickup:R499:MK2D4ZA/A": "unavailable",
-      "pickup:R485:MK2D4ZA/A": "unavailable",
-      "pickup:R673:MK2D4ZA/A": "unavailable",
-      "pickup:R610:MK2D4ZA/A": "unavailable",
-      "delivery:DELIVERY:MK2D4ZA/A": "unavailable",
-      "pickup:R428:MK2H4ZA/A": "unavailable",
-      "pickup:R409:MK2H4ZA/A": "unavailable",
-      "pickup:R499:MK2H4ZA/A": "unavailable",
-      "pickup:R485:MK2H4ZA/A": "unavailable",
-      "pickup:R673:MK2H4ZA/A": "unavailable",
-      "pickup:R610:MK2H4ZA/A": "unavailable",
-      "delivery:DELIVERY:MK2H4ZA/A": "unavailable",
       "pickup:R428:MK2K4ZA/A": "unavailable",
       "pickup:R409:MK2K4ZA/A": "unavailable",
       "pickup:R499:MK2K4ZA/A": "unavailable",
