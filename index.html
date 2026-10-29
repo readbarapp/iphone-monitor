@@ -333,27 +333,6 @@
     </section>
 
     <section class="glass">
-      <button id="previewToggle" type="button" aria-expanded="false" aria-controls="previewPanel" class="w-full flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between text-left rounded-2xl py-1 hover:bg-white/5">
-        <div class="min-w-0 w-full">
-          <p class="text-xs uppercase tracking-wide sm:tracking-[0.18em] text-sky-300/80">預覽</p>
-          <h2 class="mt-2 text-lg sm:text-xl font-semibold">預覽監測 code</h2>
-          <p id="previewToggleHint" class="text-sm text-zinc-400 mt-1">預設收起。要睇官網連結先展開。</p>
-        </div>
-        <span id="previewToggleLabel" class="shrink-0 rounded-full border border-white/15 px-3 py-1 text-xs text-zinc-300">展開</span>
-      </button>
-      <div id="previewPanel" class="hidden mt-4" hidden>
-      <p class="text-sm text-zinc-400 break-phone">撳下面連結睇官網點寫型號同門市。上面「SKU」欄有字就跟嗰個；冇字就用而家下拉揀中嘅 Duo。</p>
-      <div class="mt-4 grid sm:grid-cols-2 gap-3 text-sm min-w-0">
-        <a id="previewBuyLink" class="inner-card rounded-2xl bg-white/5 border border-white/10 px-3 sm:px-4 py-3 hover:bg-white/10 break-phone" href="https://www.apple.com/hk-zh/shop/buy-iphone" target="_blank" rel="noreferrer">香港官網買 iPhone →<br /><span class="text-[11px] text-zinc-500">揀顏色容量之後，網址／結帳頁會見到 SKU</span></a>
-        <a id="previewProductLink" class="inner-card rounded-2xl bg-white/5 border border-white/10 px-3 sm:px-4 py-3 hover:bg-white/10 break-phone" href="https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A" target="_blank" rel="noreferrer">呢款產品頁 →<br /><span class="text-[11px] text-zinc-500">網址 <code>/product/XXXXZA/A</code> 就係監測 code</span></a>
-        <a id="previewPickupLink" class="inner-card rounded-2xl bg-white/5 border border-white/10 px-3 sm:px-4 py-3 hover:bg-white/10 break-phone" href="https://www.apple.com/hk-zh/shop/retail/pickup-message?pl=true&mts.0=regular&location=Hong%20Kong&parts.0=MK2J4ZA%2FA" target="_blank" rel="noreferrer">取貨 JSON（睇 SKU 同店號）→<br /><span class="text-[11px] text-zinc-500">搵 <code>storeNumber</code>（R409）同 <code>partsAvailability</code></span></a>
-        <a id="previewDeliveryLink" class="inner-card rounded-2xl bg-white/5 border border-white/10 px-3 sm:px-4 py-3 hover:bg-white/10 break-phone" href="https://www.apple.com/hk-zh/shop/delivery-message?little=false&mts.0=regular&location=Hong%20Kong&parts.0=MK2J4ZA%2FA" target="_blank" rel="noreferrer">送貨 JSON（睇貨期）→<br /><span class="text-[11px] text-zinc-500">搵 <code>displayName</code>，例如「周六 23/01/2027」</span></a>
-      </div>
-      <p class="mt-3 text-[11px] text-zinc-500">JSON 係俾程式睇嘅。人用購物頁：<a class="text-sky-400 hover:underline" href="https://www.apple.com/hk-zh/retail/" target="_blank" rel="noreferrer">香港 Apple Store 一覽</a>。</p>
-      </div>
-    </section>
-
-    <section class="glass">
       <button id="priorityToggle" type="button" aria-expanded="false" aria-controls="priorityPanel" class="w-full flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between text-left rounded-2xl py-1 hover:bg-white/5">
         <div class="min-w-0 w-full">
           <p class="text-xs uppercase tracking-wide sm:tracking-[0.18em] text-sky-300/80">優先級</p>
@@ -461,7 +440,7 @@
   <script>
     const PAT_KEY = "iphone_monitor_pat";
     const STATE_BRANCH = "monitor-state";
-    const COLLAPSE_SECTIONS = ["sim", "live", "restock", "liveItems", "models", "stores", "preview", "priority", "pat"];
+    const COLLAPSE_SECTIONS = ["sim", "live", "restock", "liveItems", "models", "stores", "priority", "pat"];
     const DEFAULT_OPEN_SECTIONS = new Set(["live"]);
     const INTERVALS = [10, 30, 60, 120, 180, 300, 600, 900, 1200, 1800, 3600];
     const CAPACITIES = ["256gb", "512gb", "1tb", "2tb"];
@@ -575,7 +554,6 @@
     function updateSkuPreview() {
       const p = currentProduct();
       $("skuPreview").textContent = p ? `${p.name} · ${p.part} · HK$${p.price.toLocaleString()}` : "此組合沒有對應 SKU";
-      updateCodePreviewLinks();
     }
 
     function escapeHtml(s) {
@@ -603,25 +581,6 @@
 
     function isLikelyStore(s) {
       return /^R\d{3,4}$/.test(s);
-    }
-
-    function previewSku() {
-      const typed = normalizeSku($("customSku") && $("customSku").value);
-      if (typed) return typed;
-      const p = currentProduct();
-      return (p && p.part) || "MK2J4ZA/A";
-    }
-
-    function updateCodePreviewLinks() {
-      const part = previewSku();
-      const enc = encodeURIComponent(part);
-      if ($("previewProductLink")) $("previewProductLink").href = "https://www.apple.com/hk-zh/shop/product/" + part;
-      if ($("previewPickupLink")) {
-        $("previewPickupLink").href = "https://www.apple.com/hk-zh/shop/retail/pickup-message?pl=true&mts.0=regular&location=Hong%20Kong&parts.0=" + enc;
-      }
-      if ($("previewDeliveryLink")) {
-        $("previewDeliveryLink").href = "https://www.apple.com/hk-zh/shop/delivery-message?little=false&mts.0=regular&location=Hong%20Kong&parts.0=" + enc;
-      }
     }
 
     function mergeCustomStores(cfg) {
@@ -1574,10 +1533,6 @@
       if (name === "liveItems") updateLiveItemsHint();
       if (name === "models") updateModelsHint();
       if (name === "stores") updateStoresHint();
-      if (name === "preview") {
-        const hint = $("previewToggleHint");
-        if (hint) hint.textContent = open ? "撳連結核對產品頁、取貨同送貨 JSON。" : "預設收起。要睇官網連結先展開。";
-      }
       if (name === "priority") {
         const hint = $("priorityToggleHint");
         if (hint) hint.textContent = open ? "權重愈高，同週期通知排序愈前。" : "預設收起。要調容量／通路權重先展開。";
@@ -1629,7 +1584,6 @@
       if ($("addCustomStoreBtn")) $("addCustomStoreBtn").addEventListener("click", addCustomStore);
       ["customSku", "customSkuName"].forEach((id) => {
         if (!$(id)) return;
-        $(id).addEventListener("input", updateCodePreviewLinks);
         $(id).addEventListener("keydown", (ev) => {
           if (ev.key === "Enter") { ev.preventDefault(); addCustomSku(); }
         });
@@ -1701,7 +1655,6 @@
       catch { /* 使用內建門市／型號清單 */ }
       catalogStoreIds = new Set((catalog.stores || []).map((s) => s.id));
       fillFamilies();
-      updateCodePreviewLinks();
       try {
         const cfg = await loadJSON("config.json");
         applyConfigToForm(cfg);
