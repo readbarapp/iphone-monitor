@@ -2,7 +2,7 @@
 
 企業級、Zero-Trust 的香港官網庫存監控系統：GitHub Actions 定時查詢 + GitHub Pages 控制台 + Telegram 智慧聚合通知。
 
-控制台真實模式預設展開；模擬、型號、門市、預覽、優先級、PAT 預設收起。頁底儲存列常開。模擬：每格自己揀有貨／冇貨，儲存時只有冇貨→有貨先發測試 Telegram。真實：打開開關之後先問 Apple 官網。
+控制台真實模式預設展開；模擬、型號、門市、優先級、PAT 預設收起。頁底儲存列常開。模擬：每格自己揀有貨／冇貨，儲存時只有冇貨→有貨先發測試 Telegram。真實：打開開關之後先問 Apple 官網。
 
 ---
 
@@ -88,7 +88,7 @@ python3 -m http.server 8080
 
 1. 填 Owner / Repo / PAT。
 2. 選擇型號、顏色、容量，按「加入監控」。新品未入內建清單時，喺「加自訂型號」貼官網 SKU（例如 `MK2J4ZA/A`）。
-3. 多選門市，調整優先級。新店未入內建清單時，喺「加自訂門市」貼店號（例如 `R428`）。下面「預覽監測 code」可以即時打開產品頁、取貨 JSON、送貨 JSON。
+3. 多選門市，調整優先級。新店未入內建清單時，喺「加自訂門市」貼店號（例如 `R428`）。
 4. 模擬模式：展開後每格揀有貨／冇貨，撳 **儲存模擬狀態**（只有冇貨→有貨先收到測試 Telegram）。
 5. 真實模式：打開開關，按 **儲存設定**，再到 Actions 確認 `iPhone HK Monitor` workflow 為 Enable。頁頂角標仍然顯示而家 ON／OFF。
 
@@ -103,7 +103,7 @@ python3 -m http.server 8080
 | 模擬貨源 | `simulation.statuses` | 每格獨立有貨／冇貨。儲存時只有冇貨→有貨發測試訊息 |
 | 取貨模式 | `fulfillment_modes` | `pickup`、`delivery` 可並存 |
 | 型號下拉 | `models[]` | 內建 iPhone Duo；亦可加任意官網 SKU |
-| 自訂型號／門市 | `models[]` + `custom_stores` + `stores` | 控制台貼 SKU 或 `R` 店號；下面有官網預覽連結 |
+| 自訂型號／門市 | `models[]` + `custom_stores` + `stores` | 控制台貼 SKU 或 `R` 店號 |
 | 門市多選 | `stores` + `priority.stores` | 六間香港 Apple Store，可再加店號 |
 | 優先級 | `priority` | 門市權重 ×10000 + 容量 ×100 + 通路 |
 | 監控頻率 | `check_interval_seconds`（舊欄 `check_interval_minutes` 仍有效） | 最快 10 秒。儲存後由 job 內循環按呢個間隔查。10 秒較易被 Apple 攔 |
@@ -192,8 +192,7 @@ python checker.py   # enabled=false 時應印出「真實模式為 OFF」
 唔使改 `catalog.json` 或重新部署程式。控制台「監測邊款 iPhone」同「門市多選」下面有自訂欄：
 
 1. **型號監測 code**：去 [香港官網買 iPhone](https://www.apple.com/hk-zh/shop/buy-iphone) 揀顏色容量，產品頁網址尾段就係 SKU，例如 `https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A` 嘅 `MK2J4ZA/A`。貼入「SKU／監測 code」，可選填顯示名稱，撳「加入呢個 SKU」，再 **儲存設定**。
-2. **門市監測 code**：撳控制台「預覽監測 code」嘅取貨 JSON，入面每間店有 `storeNumber`（香港而家係 `R428`、`R409` 呢類）。貼入「門市 code」，可選填名稱，撳「加入呢間門市」，再 **儲存設定**。
-3. 下面四條連結會跟住你喺 SKU 欄打嘅字更新，方便核對產品頁、取貨 JSON、送貨 JSON。
+2. **門市監測 code**：官網取貨 JSON 入面每間店有 `storeNumber`（香港而家係 `R428`、`R409` 呢類）。貼入「門市 code」，可選填名稱，撳「加入呢間門市」，再 **儲存設定**。
 
 `checker.py` 唔再略過非 Duo 型號；自訂 SKU 同店號會寫入 `config.json` 嘅 `models`／`stores`／`custom_stores`。
 

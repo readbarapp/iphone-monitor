@@ -1531,6 +1531,7 @@ def run_self_test() -> int:
     check('id="restockToggle"' in html and 'id="restockPanel"' in html, "補貨紀錄有 sub collapse")
     check(">補貨紀錄<" in html, "補貨紀錄標題")
     check("最近 10 次有貨" not in html, "唔再用最近 10 次有貨做標題")
+    check("預覽監測 code" not in html and 'id="previewToggle"' not in html, "控制台已刪預覽監測 code")
 
     from usage import run_self_test as usage_self_test
 
