@@ -1121,7 +1121,7 @@
     "warned": []
   },
   "loop": {
-    "alive": true,
+    "alive": false,
     "heartbeat_at": "2026-10-29T12:18:53+08:00",
     "interval_minutes": 1,
     "tick_count": 1230,
@@ -1139,8 +1139,8 @@
       "2026-10-29T12:18:46+08:00",
       "2026-10-29T12:18:53+08:00"
     ],
-    "stopped": null,
-    "stopped_at": "2026-10-29T11:34:34+08:00",
+    "stopped": "crashed",
+    "stopped_at": "2026-10-29T12:19:01+08:00",
     "interval_seconds": 10
   }
 }
