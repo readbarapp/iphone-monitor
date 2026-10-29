@@ -67,7 +67,6 @@ REQUEST_HEADERS = {
 }
 
 HK_TZ = ZoneInfo("Asia/Hong_Kong")
-FREE_MINUTES = 2000
 STATUS_AVAILABLE = "available"
 STATUS_UNAVAILABLE = "unavailable"
 STATUS_UNKNOWN = "unknown"
@@ -751,9 +750,24 @@ def parse_delivery_payload(
 # ---------------------------------------------------------------------------
 # 狀態機：只在 unavailable → available 時通知
 # ---------------------------------------------------------------------------
+def expected_item_keys(cfg: dict[str, Any], watch: list[WatchItem]) -> set[str]:
+    """而家監測清單上應有嘅「型號 × 通路」key。"""
+    keys: set[str] = set()
+    modes = selected_modes(cfg)
+    stores = [str(s) for s in (cfg.get("stores") or [])]
+    for item in watch:
+        if "pickup" in modes:
+            for store_id in stores:
+                keys.add(item_key("pickup", store_id, item.part_number))
+        if "delivery" in modes:
+            keys.add(item_key("delivery", "DELIVERY", item.part_number))
+    return keys
+
+
 def apply_state_machine(
     state: dict[str, Any],
     hits: list[AvailabilityHit],
+    keep_keys: set[str] | None = None,
 ) -> tuple[list[AvailabilityHit], dict[str, Any]]:
     items: dict[str, Any] = dict(state.get("items") or {})
     newly_available: list[AvailabilityHit] = []
@@ -789,6 +803,9 @@ def apply_state_machine(
         else:
             record["last_available_at"] = previous.get("last_available_at")
         items[hit.key] = record
+
+    if keep_keys is not None:
+        items = {key: rec for key, rec in items.items() if key in keep_keys}
 
     new_state = {
         **state,
@@ -1113,7 +1130,7 @@ def apply_simulation(
     for hit in hits:
         hit.score = priority_score(cfg, hit)
     sim_wrap = {"items": dict(((state.get("simulation") or {}).get("items") or {}))}
-    newly, new_sim = apply_state_machine(sim_wrap, hits)
+    newly, new_sim = apply_state_machine(sim_wrap, hits, keep_keys=expected_item_keys(cfg, watch))
     newly.sort(key=lambda h: (-h.score, h.mode, h.store_id, h.part_number))
     next_state = dict(state)
     sim = dict(next_state.get("simulation") or {})
@@ -1262,7 +1279,7 @@ def run(args: argparse.Namespace) -> int:
     for hit in hits:
         hit.score = priority_score(cfg, hit)
 
-    newly, new_state = apply_state_machine(state, hits)
+    newly, new_state = apply_state_machine(state, hits, keep_keys=expected_item_keys(cfg, watch))
     newly.sort(key=lambda h: (-h.score, h.mode, h.store_id, h.part_number))
 
     available_now = sum(1 for h in hits if h.status == STATUS_AVAILABLE)
@@ -1410,6 +1427,12 @@ def run_self_test() -> int:
     check(len(stuffed["restocks"]) == RESTOCK_LOG_LIMIT, "補貨紀錄最多保留 10 筆")
     check(all(x["telegram_sent"] is False for x in stuffed["restocks"][-6:]), "新一轉 Telegram 失敗會寫低")
     check(append_restock_log(logged, [], telegram_sent=True)["restocks"] == logged["restocks"], "冇新有貨唔改紀錄")
+    keep = expected_item_keys(cfg, watch)
+    check(len(keep) == 6, "監測清單應有 6 組 key")
+    stale_items = {**{h.key: {"status": STATUS_UNAVAILABLE} for h in hits}, "pickup:R428:OLD/A": {"status": STATUS_AVAILABLE}}
+    _, pruned = apply_state_machine({"items": stale_items}, hits, keep_keys=keep)
+    check("pickup:R428:OLD/A" not in pruned["items"], "不再監測嘅項目會從貨源表刪走")
+    check(len(pruned["items"]) == 6, "貨源表只保留而家監測嘅組")
 
     text = format_message(newly3)
     check("直達結帳" in text and "門市取貨" in text and "送貨上門" in text, "綜合訊息含通路與結帳連結")
@@ -1532,11 +1555,11 @@ def run_self_test() -> int:
     check(">補貨紀錄<" in html, "補貨紀錄標題")
     check("最近 10 次有貨" not in html, "唔再用最近 10 次有貨做標題")
     check("預覽監測 code" not in html and 'id="previewToggle"' not in html, "控制台已刪預覽監測 code")
-
-    from usage import run_self_test as usage_self_test
-
-    print("用量提醒：")
-    failures += usage_self_test()
+    check("有貨 ${up}／${rows.length}" in html, "真實模式計數跟監測清單")
+    check("有貨 ${up}／${items.length}" not in html, "真實模式唔再跟舊 state.items 總數")
+    check(not Path(__file__).with_name("usage.py").exists(), "已刪用量提醒 usage.py")
+    workflow = Path(__file__).resolve().parent / ".github" / "workflows" / "monitor.yml"
+    check("usage.py" not in workflow.read_text(encoding="utf-8"), "workflow 唔再跑用量提醒")
 
     print("自我測試完成，失敗數：", failures)
     return 1 if failures else 0
