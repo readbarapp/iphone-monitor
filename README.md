@@ -109,6 +109,7 @@ python3 -m http.server 8080
 | 監控頻率 | `check_interval_seconds`（舊欄 `check_interval_minutes` 仍有效） | 最快 30 秒。儲存後由 job 內循環按呢個間隔查。30 秒較易被 Apple 攔 |
 | 每日監控時段 | `business_hours` + watchdog cron 小時欄 | 你自己定香港時間幾點開始、幾點完。Watchdog 只喺呢段時間拉起 loop |
 | 查貨紀錄 | `state.json` `loop` | 每次查貨寫入時間；控制台只顯示最近 5 轉，連續次數會一直累加 |
+| 最近 10 次有貨 | `state.json` `restocks` | 冇貨→有貨先入表：幾時、型號、通路、Telegram 有冇送出 |
 | 最近一次官網貨源 | `state.json` `items` | 上次問 Apple 時，每部監測機 × 門市／送貨嘅有貨情況 |
 | 測試 Telegram 連線 | `workflow_dispatch` `test_notify` | 只發連線短訊，**唔會**扮 iPhone 有貨 |
 | 儲存模擬狀態 | `workflow_dispatch` `apply_simulation` | 套用每格模擬貨源，有補貨先發測試 Telegram |
