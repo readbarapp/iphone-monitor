@@ -2,7 +2,7 @@
 
 企業級、Zero-Trust 的香港官網庫存監控系統：GitHub Actions 定時查詢 + GitHub Pages 控制台 + Telegram 智慧聚合通知。
 
-控制台各區塊（模擬、真實、型號、門市、預覽、優先級、PAT）都預設收起，需要時先展開。頁底儲存列常開。模擬：每格自己揀有貨／冇貨，儲存時只有冇貨→有貨先發測試 Telegram。真實：打開開關之後先問 Apple 官網。
+控制台真實模式預設展開；模擬、型號、門市、預覽、優先級、PAT 預設收起。頁底儲存列常開。模擬：每格自己揀有貨／冇貨，儲存時只有冇貨→有貨先發測試 Telegram。真實：打開開關之後先問 Apple 官網。
 
 ---
 
@@ -12,7 +12,7 @@
 2. 同時支援 **門市取貨（Pick-up）** 與 **送貨上門（Delivery）**。
 3. 只在狀態從冇貨變成有貨時通知；同一輪多筆有貨會**打包成 1 條訊息**，並依優先級排序。
 4. 訊息標註通路，並附上 [直達結帳連結](https://www.apple.com/hk-zh/shop/buy-iphone)。
-5. 控制台可開關真實模式、改模擬貨源，並用 GitHub REST API 回寫 `config.json`。各區塊預設收起，有需要先展開。頁底儲存列常開。
+5. 控制台可開關真實模式、改模擬貨源，並用 GitHub REST API 回寫 `config.json`。真實模式預設展開，其餘區塊有需要先展開。頁底儲存列常開。
 
 ### 架構（Zero-Trust）
 
@@ -90,7 +90,7 @@ python3 -m http.server 8080
 2. 選擇型號、顏色、容量，按「加入監控」。新品未入內建清單時，喺「加自訂型號」貼官網 SKU（例如 `MK2J4ZA/A`）。
 3. 多選門市，調整優先級。新店未入內建清單時，喺「加自訂門市」貼店號（例如 `R428`）。下面「預覽監測 code」可以即時打開產品頁、取貨 JSON、送貨 JSON。
 4. 模擬模式：展開後每格揀有貨／冇貨，撳 **儲存模擬狀態**（只有冇貨→有貨先收到測試 Telegram）。
-5. 真實模式：展開後打開開關，按 **儲存設定**，再到 Actions 確認 `iPhone HK Monitor` workflow 為 Enable。頁頂角標仍然顯示而家 ON／OFF。
+5. 真實模式：打開開關，按 **儲存設定**，再到 Actions 確認 `iPhone HK Monitor` workflow 為 Enable。頁頂角標仍然顯示而家 ON／OFF。
 
 ---
 
@@ -98,7 +98,7 @@ python3 -m http.server 8080
 
 | 元件 | 寫入欄位 | 作用 |
 | --- | --- | --- |
-| 真實模式 | `enabled` | `false` 時不查 Apple。打開後查監測清單上嘅型號。控制台呢塊預設收起，角標仍顯示 ON／OFF |
+| 真實模式 | `enabled` | `false` 時不查 Apple。打開後查監測清單上嘅型號。控制台呢塊預設展開，角標仍顯示 ON／OFF |
 | 幾耐之內先當有貨 | `soon_window_days` | 真實模式左邊下拉，預設 7 日。送貨／取貨都係：呢個日數內可送或可取先當有貨，其他當冇貨。要撳「儲存設定」先生效 |
 | 模擬貨源 | `simulation.statuses` | 每格獨立有貨／冇貨。儲存時只有冇貨→有貨發測試訊息 |
 | 取貨模式 | `fulfillment_modes` | `pickup`、`delivery` 可並存 |
@@ -109,7 +109,7 @@ python3 -m http.server 8080
 | 監控頻率 | `check_interval_seconds`（舊欄 `check_interval_minutes` 仍有效） | 最快 10 秒。儲存後由 job 內循環按呢個間隔查。10 秒較易被 Apple 攔 |
 | 每日監控時段 | `business_hours` + watchdog cron 小時欄 | 你自己定香港時間幾點開始、幾點完。Watchdog 只喺呢段時間拉起 loop |
 | 查貨紀錄 | `state.json` `loop` | 每次查貨寫入時間；控制台只顯示最近 5 轉，連續次數會一直累加 |
-| 最近 10 次有貨 | `state.json` `restocks` | 冇貨→有貨先入表：幾時、型號、通路、Telegram 有冇送出 |
+| 補貨紀錄 | `state.json` `restocks` | 冇貨→有貨先入表（最多 10 筆）：幾時、型號、通路、Telegram 有冇送出。控制台預設收起 |
 | 最近一次官網貨源 | `state.json` `items` | 上次問 Apple 時，每部監測機 × 門市／送貨嘅有貨情況 |
 | 測試 Telegram 連線 | `workflow_dispatch` `test_notify` | 只發連線短訊，**唔會**扮 iPhone 有貨 |
 | 儲存模擬狀態 | `workflow_dispatch` `apply_simulation` | 套用每格模擬貨源，有補貨先發測試 Telegram |
