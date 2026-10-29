@@ -93,6 +93,12 @@
     .chip-on { background: rgba(0,113,227,.2); border-color: rgba(0,113,227,.55); color: #7cc4ff; }
     .mode-sim { border-color: rgba(245, 158, 11, 0.4); }
     .mode-live { border-color: rgba(48, 209, 88, 0.32); }
+    .full-copy {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+    }
   </style>
 </head>
 <body class="min-h-screen text-zinc-100 font-sans antialiased">
@@ -101,7 +107,7 @@
       <div class="flex items-center gap-2 sm:gap-3 min-w-0">
         <div class="h-9 w-9 sm:h-10 sm:w-10 shrink-0 rounded-2xl bg-white text-black grid place-items-center font-semibold"></div>
         <div class="min-w-0">
-          <p class="text-[10px] sm:text-xs uppercase tracking-[0.14em] sm:tracking-[0.2em] text-zinc-400">Hong Kong · Zero-Trust</p>
+          <p class="text-[10px] sm:text-xs uppercase tracking-wide sm:tracking-[0.2em] text-zinc-400">Hong Kong · Zero-Trust</p>
           <h1 class="text-base sm:text-xl font-semibold truncate">iPhone Duo 官網庫存監控</h1>
         </div>
       </div>
@@ -111,9 +117,9 @@
 
   <main class="max-w-6xl mx-auto px-3 sm:px-4 py-5 sm:py-10 space-y-4 sm:space-y-6 min-w-0">
     <section class="glass mode-sim">
-      <button id="simToggle" type="button" aria-expanded="false" aria-controls="simPanel" class="w-full flex items-start justify-between gap-3 text-left rounded-2xl py-1 hover:bg-white/5">
-        <div class="min-w-0">
-          <p class="text-xs uppercase tracking-[0.14em] sm:tracking-[0.18em] text-amber-200/80">模擬模式</p>
+      <button id="simToggle" type="button" aria-expanded="false" aria-controls="simPanel" class="w-full flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between text-left rounded-2xl py-1 hover:bg-white/5">
+        <div class="min-w-0 w-full">
+          <p class="text-xs uppercase tracking-wide sm:tracking-[0.18em] text-amber-200/80">模擬模式</p>
           <h2 class="mt-2 text-lg sm:text-xl font-semibold">練習通知（唔問 Apple）</h2>
           <p id="simToggleHint" class="text-sm text-zinc-400 mt-1">預設收起。要試 Telegram「冇貨→有貨」先展開。</p>
         </div>
@@ -134,9 +140,9 @@
     </section>
 
     <section class="glass mode-live">
-      <button id="liveToggle" type="button" aria-expanded="false" aria-controls="livePanel" class="w-full flex items-start justify-between gap-3 text-left rounded-2xl py-1 hover:bg-white/5">
-        <div class="min-w-0">
-          <p class="text-xs uppercase tracking-[0.14em] sm:tracking-[0.18em] text-emerald-300/80">真實模式</p>
+      <button id="liveToggle" type="button" aria-expanded="false" aria-controls="livePanel" class="w-full flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between text-left rounded-2xl py-1 hover:bg-white/5">
+        <div class="min-w-0 w-full">
+          <p class="text-xs uppercase tracking-wide sm:tracking-[0.18em] text-emerald-300/80">真實模式</p>
           <h2 class="mt-2 text-lg sm:text-xl font-semibold break-phone">問 Apple 官網（監測清單上嘅型號）</h2>
           <p id="liveToggleHint" class="text-sm text-zinc-400 mt-1 break-phone">預設收起。要改頻率、時段或睇貨源先展開。</p>
         </div>
@@ -147,7 +153,7 @@
       </button>
       <div id="livePanel" class="hidden mt-4" hidden>
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <p id="liveModeHint" class="text-sm text-zinc-400 min-w-0 break-phone">而家：真實模式已關閉。左邊「幾耐之內先當有貨」可以改日數。送貨同取貨同一規則。</p>
+        <p id="liveModeHint" class="text-sm text-zinc-400 min-w-0 w-full break-phone">而家：真實模式已關閉。左邊「幾耐之內先當有貨」可以改日數。送貨同取貨同一規則。</p>
         <div class="flex items-center justify-between sm:justify-end gap-3 shrink-0">
           <span class="text-sm text-zinc-300">真實模式</span>
           <button id="enabledToggle" class="toggle" role="switch" aria-checked="false" aria-label="真實模式"></button>
@@ -198,17 +204,22 @@
           </label>
         </div>
         <div class="inner-card lg:col-span-2 rounded-2xl bg-white/5 p-3 sm:p-4 border border-white/10">
-          <div class="flex items-start justify-between gap-2 min-w-0">
-            <div class="min-w-0">
-              <h3 class="font-medium">最近一次官網貨源</h3>
-              <p id="lastRunText" class="text-xs text-zinc-400 mt-1 break-phone">尚未讀取。有貨＝設定日數內可送或可取。遲過呢個窗或冇寫日期，一律當冇貨、唔通知。</p>
+          <div class="w-full min-w-0 space-y-2">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <h3 class="font-medium full-copy">最近一次官網貨源</h3>
+              <span id="liveBadge" class="self-start rounded-full px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-medium bg-zinc-800 text-zinc-300">尚未查詢</span>
             </div>
-            <span id="liveBadge" class="shrink-0 rounded-full px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-medium bg-zinc-800 text-zinc-300">尚未查詢</span>
+            <p id="lastRunText" class="text-xs text-zinc-400 full-copy break-phone">尚未讀取。有貨＝設定日數內可送或可取。遲過呢個窗或冇寫日期，一律當冇貨、唔通知。</p>
           </div>
           <div class="mt-3 rounded-xl bg-black/30 border border-white/10 p-3 min-w-0">
             <p class="text-xs font-medium text-zinc-200">查貨紀錄</p>
-            <p class="text-[11px] text-zinc-500 mt-1 break-phone">只顯示最近 5 轉查官網嘅香港時間。連續次數會一直累加。每 15 秒直接讀 GitHub 最新 state.json，唔使等 Pages。兩筆相差應約等於你設嘅間隔；loop 死會 Telegram 你。</p>
-            <p id="loopTicks" class="mt-2 text-[11px] text-zinc-300 leading-relaxed whitespace-pre-wrap break-all font-mono"></p>
+            <p class="text-[11px] text-zinc-500 mt-1 full-copy break-phone">只顯示最近 5 轉查官網嘅香港時間。連續次數會一直累加。每 15 秒直接讀 GitHub 最新 state.json，唔使等 Pages。兩筆相差應約等於你設嘅間隔；loop 死會 Telegram 你。</p>
+            <p id="loopTicks" class="mt-2 text-[11px] text-zinc-300 leading-relaxed whitespace-pre-wrap break-all font-mono full-copy"></p>
+          </div>
+          <div class="mt-3 rounded-xl bg-black/30 border border-white/10 p-3 min-w-0">
+            <p class="text-xs font-medium text-zinc-200">最近 10 次有貨</p>
+            <p class="text-[11px] text-zinc-500 mt-1 full-copy break-phone">由「冇貨 → 有貨」先入表。顯示幾時、型號、通路，同 Telegram 有冇送出。新紀錄要等下一轉真實查貨。</p>
+            <div id="restockLog" class="mt-2 space-y-2"></div>
           </div>
           <div id="liveBoard" class="mt-4"></div>
           <div class="mt-4 space-y-2">
@@ -228,9 +239,9 @@
     </section>
 
     <section class="glass">
-      <button id="modelsToggle" type="button" aria-expanded="false" aria-controls="modelsPanel" class="w-full flex items-start justify-between gap-3 text-left rounded-2xl py-1 hover:bg-white/5">
-        <div class="min-w-0">
-          <p class="text-xs uppercase tracking-[0.14em] sm:tracking-[0.18em] text-sky-300/80">型號</p>
+      <button id="modelsToggle" type="button" aria-expanded="false" aria-controls="modelsPanel" class="w-full flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between text-left rounded-2xl py-1 hover:bg-white/5">
+        <div class="min-w-0 w-full">
+          <p class="text-xs uppercase tracking-wide sm:tracking-[0.18em] text-sky-300/80">型號</p>
           <h2 class="mt-2 text-lg sm:text-xl font-semibold">監測邊款 iPhone</h2>
           <p id="modelsToggleHint" class="text-sm text-zinc-400 mt-1">預設收起。要加型號先展開。</p>
         </div>
@@ -272,9 +283,9 @@
     </section>
 
     <section class="glass">
-      <button id="storesToggle" type="button" aria-expanded="false" aria-controls="storesPanel" class="w-full flex items-start justify-between gap-3 text-left rounded-2xl py-1 hover:bg-white/5">
-        <div class="min-w-0">
-          <p class="text-xs uppercase tracking-[0.14em] sm:tracking-[0.18em] text-sky-300/80">門市</p>
+      <button id="storesToggle" type="button" aria-expanded="false" aria-controls="storesPanel" class="w-full flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between text-left rounded-2xl py-1 hover:bg-white/5">
+        <div class="min-w-0 w-full">
+          <p class="text-xs uppercase tracking-wide sm:tracking-[0.18em] text-sky-300/80">門市</p>
           <h2 class="mt-2 text-lg sm:text-xl font-semibold">門市多選（Pick-up）</h2>
           <p id="storesToggleHint" class="text-sm text-zinc-400 mt-1">預設收起。要勾選或加店先展開。</p>
         </div>
@@ -300,9 +311,9 @@
     </section>
 
     <section class="glass">
-      <button id="previewToggle" type="button" aria-expanded="false" aria-controls="previewPanel" class="w-full flex items-start justify-between gap-3 text-left rounded-2xl py-1 hover:bg-white/5">
-        <div class="min-w-0">
-          <p class="text-xs uppercase tracking-[0.14em] sm:tracking-[0.18em] text-sky-300/80">預覽</p>
+      <button id="previewToggle" type="button" aria-expanded="false" aria-controls="previewPanel" class="w-full flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between text-left rounded-2xl py-1 hover:bg-white/5">
+        <div class="min-w-0 w-full">
+          <p class="text-xs uppercase tracking-wide sm:tracking-[0.18em] text-sky-300/80">預覽</p>
           <h2 class="mt-2 text-lg sm:text-xl font-semibold">預覽監測 code</h2>
           <p id="previewToggleHint" class="text-sm text-zinc-400 mt-1">預設收起。要睇官網連結先展開。</p>
         </div>
@@ -321,9 +332,9 @@
     </section>
 
     <section class="glass">
-      <button id="priorityToggle" type="button" aria-expanded="false" aria-controls="priorityPanel" class="w-full flex items-start justify-between gap-3 text-left rounded-2xl py-1 hover:bg-white/5">
-        <div class="min-w-0">
-          <p class="text-xs uppercase tracking-[0.14em] sm:tracking-[0.18em] text-sky-300/80">優先級</p>
+      <button id="priorityToggle" type="button" aria-expanded="false" aria-controls="priorityPanel" class="w-full flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between text-left rounded-2xl py-1 hover:bg-white/5">
+        <div class="min-w-0 w-full">
+          <p class="text-xs uppercase tracking-wide sm:tracking-[0.18em] text-sky-300/80">優先級</p>
           <h2 class="mt-2 text-lg sm:text-xl font-semibold break-phone">優先級設定</h2>
           <p id="priorityToggleHint" class="text-sm text-zinc-400 mt-1">預設收起。要調容量／通路權重先展開。</p>
         </div>
@@ -354,9 +365,9 @@
     </section>
 
     <section class="glass">
-      <button id="patToggle" type="button" aria-expanded="false" aria-controls="patPanel" class="w-full flex items-start justify-between gap-3 text-left rounded-2xl py-1 hover:bg-white/5">
-        <div class="min-w-0">
-          <p class="text-xs uppercase tracking-[0.14em] sm:tracking-[0.18em] text-sky-300/80">連線</p>
+      <button id="patToggle" type="button" aria-expanded="false" aria-controls="patPanel" class="w-full flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between text-left rounded-2xl py-1 hover:bg-white/5">
+        <div class="min-w-0 w-full">
+          <p class="text-xs uppercase tracking-wide sm:tracking-[0.18em] text-sky-300/80">連線</p>
           <h2 class="mt-2 text-lg sm:text-xl font-semibold">GitHub PAT</h2>
           <p id="patToggleHint" class="text-sm text-zinc-400 mt-1">預設收起。要填 PAT 或查 Secrets 先展開。</p>
         </div>
@@ -799,7 +810,7 @@
                 const rec = items[r.key] || {};
                 const st = rec.status;
                 const tone = st === "available" ? "text-emerald-300" : st === "unavailable" ? "text-rose-300" : "text-zinc-500";
-                const extra = rec.quote ? `<div class="text-[11px] text-zinc-500 truncate">${rec.quote}</div>` : "";
+                const extra = rec.quote ? `<div class="text-[11px] text-zinc-500 break-phone">${rec.quote}</div>` : "";
                 const when = rec.last_checked_at ? `<div class="text-[11px] text-zinc-600">${rec.last_checked_at}</div>` : "";
                 return `
                 <tr class="border-t border-white/5">
@@ -1391,6 +1402,36 @@
         lines.join("\n");
     }
 
+    function restockChannel(entry) {
+      if (entry.mode === "delivery") return "送貨上門";
+      const store = entry.store_name || entry.store_id || "";
+      return store ? `門市取貨 · ${store}` : "門市取貨";
+    }
+
+    function renderRestockLog(state) {
+      const el = $("restockLog");
+      if (!el) return;
+      const rows = [...((state && state.restocks) || [])].filter((x) => x && x.at).reverse();
+      if (!rows.length) {
+        el.innerHTML = `<p class="text-[11px] text-zinc-400 full-copy break-phone">尚未有「冇貨 → 有貨」紀錄。下一轉真係補貨就會出現喺呢度。</p>`;
+        return;
+      }
+      el.innerHTML = rows.map((row) => {
+        const tg = row.telegram_sent
+          ? `<span class="text-emerald-300">Telegram 已送</span>`
+          : `<span class="text-rose-300">Telegram 未送出</span>`;
+        const model = escapeHtml(row.name || row.part_number || "未知型號");
+        const sku = row.part_number ? ` <span class="text-zinc-500">${escapeHtml(row.part_number)}</span>` : "";
+        const quote = row.quote ? `<div class="text-[11px] text-zinc-500 full-copy break-phone">${escapeHtml(row.quote)}</div>` : "";
+        return `<div class="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2 min-w-0">
+          <p class="text-[11px] text-zinc-200 full-copy break-phone">${escapeHtml(row.at)}</p>
+          <p class="text-sm text-zinc-100 mt-0.5 full-copy break-phone">${model}${sku}</p>
+          <p class="text-[11px] text-zinc-400 mt-0.5 full-copy break-phone">${escapeHtml(restockChannel(row))} · ${tg}</p>
+          ${quote}
+        </div>`;
+      }).join("");
+    }
+
     async function loadState() {
       try {
         latestStateError = "";
@@ -1434,17 +1475,17 @@
           }
         }
         renderLoopTicks(latestState);
+        renderRestockLog(latestState);
         if ($("liveBadge")) {
-          const beat = (latestState.loop || {}).heartbeat_at || run.at;
           if (run.status === "ok") {
-            $("liveBadge").textContent = "查貨 " + (beat || "");
-            $("liveBadge").className = "shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-emerald-500/20 text-emerald-200";
+            $("liveBadge").textContent = run.telegram_sent ? "查貨 OK · TG 已送" : "查貨 OK";
+            $("liveBadge").className = "self-start rounded-full px-3 py-1 text-xs font-medium bg-emerald-500/20 text-emerald-200";
           } else if (run.status === "disabled") {
             $("liveBadge").textContent = "真實模式 OFF";
-            $("liveBadge").className = "shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300";
+            $("liveBadge").className = "self-start rounded-full px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300";
           } else {
             $("liveBadge").textContent = run.status ? String(run.status) : "尚未查詢";
-            $("liveBadge").className = "shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300";
+            $("liveBadge").className = "self-start rounded-full px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300";
           }
         }
         const simRun = (latestState.simulation || {}).last_run || {};

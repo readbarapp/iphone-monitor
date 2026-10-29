@@ -799,6 +799,39 @@ def apply_state_machine(
     return newly_available, new_state
 
 
+RESTOCK_LOG_LIMIT = 10
+
+
+def append_restock_log(
+    state: dict[str, Any],
+    newly: list[AvailabilityHit],
+    *,
+    telegram_sent: bool,
+    at: str | None = None,
+) -> dict[str, Any]:
+    """記住最近 10 筆「冇貨→有貨」，連 Telegram 有冇送出。"""
+    if not newly:
+        return state
+    stamp = at or iso_now()
+    log = [x for x in (state.get("restocks") or []) if isinstance(x, dict)]
+    for hit in newly:
+        log.append(
+            {
+                "at": stamp,
+                "name": hit.name,
+                "part_number": hit.part_number,
+                "mode": hit.mode,
+                "store_id": hit.store_id,
+                "store_name": hit.store_name,
+                "quote": hit.quote,
+                "telegram_sent": bool(telegram_sent),
+            }
+        )
+    next_state = dict(state)
+    next_state["restocks"] = log[-RESTOCK_LOG_LIMIT:]
+    return next_state
+
+
 # ---------------------------------------------------------------------------
 # 通知
 # ---------------------------------------------------------------------------
@@ -1241,17 +1274,21 @@ def run(args: argparse.Namespace) -> int:
     )
 
     notified = 0
+    telegram_sent = False
     if newly:
         text = format_message(newly)
         print(text)
-        notified = 1 if dispatch_notifications(cfg, text) else 0
+        telegram_sent = bool(dispatch_notifications(cfg, text))
+        notified = len(newly) if telegram_sent else 0
     else:
         print("沒有「冇貨 → 有貨」的新項目，不發送通知（防洗版）。")
 
+    new_state = append_restock_log(new_state, newly, telegram_sent=telegram_sent)
     new_state["last_run"] = {
         "status": "ok",
         "message": f"真實模式：查詢 {len(hits)} 組，新轉有貨 {len(newly)}",
-        "notified": len(newly),
+        "notified": notified,
+        "telegram_sent": telegram_sent if newly else None,
         "checked": len(hits),
         "at": iso_now(),
     }
@@ -1356,6 +1393,15 @@ def run_self_test() -> int:
         top.store_id == "R428" and top.capacity == "256gb" and top.mode == "pickup",
         f"最高優先應為 ifc 256GB 門市（實際 {top.store_id} {top.capacity} {top.mode}）",
     )
+
+    logged = append_restock_log({"restocks": []}, newly3, telegram_sent=True, at="2026-10-29T08:58:36+08:00")
+    check(len(logged["restocks"]) == 6, "有貨會寫入最近補貨紀錄")
+    check(logged["restocks"][0]["telegram_sent"] is True, "紀錄會標 Telegram 已送")
+    check(logged["restocks"][0]["name"] and logged["restocks"][0]["mode"], "紀錄有型號同通路")
+    stuffed = append_restock_log(logged, newly3, telegram_sent=False, at="2026-10-29T09:00:00+08:00")
+    check(len(stuffed["restocks"]) == RESTOCK_LOG_LIMIT, "補貨紀錄最多保留 10 筆")
+    check(all(x["telegram_sent"] is False for x in stuffed["restocks"][-6:]), "新一轉 Telegram 失敗會寫低")
+    check(append_restock_log(logged, [], telegram_sent=True)["restocks"] == logged["restocks"], "冇新有貨唔改紀錄")
 
     text = format_message(newly3)
     check("直達結帳" in text and "門市取貨" in text and "送貨上門" in text, "綜合訊息含通路與結帳連結")
