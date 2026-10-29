@@ -210,12 +210,12 @@ def item_key(mode: str, store_id: str, part_number: str) -> str:
     return f"{mode}:{store_id}:{part_number}"
 
 
-MIN_INTERVAL_SECONDS = 30
+MIN_INTERVAL_SECONDS = 10
 MAX_INTERVAL_SECONDS = 3600
 
 
 def loop_interval_seconds(cfg: dict[str, Any] | None = None) -> int:
-    """查貨間隔（秒）。有 check_interval_seconds 就用佢，否則用分鐘 × 60。最快 30 秒。"""
+    """查貨間隔（秒）。有 check_interval_seconds 就用佢，否則用分鐘 × 60。最快 10 秒。"""
     data = cfg or {}
     raw_sec = data.get("check_interval_seconds")
     if raw_sec not in (None, ""):
@@ -1356,15 +1356,23 @@ def run_self_test() -> int:
     check(not due_for_interval(cfg, fresh, later), "未滿間隔不應再查")
     check(due_for_interval(cfg, fresh, much_later), "滿間隔應再查")
     check(due_for_interval(cfg, {"last_run": {"status": "disabled", "at": inside.isoformat()}}, later), "非成功查詢不套用間隔")
+    check(loop_interval_seconds({"check_interval_seconds": 10}) == 10, "可設 10 秒一轉")
+    check(loop_interval_seconds({"check_interval_seconds": 5}) == 10, "低於 10 秒會夾到 10")
     check(loop_interval_seconds({"check_interval_seconds": 30}) == 30, "可設 30 秒一轉")
     check(loop_interval_seconds({"check_interval_minutes": 1}) == 60, "舊設定 1 分鐘＝60 秒")
+    check(format_interval_label(10) == "10 秒", "10 秒文案")
     check(format_interval_label(30) == "30 秒", "30 秒文案")
-    fast_cfg = {"check_interval_seconds": 30}
+    fast_cfg = {"check_interval_seconds": 10}
     just = inside
-    soon = inside.replace(second=min(inside.second + 10, 59))
-    after = inside.replace(minute=inside.minute, second=0) + timedelta(seconds=31)
-    check(not due_for_interval(fast_cfg, {"last_run": {"status": "ok", "at": just.isoformat()}}, soon), "未滿 30 秒不應再查")
-    check(due_for_interval(fast_cfg, {"last_run": {"status": "ok", "at": just.isoformat()}}, after), "滿 30 秒應再查")
+    soon = just + timedelta(seconds=3)
+    after = just + timedelta(seconds=9)
+    check(not due_for_interval(fast_cfg, {"last_run": {"status": "ok", "at": just.isoformat()}}, soon), "未滿 10 秒不應再查")
+    check(due_for_interval(fast_cfg, {"last_run": {"status": "ok", "at": just.isoformat()}}, after), "滿 10 秒應再查")
+    mid_cfg = {"check_interval_seconds": 30}
+    soon30 = just + timedelta(seconds=10)
+    after30 = just + timedelta(seconds=31)
+    check(not due_for_interval(mid_cfg, {"last_run": {"status": "ok", "at": just.isoformat()}}, soon30), "未滿 30 秒不應再查")
+    check(due_for_interval(mid_cfg, {"last_run": {"status": "ok", "at": just.isoformat()}}, after30), "滿 30 秒應再查")
 
     watch = resolve_watch_list(cfg, catalog)
     hits = mock_hits(cfg, watch, catalog, default_status=STATUS_AVAILABLE)
@@ -1514,6 +1522,11 @@ def run_self_test() -> int:
     check(not loop_heartbeat_stale(stale_state, now=later), "已標示停低就唔當心跳過期")
     fresh_state = {"loop": {"alive": True, "heartbeat_at": later.isoformat(), "interval_minutes": 1}}
     check(not loop_heartbeat_stale(fresh_state, now=later), "新鮮心跳唔當死")
+
+    html = Path(__file__).with_name("index.html").read_text(encoding="utf-8")
+    check('id="liveBadge"' not in html, "控制台已移除查貨 OK badge")
+    check('id="liveItemsToggle"' in html and 'id="liveItemsPanel"' in html, "各機型貨源有 sub collapse")
+    check('<option value="10">每 10 秒' in html and "const INTERVALS = [10, 30," in html, "控制台可選 10 秒一轉")
 
     from usage import run_self_test as usage_self_test
 
