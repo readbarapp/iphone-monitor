@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-29T12:18:09+08:00",
+  "updated_at": "2026-10-29T12:18:10+08:00",
   "schema_version": 1,
   "items": {
     "pickup:R409:MK2J4ZA/A": {
@@ -11,7 +11,7 @@
       "store_name": "銅鑼灣 Causeway Bay",
       "quote": "Apple Causeway Bay 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -24,7 +24,7 @@
       "store_name": "銅鑼灣 Causeway Bay",
       "quote": "Apple Causeway Bay 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2E4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -37,7 +37,7 @@
       "store_name": "銅鑼灣 Causeway Bay",
       "quote": "Apple Causeway Bay 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2G4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -50,7 +50,7 @@
       "store_name": "銅鑼灣 Causeway Bay",
       "quote": "Apple Causeway Bay 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2L4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -87,7 +87,7 @@
       "store_name": "銅鑼灣 Causeway Bay",
       "quote": "Apple Causeway Bay 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2H4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -100,7 +100,7 @@
       "store_name": "銅鑼灣 Causeway Bay",
       "quote": "Apple Causeway Bay 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2K4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -113,7 +113,7 @@
       "store_name": "中環 ifc mall",
       "quote": "Apple ifc mall 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -126,7 +126,7 @@
       "store_name": "中環 ifc mall",
       "quote": "Apple ifc mall 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2E4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -139,7 +139,7 @@
       "store_name": "中環 ifc mall",
       "quote": "Apple ifc mall 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2G4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -152,7 +152,7 @@
       "store_name": "中環 ifc mall",
       "quote": "Apple ifc mall 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2L4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -189,7 +189,7 @@
       "store_name": "中環 ifc mall",
       "quote": "Apple ifc mall 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2H4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -202,7 +202,7 @@
       "store_name": "中環 ifc mall",
       "quote": "Apple ifc mall 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2K4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -215,7 +215,7 @@
       "store_name": "尖沙咀 廣東道",
       "quote": "Apple Canton Road 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -228,7 +228,7 @@
       "store_name": "尖沙咀 廣東道",
       "quote": "Apple Canton Road 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2E4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -241,7 +241,7 @@
       "store_name": "尖沙咀 廣東道",
       "quote": "Apple Canton Road 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2G4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -254,7 +254,7 @@
       "store_name": "尖沙咀 廣東道",
       "quote": "Apple Canton Road 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2L4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -291,7 +291,7 @@
       "store_name": "尖沙咀 廣東道",
       "quote": "Apple Canton Road 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2H4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -304,7 +304,7 @@
       "store_name": "尖沙咀 廣東道",
       "quote": "Apple Canton Road 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2K4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -317,7 +317,7 @@
       "store_name": "觀塘 apm",
       "quote": "Apple apm Hong Kong 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -330,7 +330,7 @@
       "store_name": "觀塘 apm",
       "quote": "Apple apm Hong Kong 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2E4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -343,7 +343,7 @@
       "store_name": "觀塘 apm",
       "quote": "Apple apm Hong Kong 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2G4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -356,7 +356,7 @@
       "store_name": "觀塘 apm",
       "quote": "Apple apm Hong Kong 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2L4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -393,7 +393,7 @@
       "store_name": "觀塘 apm",
       "quote": "Apple apm Hong Kong 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2H4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -406,7 +406,7 @@
       "store_name": "觀塘 apm",
       "quote": "Apple apm Hong Kong 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2K4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -419,7 +419,7 @@
       "store_name": "九龍塘 又一城",
       "quote": "Apple Festival Walk 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -432,7 +432,7 @@
       "store_name": "九龍塘 又一城",
       "quote": "Apple Festival Walk 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2E4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -445,7 +445,7 @@
       "store_name": "九龍塘 又一城",
       "quote": "Apple Festival Walk 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2G4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -458,7 +458,7 @@
       "store_name": "九龍塘 又一城",
       "quote": "Apple Festival Walk 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2L4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -495,7 +495,7 @@
       "store_name": "九龍塘 又一城",
       "quote": "Apple Festival Walk 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2H4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -508,7 +508,7 @@
       "store_name": "九龍塘 又一城",
       "quote": "Apple Festival Walk 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2K4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -521,7 +521,7 @@
       "store_name": "沙田 新城市廣場",
       "quote": "Apple New Town Plaza 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -534,7 +534,7 @@
       "store_name": "沙田 新城市廣場",
       "quote": "Apple New Town Plaza 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2E4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -547,7 +547,7 @@
       "store_name": "沙田 新城市廣場",
       "quote": "Apple New Town Plaza 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2G4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -560,7 +560,7 @@
       "store_name": "沙田 新城市廣場",
       "quote": "Apple New Town Plaza 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2L4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -597,7 +597,7 @@
       "store_name": "沙田 新城市廣場",
       "quote": "Apple New Town Plaza 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2H4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -610,7 +610,7 @@
       "store_name": "沙田 新城市廣場",
       "quote": "Apple New Town Plaza 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2K4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -623,7 +623,7 @@
       "store_name": "送貨上門（香港）",
       "quote": "周六 23/01/2027 — 免費",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": "2026-10-27T13:42:11+08:00"
     },
     "delivery:DELIVERY:MK2E4ZA/A": {
@@ -635,7 +635,7 @@
       "store_name": "送貨上門（香港）",
       "quote": "周六 23/01/2027 — 免費",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2E4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": "2026-10-27T13:42:11+08:00"
     },
     "delivery:DELIVERY:MK2G4ZA/A": {
@@ -647,7 +647,7 @@
       "store_name": "送貨上門（香港）",
       "quote": "周六 23/01/2027 — 免費",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2G4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": "2026-10-27T13:42:11+08:00"
     },
     "delivery:DELIVERY:MK2L4ZA/A": {
@@ -659,7 +659,7 @@
       "store_name": "送貨上門（香港）",
       "quote": "周六 23/01/2027 — 免費",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2L4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": "2026-10-27T13:42:11+08:00"
     },
     "delivery:DELIVERY:MK2D4ZA/A": {
@@ -695,7 +695,7 @@
       "store_name": "送貨上門（香港）",
       "quote": "周六 23/01/2027 — 免費",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2H4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": "2026-10-27T13:42:11+08:00"
     },
     "delivery:DELIVERY:MK2K4ZA/A": {
@@ -707,7 +707,7 @@
       "store_name": "送貨上門（香港）",
       "quote": "周六 23/01/2027 — 免費",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2K4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:09+08:00",
+      "last_checked_at": "2026-10-29T12:18:10+08:00",
       "last_available_at": "2026-10-27T13:42:11+08:00"
     },
     "pickup:R409:MJXQ4ZA/A": {
@@ -801,7 +801,7 @@
     "notified": 0,
     "telegram_sent": null,
     "checked": 42,
-    "at": "2026-10-29T12:18:09+08:00"
+    "at": "2026-10-29T12:18:10+08:00"
   },
   "simulation": {
     "items": {
@@ -1158,7 +1158,7 @@
   },
   "loop": {
     "alive": true,
-    "heartbeat_at": "2026-10-29T12:18:09+08:00",
+    "heartbeat_at": "2026-10-29T12:18:10+08:00",
     "interval_minutes": 1,
     "tick_count": 1227,
     "ticks": [
@@ -1173,7 +1173,7 @@
       "2026-10-29T12:17:12+08:00",
       "2026-10-29T12:17:32+08:00",
       "2026-10-29T12:17:51+08:00",
-      "2026-10-29T12:18:09+08:00"
+      "2026-10-29T12:18:10+08:00"
     ],
     "stopped": null,
     "stopped_at": "2026-10-29T11:34:34+08:00",
