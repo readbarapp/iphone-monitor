@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-29T15:22:56+08:00",
+  "updated_at": "2026-10-29T15:23:16+08:00",
   "schema_version": 1,
   "items": {
     "pickup:R409:MK2J4ZA/A": {
@@ -11,7 +11,7 @@
       "store_name": "銅鑼灣 Causeway Bay",
       "quote": "Apple Causeway Bay 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -24,7 +24,7 @@
       "store_name": "銅鑼灣 Causeway Bay",
       "quote": "Apple Causeway Bay 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2E4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -37,7 +37,7 @@
       "store_name": "銅鑼灣 Causeway Bay",
       "quote": "Apple Causeway Bay 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2G4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -50,33 +50,9 @@
       "store_name": "銅鑼灣 Causeway Bay",
       "quote": "Apple Causeway Bay 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2L4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
-    },
-    "pickup:R409:MK2D4ZA/A": {
-      "status": "unavailable",
-      "mode": "pickup",
-      "part_number": "MK2D4ZA/A",
-      "name": "iPhone Duo 256GB 星光白色",
-      "store_id": "R409",
-      "store_name": "銅鑼灣 Causeway Bay",
-      "quote": "Apple Causeway Bay 暫時無法提供",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2D4ZA/A",
-      "last_checked_at": "2026-10-28T11:50:24+08:00",
-      "last_available_at": null
-    },
-    "pickup:R409:MK2F4ZA/A": {
-      "status": "unavailable",
-      "mode": "pickup",
-      "part_number": "MK2F4ZA/A",
-      "name": "iPhone Duo 512GB 星光白色",
-      "store_id": "R409",
-      "store_name": "銅鑼灣 Causeway Bay",
-      "quote": "Apple Causeway Bay 暫時無法提供",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2F4ZA/A",
-      "last_checked_at": "2026-10-28T11:50:24+08:00",
-      "last_available_at": null
     },
     "pickup:R409:MK2H4ZA/A": {
       "status": "unavailable",
@@ -87,7 +63,7 @@
       "store_name": "銅鑼灣 Causeway Bay",
       "quote": "Apple Causeway Bay 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2H4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -100,7 +76,7 @@
       "store_name": "銅鑼灣 Causeway Bay",
       "quote": "Apple Causeway Bay 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2K4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -113,7 +89,7 @@
       "store_name": "中環 ifc mall",
       "quote": "Apple ifc mall 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -126,7 +102,7 @@
       "store_name": "中環 ifc mall",
       "quote": "Apple ifc mall 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2E4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -139,7 +115,7 @@
       "store_name": "中環 ifc mall",
       "quote": "Apple ifc mall 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2G4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -152,33 +128,9 @@
       "store_name": "中環 ifc mall",
       "quote": "Apple ifc mall 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2L4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
-    },
-    "pickup:R428:MK2D4ZA/A": {
-      "status": "unavailable",
-      "mode": "pickup",
-      "part_number": "MK2D4ZA/A",
-      "name": "iPhone Duo 256GB 星光白色",
-      "store_id": "R428",
-      "store_name": "中環 ifc mall",
-      "quote": "Apple ifc mall 暫時無法提供",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2D4ZA/A",
-      "last_checked_at": "2026-10-28T11:50:24+08:00",
-      "last_available_at": null
-    },
-    "pickup:R428:MK2F4ZA/A": {
-      "status": "unavailable",
-      "mode": "pickup",
-      "part_number": "MK2F4ZA/A",
-      "name": "iPhone Duo 512GB 星光白色",
-      "store_id": "R428",
-      "store_name": "中環 ifc mall",
-      "quote": "Apple ifc mall 暫時無法提供",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2F4ZA/A",
-      "last_checked_at": "2026-10-28T11:50:24+08:00",
-      "last_available_at": null
     },
     "pickup:R428:MK2H4ZA/A": {
       "status": "unavailable",
@@ -189,7 +141,7 @@
       "store_name": "中環 ifc mall",
       "quote": "Apple ifc mall 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2H4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -202,7 +154,7 @@
       "store_name": "中環 ifc mall",
       "quote": "Apple ifc mall 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2K4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -215,7 +167,7 @@
       "store_name": "尖沙咀 廣東道",
       "quote": "Apple Canton Road 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -228,7 +180,7 @@
       "store_name": "尖沙咀 廣東道",
       "quote": "Apple Canton Road 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2E4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -241,7 +193,7 @@
       "store_name": "尖沙咀 廣東道",
       "quote": "Apple Canton Road 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2G4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -254,33 +206,9 @@
       "store_name": "尖沙咀 廣東道",
       "quote": "Apple Canton Road 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2L4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
-    },
-    "pickup:R499:MK2D4ZA/A": {
-      "status": "unavailable",
-      "mode": "pickup",
-      "part_number": "MK2D4ZA/A",
-      "name": "iPhone Duo 256GB 星光白色",
-      "store_id": "R499",
-      "store_name": "尖沙咀 廣東道",
-      "quote": "Apple Canton Road 暫時無法提供",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2D4ZA/A",
-      "last_checked_at": "2026-10-28T11:50:24+08:00",
-      "last_available_at": null
-    },
-    "pickup:R499:MK2F4ZA/A": {
-      "status": "unavailable",
-      "mode": "pickup",
-      "part_number": "MK2F4ZA/A",
-      "name": "iPhone Duo 512GB 星光白色",
-      "store_id": "R499",
-      "store_name": "尖沙咀 廣東道",
-      "quote": "Apple Canton Road 暫時無法提供",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2F4ZA/A",
-      "last_checked_at": "2026-10-28T11:50:24+08:00",
-      "last_available_at": null
     },
     "pickup:R499:MK2H4ZA/A": {
       "status": "unavailable",
@@ -291,7 +219,7 @@
       "store_name": "尖沙咀 廣東道",
       "quote": "Apple Canton Road 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2H4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -304,7 +232,7 @@
       "store_name": "尖沙咀 廣東道",
       "quote": "Apple Canton Road 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2K4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -317,7 +245,7 @@
       "store_name": "觀塘 apm",
       "quote": "Apple apm Hong Kong 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -330,7 +258,7 @@
       "store_name": "觀塘 apm",
       "quote": "Apple apm Hong Kong 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2E4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -343,7 +271,7 @@
       "store_name": "觀塘 apm",
       "quote": "Apple apm Hong Kong 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2G4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -356,33 +284,9 @@
       "store_name": "觀塘 apm",
       "quote": "Apple apm Hong Kong 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2L4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
-    },
-    "pickup:R673:MK2D4ZA/A": {
-      "status": "unavailable",
-      "mode": "pickup",
-      "part_number": "MK2D4ZA/A",
-      "name": "iPhone Duo 256GB 星光白色",
-      "store_id": "R673",
-      "store_name": "觀塘 apm",
-      "quote": "Apple apm Hong Kong 暫時無法提供",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2D4ZA/A",
-      "last_checked_at": "2026-10-28T11:50:24+08:00",
-      "last_available_at": null
-    },
-    "pickup:R673:MK2F4ZA/A": {
-      "status": "unavailable",
-      "mode": "pickup",
-      "part_number": "MK2F4ZA/A",
-      "name": "iPhone Duo 512GB 星光白色",
-      "store_id": "R673",
-      "store_name": "觀塘 apm",
-      "quote": "Apple apm Hong Kong 暫時無法提供",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2F4ZA/A",
-      "last_checked_at": "2026-10-28T11:50:24+08:00",
-      "last_available_at": null
     },
     "pickup:R673:MK2H4ZA/A": {
       "status": "unavailable",
@@ -393,7 +297,7 @@
       "store_name": "觀塘 apm",
       "quote": "Apple apm Hong Kong 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2H4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -406,7 +310,7 @@
       "store_name": "觀塘 apm",
       "quote": "Apple apm Hong Kong 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2K4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -419,7 +323,7 @@
       "store_name": "九龍塘 又一城",
       "quote": "Apple Festival Walk 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -432,7 +336,7 @@
       "store_name": "九龍塘 又一城",
       "quote": "Apple Festival Walk 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2E4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -445,7 +349,7 @@
       "store_name": "九龍塘 又一城",
       "quote": "Apple Festival Walk 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2G4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -458,33 +362,9 @@
       "store_name": "九龍塘 又一城",
       "quote": "Apple Festival Walk 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2L4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
-    },
-    "pickup:R485:MK2D4ZA/A": {
-      "status": "unavailable",
-      "mode": "pickup",
-      "part_number": "MK2D4ZA/A",
-      "name": "iPhone Duo 256GB 星光白色",
-      "store_id": "R485",
-      "store_name": "九龍塘 又一城",
-      "quote": "Apple Festival Walk 暫時無法提供",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2D4ZA/A",
-      "last_checked_at": "2026-10-28T11:50:24+08:00",
-      "last_available_at": null
-    },
-    "pickup:R485:MK2F4ZA/A": {
-      "status": "unavailable",
-      "mode": "pickup",
-      "part_number": "MK2F4ZA/A",
-      "name": "iPhone Duo 512GB 星光白色",
-      "store_id": "R485",
-      "store_name": "九龍塘 又一城",
-      "quote": "Apple Festival Walk 暫時無法提供",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2F4ZA/A",
-      "last_checked_at": "2026-10-28T11:50:24+08:00",
-      "last_available_at": null
     },
     "pickup:R485:MK2H4ZA/A": {
       "status": "unavailable",
@@ -495,7 +375,7 @@
       "store_name": "九龍塘 又一城",
       "quote": "Apple Festival Walk 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2H4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -508,7 +388,7 @@
       "store_name": "九龍塘 又一城",
       "quote": "Apple Festival Walk 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2K4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -521,7 +401,7 @@
       "store_name": "沙田 新城市廣場",
       "quote": "Apple New Town Plaza 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -534,7 +414,7 @@
       "store_name": "沙田 新城市廣場",
       "quote": "Apple New Town Plaza 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2E4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -547,7 +427,7 @@
       "store_name": "沙田 新城市廣場",
       "quote": "Apple New Town Plaza 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2G4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -560,33 +440,9 @@
       "store_name": "沙田 新城市廣場",
       "quote": "Apple New Town Plaza 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2L4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
-    },
-    "pickup:R610:MK2D4ZA/A": {
-      "status": "unavailable",
-      "mode": "pickup",
-      "part_number": "MK2D4ZA/A",
-      "name": "iPhone Duo 256GB 星光白色",
-      "store_id": "R610",
-      "store_name": "沙田 新城市廣場",
-      "quote": "Apple New Town Plaza 暫時無法提供",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2D4ZA/A",
-      "last_checked_at": "2026-10-28T11:50:24+08:00",
-      "last_available_at": null
-    },
-    "pickup:R610:MK2F4ZA/A": {
-      "status": "unavailable",
-      "mode": "pickup",
-      "part_number": "MK2F4ZA/A",
-      "name": "iPhone Duo 512GB 星光白色",
-      "store_id": "R610",
-      "store_name": "沙田 新城市廣場",
-      "quote": "Apple New Town Plaza 暫時無法提供",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2F4ZA/A",
-      "last_checked_at": "2026-10-28T11:50:24+08:00",
-      "last_available_at": null
     },
     "pickup:R610:MK2H4ZA/A": {
       "status": "unavailable",
@@ -597,7 +453,7 @@
       "store_name": "沙田 新城市廣場",
       "quote": "Apple New Town Plaza 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2H4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
     },
@@ -610,189 +466,9 @@
       "store_name": "沙田 新城市廣場",
       "quote": "Apple New Town Plaza 暫時無法提供",
       "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2K4ZA/A",
-      "last_checked_at": "2026-10-29T15:22:56+08:00",
+      "last_checked_at": "2026-10-29T15:23:16+08:00",
       "last_available_at": null,
       "last_error": "pickup query failed"
-    },
-    "delivery:DELIVERY:MK2J4ZA/A": {
-      "status": "unavailable",
-      "mode": "delivery",
-      "part_number": "MK2J4ZA/A",
-      "name": "iPhone Duo 1TB 夜空色",
-      "store_id": "DELIVERY",
-      "store_name": "送貨上門（香港）",
-      "quote": "周六 23/01/2027 — 免費",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2J4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:29+08:00",
-      "last_available_at": "2026-10-27T13:42:11+08:00"
-    },
-    "delivery:DELIVERY:MK2E4ZA/A": {
-      "status": "unavailable",
-      "mode": "delivery",
-      "part_number": "MK2E4ZA/A",
-      "name": "iPhone Duo 256GB 夜空色",
-      "store_id": "DELIVERY",
-      "store_name": "送貨上門（香港）",
-      "quote": "周六 23/01/2027 — 免費",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2E4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:29+08:00",
-      "last_available_at": "2026-10-27T13:42:11+08:00"
-    },
-    "delivery:DELIVERY:MK2G4ZA/A": {
-      "status": "unavailable",
-      "mode": "delivery",
-      "part_number": "MK2G4ZA/A",
-      "name": "iPhone Duo 512GB 夜空色",
-      "store_id": "DELIVERY",
-      "store_name": "送貨上門（香港）",
-      "quote": "周六 23/01/2027 — 免費",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2G4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:29+08:00",
-      "last_available_at": "2026-10-27T13:42:11+08:00"
-    },
-    "delivery:DELIVERY:MK2L4ZA/A": {
-      "status": "unavailable",
-      "mode": "delivery",
-      "part_number": "MK2L4ZA/A",
-      "name": "iPhone Duo 2TB 夜空色",
-      "store_id": "DELIVERY",
-      "store_name": "送貨上門（香港）",
-      "quote": "周六 23/01/2027 — 免費",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2L4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:29+08:00",
-      "last_available_at": "2026-10-27T13:42:11+08:00"
-    },
-    "delivery:DELIVERY:MK2D4ZA/A": {
-      "status": "unavailable",
-      "mode": "delivery",
-      "part_number": "MK2D4ZA/A",
-      "name": "iPhone Duo 256GB 星光白",
-      "store_id": "DELIVERY",
-      "store_name": "送貨上門（香港）",
-      "quote": "周六 23/01/2027 — 免費",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2D4ZA/A",
-      "last_checked_at": "2026-10-28T11:50:24+08:00",
-      "last_available_at": "2026-10-27T13:42:11+08:00"
-    },
-    "delivery:DELIVERY:MK2F4ZA/A": {
-      "status": "unavailable",
-      "mode": "delivery",
-      "part_number": "MK2F4ZA/A",
-      "name": "iPhone Duo 512GB 星光白",
-      "store_id": "DELIVERY",
-      "store_name": "送貨上門（香港）",
-      "quote": "周六 23/01/2027 — 免費",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2F4ZA/A",
-      "last_checked_at": "2026-10-28T11:50:24+08:00",
-      "last_available_at": "2026-10-27T13:42:11+08:00"
-    },
-    "delivery:DELIVERY:MK2H4ZA/A": {
-      "status": "unavailable",
-      "mode": "delivery",
-      "part_number": "MK2H4ZA/A",
-      "name": "iPhone Duo 1TB 星光白",
-      "store_id": "DELIVERY",
-      "store_name": "送貨上門（香港）",
-      "quote": "周六 23/01/2027 — 免費",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2H4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:29+08:00",
-      "last_available_at": "2026-10-27T13:42:11+08:00"
-    },
-    "delivery:DELIVERY:MK2K4ZA/A": {
-      "status": "unavailable",
-      "mode": "delivery",
-      "part_number": "MK2K4ZA/A",
-      "name": "iPhone Duo 2TB 星光白",
-      "store_id": "DELIVERY",
-      "store_name": "送貨上門（香港）",
-      "quote": "周六 23/01/2027 — 免費",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MK2K4ZA/A",
-      "last_checked_at": "2026-10-29T12:18:29+08:00",
-      "last_available_at": "2026-10-27T13:42:11+08:00"
-    },
-    "pickup:R409:MJXQ4ZA/A": {
-      "status": "unavailable",
-      "mode": "pickup",
-      "part_number": "MJXQ4ZA/A",
-      "name": "iPhone 18 Pro Max 256GB 布根地紅色",
-      "store_id": "R409",
-      "store_name": "銅鑼灣 Causeway Bay",
-      "quote": "Apple Causeway Bay 暫時無法提供",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MJXQ4ZA/A",
-      "last_checked_at": "2026-10-28T11:50:24+08:00",
-      "last_available_at": null
-    },
-    "pickup:R428:MJXQ4ZA/A": {
-      "status": "unavailable",
-      "mode": "pickup",
-      "part_number": "MJXQ4ZA/A",
-      "name": "iPhone 18 Pro Max 256GB 布根地紅色",
-      "store_id": "R428",
-      "store_name": "中環 ifc mall",
-      "quote": "Apple ifc mall 暫時無法提供",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MJXQ4ZA/A",
-      "last_checked_at": "2026-10-28T11:50:24+08:00",
-      "last_available_at": null
-    },
-    "pickup:R499:MJXQ4ZA/A": {
-      "status": "unavailable",
-      "mode": "pickup",
-      "part_number": "MJXQ4ZA/A",
-      "name": "iPhone 18 Pro Max 256GB 布根地紅色",
-      "store_id": "R499",
-      "store_name": "尖沙咀 廣東道",
-      "quote": "Apple Canton Road 暫時無法提供",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MJXQ4ZA/A",
-      "last_checked_at": "2026-10-28T11:50:24+08:00",
-      "last_available_at": null
-    },
-    "pickup:R673:MJXQ4ZA/A": {
-      "status": "unavailable",
-      "mode": "pickup",
-      "part_number": "MJXQ4ZA/A",
-      "name": "iPhone 18 Pro Max 256GB 布根地紅色",
-      "store_id": "R673",
-      "store_name": "觀塘 apm",
-      "quote": "Apple apm Hong Kong 暫時無法提供",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MJXQ4ZA/A",
-      "last_checked_at": "2026-10-28T11:50:24+08:00",
-      "last_available_at": null
-    },
-    "pickup:R485:MJXQ4ZA/A": {
-      "status": "unavailable",
-      "mode": "pickup",
-      "part_number": "MJXQ4ZA/A",
-      "name": "iPhone 18 Pro Max 256GB 布根地紅色",
-      "store_id": "R485",
-      "store_name": "九龍塘 又一城",
-      "quote": "Apple Festival Walk 暫時無法提供",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MJXQ4ZA/A",
-      "last_checked_at": "2026-10-28T11:50:24+08:00",
-      "last_available_at": null
-    },
-    "pickup:R610:MJXQ4ZA/A": {
-      "status": "unavailable",
-      "mode": "pickup",
-      "part_number": "MJXQ4ZA/A",
-      "name": "iPhone 18 Pro Max 256GB 布根地紅色",
-      "store_id": "R610",
-      "store_name": "沙田 新城市廣場",
-      "quote": "Apple New Town Plaza 暫時無法提供",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MJXQ4ZA/A",
-      "last_checked_at": "2026-10-28T11:50:24+08:00",
-      "last_available_at": null
-    },
-    "delivery:DELIVERY:MJXQ4ZA/A": {
-      "status": "unavailable",
-      "mode": "delivery",
-      "part_number": "MJXQ4ZA/A",
-      "name": "iPhone 18 Pro Max 256GB 酒紅色",
-      "store_id": "DELIVERY",
-      "store_name": "送貨上門（香港）",
-      "quote": "14/11/2026 – 21/11/2026 — 免費",
-      "checkout_url": "https://www.apple.com/hk-zh/shop/product/MJXQ4ZA/A",
-      "last_checked_at": "2026-10-28T11:50:24+08:00",
-      "last_available_at": null
     }
   },
   "last_run": {
@@ -801,7 +477,7 @@
     "notified": 0,
     "telegram_sent": null,
     "checked": 36,
-    "at": "2026-10-29T15:22:56+08:00"
+    "at": "2026-10-29T15:23:16+08:00"
   },
   "simulation": {
     "items": {
@@ -1160,11 +836,10 @@
   },
   "loop": {
     "alive": true,
-    "heartbeat_at": "2026-10-29T15:22:56+08:00",
+    "heartbeat_at": "2026-10-29T15:23:16+08:00",
     "interval_minutes": 1,
-    "tick_count": 1825,
+    "tick_count": 1826,
     "ticks": [
-      "2026-10-29T15:19:33+08:00",
       "2026-10-29T15:19:51+08:00",
       "2026-10-29T15:20:10+08:00",
       "2026-10-29T15:20:27+08:00",
@@ -1175,7 +850,8 @@
       "2026-10-29T15:22:02+08:00",
       "2026-10-29T15:22:21+08:00",
       "2026-10-29T15:22:37+08:00",
-      "2026-10-29T15:22:56+08:00"
+      "2026-10-29T15:22:56+08:00",
+      "2026-10-29T15:23:16+08:00"
     ],
     "stopped": null,
     "stopped_at": "2026-10-29T11:34:34+08:00",
