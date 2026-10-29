@@ -44,13 +44,6 @@
       "capacity": "256gb"
     },
     {
-      "part_number": "MK2F4ZA/A",
-      "family": "iphone-duo",
-      "name": "iPhone Duo 512GB 星光白",
-      "color": "starwhite",
-      "capacity": "512gb"
-    },
-    {
       "part_number": "MK2H4ZA/A",
       "family": "iphone-duo",
       "name": "iPhone Duo 1TB 星光白",
@@ -166,13 +159,6 @@
       "pickup:R673:MK2D4ZA/A": "unavailable",
       "pickup:R610:MK2D4ZA/A": "unavailable",
       "delivery:DELIVERY:MK2D4ZA/A": "unavailable",
-      "pickup:R428:MK2F4ZA/A": "unavailable",
-      "pickup:R409:MK2F4ZA/A": "unavailable",
-      "pickup:R499:MK2F4ZA/A": "unavailable",
-      "pickup:R485:MK2F4ZA/A": "unavailable",
-      "pickup:R673:MK2F4ZA/A": "unavailable",
-      "pickup:R610:MK2F4ZA/A": "unavailable",
-      "delivery:DELIVERY:MK2F4ZA/A": "unavailable",
       "pickup:R428:MK2H4ZA/A": "unavailable",
       "pickup:R409:MK2H4ZA/A": "unavailable",
       "pickup:R499:MK2H4ZA/A": "unavailable",
