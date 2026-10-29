@@ -15,20 +15,6 @@
       "capacity": "1tb"
     },
     {
-      "part_number": "MK2E4ZA/A",
-      "family": "iphone-duo",
-      "name": "iPhone Duo 256GB 夜空色",
-      "color": "nightsky",
-      "capacity": "256gb"
-    },
-    {
-      "part_number": "MK2G4ZA/A",
-      "family": "iphone-duo",
-      "name": "iPhone Duo 512GB 夜空色",
-      "color": "nightsky",
-      "capacity": "512gb"
-    },
-    {
       "part_number": "MK2L4ZA/A",
       "family": "iphone-duo",
       "name": "iPhone Duo 2TB 夜空色",
@@ -115,18 +101,6 @@
       "pickup:R485:MK2J4ZA/A": "unavailable",
       "pickup:R673:MK2J4ZA/A": "unavailable",
       "pickup:R610:MK2J4ZA/A": "unavailable",
-      "pickup:R428:MK2E4ZA/A": "unavailable",
-      "pickup:R409:MK2E4ZA/A": "unavailable",
-      "pickup:R499:MK2E4ZA/A": "unavailable",
-      "pickup:R485:MK2E4ZA/A": "unavailable",
-      "pickup:R673:MK2E4ZA/A": "unavailable",
-      "pickup:R610:MK2E4ZA/A": "unavailable",
-      "pickup:R428:MK2G4ZA/A": "unavailable",
-      "pickup:R409:MK2G4ZA/A": "unavailable",
-      "pickup:R499:MK2G4ZA/A": "unavailable",
-      "pickup:R485:MK2G4ZA/A": "unavailable",
-      "pickup:R673:MK2G4ZA/A": "unavailable",
-      "pickup:R610:MK2G4ZA/A": "unavailable",
       "pickup:R428:MK2L4ZA/A": "unavailable",
       "pickup:R409:MK2L4ZA/A": "unavailable",
       "pickup:R499:MK2L4ZA/A": "unavailable",
