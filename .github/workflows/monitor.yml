@@ -1,6 +1,6 @@
 # Apple 香港 iPhone 庫存監控
 # GitHub 嘅 schedule 鬧鐘最短約 5 分鐘，而且會遲、會漏。
-# 真正監測係 job 入面按 check_interval_seconds（或分鐘）循環查。最快 30 秒。
+# 真正監測係 job 入面按 check_interval_seconds（或分鐘）循環查。最快 10 秒。
 # state.json 推去 monitor-state，唔好 commit 入 main，否則 GitHub Pages 會每轉紅叉。
 # 單條 job 約 5.5 小時正常換班後，會即刻 workflow_dispatch 下一條。
 # schedule 只係後備：dispatch 失敗或者 loop 死咗，先靠鬧鐘再拉起。
