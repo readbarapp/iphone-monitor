@@ -44,11 +44,11 @@
       "capacity": "2tb"
     },
     {
-      "part_number": "MJXQ4ZA/A",
-      "family": "custom",
-      "name": "iPhone 18 Pro Max 256GB 酒紅色",
-      "color": "",
-      "capacity": ""
+      "part_number": "MK2H4ZA/A",
+      "family": "iphone-duo",
+      "name": "iPhone Duo 1TB 星光白",
+      "color": "starwhite",
+      "capacity": "1tb"
     }
   ],
   "custom_stores": [],
@@ -145,13 +145,13 @@
       "pickup:R673:MK2K4ZA/A": "unavailable",
       "pickup:R610:MK2K4ZA/A": "unavailable",
       "delivery:DELIVERY:MK2K4ZA/A": "unavailable",
-      "pickup:R428:MJXQ4ZA/A": "unavailable",
-      "pickup:R409:MJXQ4ZA/A": "unavailable",
-      "pickup:R499:MJXQ4ZA/A": "unavailable",
-      "pickup:R485:MJXQ4ZA/A": "unavailable",
-      "pickup:R673:MJXQ4ZA/A": "unavailable",
-      "pickup:R610:MJXQ4ZA/A": "unavailable",
-      "delivery:DELIVERY:MJXQ4ZA/A": "unavailable"
+      "pickup:R428:MK2H4ZA/A": "unavailable",
+      "pickup:R409:MK2H4ZA/A": "unavailable",
+      "pickup:R499:MK2H4ZA/A": "unavailable",
+      "pickup:R485:MK2H4ZA/A": "unavailable",
+      "pickup:R673:MK2H4ZA/A": "unavailable",
+      "pickup:R610:MK2H4ZA/A": "unavailable",
+      "delivery:DELIVERY:MK2H4ZA/A": "unavailable"
     }
   },
   "notifications": {
