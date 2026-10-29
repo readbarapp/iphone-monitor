@@ -140,18 +140,18 @@
     </section>
 
     <section class="glass mode-live">
-      <button id="liveToggle" type="button" aria-expanded="false" aria-controls="livePanel" class="w-full flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between text-left rounded-2xl py-1 hover:bg-white/5">
+      <button id="liveToggle" type="button" aria-expanded="true" aria-controls="livePanel" class="w-full flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between text-left rounded-2xl py-1 hover:bg-white/5">
         <div class="min-w-0 w-full">
           <p class="text-xs uppercase tracking-wide sm:tracking-[0.18em] text-emerald-300/80">真實模式</p>
           <h2 class="mt-2 text-lg sm:text-xl font-semibold break-phone">問 Apple 官網（監測清單上嘅型號）</h2>
-          <p id="liveToggleHint" class="text-sm text-zinc-400 mt-1 break-phone">預設收起。要改頻率、時段或睇貨源先展開。</p>
+          <p id="liveToggleHint" class="text-sm text-zinc-400 mt-1 break-phone">預設展開。可以改頻率、時段或睇貨源。</p>
         </div>
         <span class="shrink-0 flex flex-col items-end gap-2">
           <span id="liveSectionBadge" class="rounded-full px-3 py-1 text-xs font-medium bg-zinc-800 text-zinc-300">OFF</span>
-          <span id="liveToggleLabel" class="rounded-full border border-white/15 px-3 py-1 text-xs text-zinc-300">展開</span>
+          <span id="liveToggleLabel" class="rounded-full border border-white/15 px-3 py-1 text-xs text-zinc-300">收起</span>
         </span>
       </button>
-      <div id="livePanel" class="hidden mt-4" hidden>
+      <div id="livePanel" class="mt-4">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <p id="liveModeHint" class="text-sm text-zinc-400 min-w-0 w-full break-phone">而家：真實模式已關閉。左邊「幾耐之內先當有貨」可以改日數。送貨同取貨同一規則。</p>
         <div class="flex items-center justify-between sm:justify-end gap-3 shrink-0">
@@ -215,9 +215,19 @@
             <p id="loopTicks" class="mt-2 text-[11px] text-zinc-300 leading-relaxed whitespace-pre-wrap break-all font-mono full-copy"></p>
           </div>
           <div class="mt-3 rounded-xl bg-black/30 border border-white/10 p-3 min-w-0">
-            <p class="text-xs font-medium text-zinc-200">最近 10 次有貨</p>
-            <p class="text-[11px] text-zinc-500 mt-1 full-copy break-phone">由「冇貨 → 有貨」先入表。顯示幾時、型號、通路，同 Telegram 有冇送出。新紀錄要等下一轉真實查貨。</p>
-            <div id="restockLog" class="mt-2 space-y-2"></div>
+            <button id="restockToggle" type="button" aria-expanded="false" aria-controls="restockPanel" class="w-full flex items-start justify-between gap-2 text-left rounded-lg hover:bg-white/5">
+              <div class="min-w-0">
+                <p class="text-xs font-medium text-zinc-200">補貨紀錄</p>
+                <p id="restockToggleHint" class="text-[11px] text-zinc-500 mt-1 full-copy break-phone">預設收起。由「冇貨 → 有貨」先入表，最多 10 筆。</p>
+              </div>
+              <span class="shrink-0 flex items-center gap-2">
+                <span id="restockCount" class="text-[11px] text-zinc-400"></span>
+                <span id="restockToggleLabel" class="rounded-full border border-white/15 px-3 py-1 text-xs text-zinc-300">展開</span>
+              </span>
+            </button>
+            <div id="restockPanel" class="hidden mt-2" hidden>
+              <div id="restockLog" class="space-y-2"></div>
+            </div>
           </div>
           <div class="mt-3 rounded-xl bg-black/30 border border-white/10 p-3 min-w-0">
             <button id="liveItemsToggle" type="button" aria-expanded="false" aria-controls="liveItemsPanel" class="w-full flex items-start justify-between gap-2 text-left rounded-lg hover:bg-white/5">
@@ -451,7 +461,8 @@
   <script>
     const PAT_KEY = "iphone_monitor_pat";
     const STATE_BRANCH = "monitor-state";
-    const COLLAPSE_SECTIONS = ["sim", "live", "liveItems", "models", "stores", "preview", "priority", "pat"];
+    const COLLAPSE_SECTIONS = ["sim", "live", "restock", "liveItems", "models", "stores", "preview", "priority", "pat"];
+    const DEFAULT_OPEN_SECTIONS = new Set(["live"]);
     const INTERVALS = [10, 30, 60, 120, 180, 300, 600, 900, 1200, 1800, 3600];
     const CAPACITIES = ["256gb", "512gb", "1tb", "2tb"];
     const CAP_LABEL = { "256gb": "256GB", "512gb": "512GB", "1tb": "1TB", "2tb": "2TB" };
@@ -1074,11 +1085,11 @@
         } else if (open) {
           headerHint.textContent = on
             ? `而家 ON。${soonDays()} 日內可送或可取先 Telegram。`
-            : `而家 OFF。展開後可以改頻率、時段同「幾耐之內先當有貨」。`;
+            : `而家 OFF。可以改頻率、時段同「幾耐之內先當有貨」。`;
         } else {
           headerHint.textContent = on
             ? `而家 ON · ${soonDays()} 日窗。要改設定或睇貨源先展開。`
-            : `而家 OFF · 預設收起。要改頻率、時段或睇貨源先展開。`;
+            : `而家 OFF。要改頻率、時段或睇貨源先展開。`;
         }
       }
     }
@@ -1435,10 +1446,26 @@
       return store ? `門市取貨 · ${store}` : "門市取貨";
     }
 
+    function restockRows(state) {
+      return [...((state && state.restocks) || [])].filter((x) => x && x.at);
+    }
+
+    function updateRestockHint() {
+      const hint = $("restockToggleHint");
+      const countEl = $("restockCount");
+      const n = restockRows(latestState).length;
+      if (countEl) countEl.textContent = n ? `${n} 筆` : "";
+      if (!hint) return;
+      hint.textContent = sectionIsOpen("restock")
+        ? "由「冇貨 → 有貨」先入表。顯示幾時、型號、通路，同 Telegram 有冇送出。"
+        : (n ? `預設收起。最近 ${n} 筆補貨。要睇明細先展開。` : "預設收起。尚未有「冇貨 → 有貨」紀錄。");
+    }
+
     function renderRestockLog(state) {
       const el = $("restockLog");
       if (!el) return;
-      const rows = [...((state && state.restocks) || [])].filter((x) => x && x.at).reverse();
+      const rows = restockRows(state).reverse();
+      updateRestockHint();
       if (!rows.length) {
         el.innerHTML = `<p class="text-[11px] text-zinc-400 full-copy break-phone">尚未有「冇貨 → 有貨」紀錄。下一轉真係補貨就會出現喺呢度。</p>`;
         return;
@@ -1512,7 +1539,7 @@
         renderLiveBoard();
         updatePill();
       } catch (err) {
-        latestStateError = "讀唔到查貨紀錄（state.json 損壞或未更新）。展開真實模式再撳重新載入。";
+        latestStateError = "讀唔到查貨紀錄（state.json 損壞或未更新）。撳重新載入。";
         if ($("lastRunText")) {
           $("lastRunText").textContent = "讀不到 state.json：" + (err && err.message ? err.message : "檔案可能有 git 衝突標記");
         }
@@ -1543,6 +1570,7 @@
         }
       }
       if (name === "live") updatePill();
+      if (name === "restock") updateRestockHint();
       if (name === "liveItems") updateLiveItemsHint();
       if (name === "models") updateModelsHint();
       if (name === "stores") updateStoresHint();
@@ -1570,7 +1598,7 @@
         toggle.addEventListener("click", () => {
           setSectionOpen(name, toggle.getAttribute("aria-expanded") !== "true");
         });
-        setSectionOpen(name, false);
+        setSectionOpen(name, DEFAULT_OPEN_SECTIONS.has(name));
       });
       $("enabledToggle").addEventListener("click", () => {
         setToggle($("enabledToggle"), !isOn($("enabledToggle")));

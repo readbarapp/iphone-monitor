@@ -1527,6 +1527,10 @@ def run_self_test() -> int:
     check('id="liveBadge"' not in html, "控制台已移除查貨 OK badge")
     check('id="liveItemsToggle"' in html and 'id="liveItemsPanel"' in html, "各機型貨源有 sub collapse")
     check('<option value="10">每 10 秒' in html and "const INTERVALS = [10, 30," in html, "控制台可選 10 秒一轉")
+    check('DEFAULT_OPEN_SECTIONS = new Set(["live"])' in html, "真實模式預設展開")
+    check('id="restockToggle"' in html and 'id="restockPanel"' in html, "補貨紀錄有 sub collapse")
+    check(">補貨紀錄<" in html, "補貨紀錄標題")
+    check("最近 10 次有貨" not in html, "唔再用最近 10 次有貨做標題")
 
     from usage import run_self_test as usage_self_test
 
