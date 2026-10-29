@@ -74,14 +74,14 @@
       "R610": 50
     },
     "capacities": {
-      "256gb": 3,
-      "512gb": 15,
+      "256gb": 1,
+      "512gb": 0,
       "1tb": 100,
-      "2tb": 23
+      "2tb": 100
     },
     "modes": {
       "pickup": 100,
-      "delivery": 70
+      "delivery": 1
     }
   },
   "business_hours": {
