@@ -4,8 +4,7 @@
   "check_interval_seconds": 10,
   "check_interval_minutes": 1,
   "fulfillment_modes": [
-    "pickup",
-    "delivery"
+    "pickup"
   ],
   "models": [
     {
@@ -61,7 +60,7 @@
     "R610"
   ],
   "delivery": {
-    "enabled": true,
+    "enabled": false,
     "location": "Hong Kong"
   },
   "priority": {
@@ -116,42 +115,36 @@
       "pickup:R485:MK2J4ZA/A": "unavailable",
       "pickup:R673:MK2J4ZA/A": "unavailable",
       "pickup:R610:MK2J4ZA/A": "unavailable",
-      "delivery:DELIVERY:MK2J4ZA/A": "unavailable",
       "pickup:R428:MK2E4ZA/A": "unavailable",
       "pickup:R409:MK2E4ZA/A": "unavailable",
       "pickup:R499:MK2E4ZA/A": "unavailable",
       "pickup:R485:MK2E4ZA/A": "unavailable",
       "pickup:R673:MK2E4ZA/A": "unavailable",
       "pickup:R610:MK2E4ZA/A": "unavailable",
-      "delivery:DELIVERY:MK2E4ZA/A": "unavailable",
       "pickup:R428:MK2G4ZA/A": "unavailable",
       "pickup:R409:MK2G4ZA/A": "unavailable",
       "pickup:R499:MK2G4ZA/A": "unavailable",
       "pickup:R485:MK2G4ZA/A": "unavailable",
       "pickup:R673:MK2G4ZA/A": "unavailable",
       "pickup:R610:MK2G4ZA/A": "unavailable",
-      "delivery:DELIVERY:MK2G4ZA/A": "unavailable",
       "pickup:R428:MK2L4ZA/A": "unavailable",
       "pickup:R409:MK2L4ZA/A": "unavailable",
       "pickup:R499:MK2L4ZA/A": "unavailable",
       "pickup:R485:MK2L4ZA/A": "unavailable",
       "pickup:R673:MK2L4ZA/A": "unavailable",
       "pickup:R610:MK2L4ZA/A": "unavailable",
-      "delivery:DELIVERY:MK2L4ZA/A": "unavailable",
       "pickup:R428:MK2K4ZA/A": "unavailable",
       "pickup:R409:MK2K4ZA/A": "unavailable",
       "pickup:R499:MK2K4ZA/A": "unavailable",
       "pickup:R485:MK2K4ZA/A": "unavailable",
       "pickup:R673:MK2K4ZA/A": "unavailable",
       "pickup:R610:MK2K4ZA/A": "unavailable",
-      "delivery:DELIVERY:MK2K4ZA/A": "unavailable",
       "pickup:R428:MK2H4ZA/A": "unavailable",
       "pickup:R409:MK2H4ZA/A": "unavailable",
       "pickup:R499:MK2H4ZA/A": "unavailable",
       "pickup:R485:MK2H4ZA/A": "unavailable",
       "pickup:R673:MK2H4ZA/A": "unavailable",
-      "pickup:R610:MK2H4ZA/A": "unavailable",
-      "delivery:DELIVERY:MK2H4ZA/A": "unavailable"
+      "pickup:R610:MK2H4ZA/A": "unavailable"
     }
   },
   "notifications": {
