@@ -104,13 +104,6 @@ jobs:
               fh.write(f"loop={'true' if loop else 'false'}\n")
           PY
 
-      - name: Record usage and warn at 1800 / 2000
-        if: steps.already.outputs.skip != 'true' && steps.gate.outputs.loop != 'true'
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python3 usage.py
-
       - name: Setup Python
         if: steps.already.outputs.skip != 'true' && steps.gate.outputs.run == 'true'
         uses: actions/setup-python@v5
@@ -162,8 +155,6 @@ jobs:
             }
             python3 push_state.py --pull || true
             INTERVAL_SEC=$(python3 -c "import json; from checker import loop_interval_seconds; print(loop_interval_seconds(json.load(open('config.json'))))")
-            USAGE_MIN=$(( (INTERVAL_SEC + 59) / 60 ))
-            python3 usage.py --minutes "$USAGE_MIN" || true
             python3 checker.py --ignore-interval || true
             commit_state
             python3 - <<'PY' || { STOPPED=disabled; break; }

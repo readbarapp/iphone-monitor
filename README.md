@@ -114,7 +114,6 @@ python3 -m http.server 8080
 | 測試 Telegram 連線 | `workflow_dispatch` `test_notify` | 只發連線短訊，**唔會**扮 iPhone 有貨 |
 | 儲存模擬狀態 | `workflow_dispatch` `apply_simulation` | 套用每格模擬貨源，有補貨先發測試 Telegram |
 | 儲存設定 | GitHub Contents API | 更新真實模式開關、頻率、監測清單 |
-| 用量提醒 | `state.json` `usage` | 私人倉先有意義：到 1,800 同 2,000 發 Telegram。公開倉標準 runner 通常免費，控制台已唔再顯示用量 |
 
 ---
 
@@ -127,7 +126,7 @@ python3 -m http.server 8080
    唔需要。鬧鐘喺 GitHub 伺服器行，有貨會直接 Telegram 你。控制台只係改設定用。
 
 3. **超過 2,000 分鐘會唔會自動停？**  
-   唔會優雅停。關「真實模式」都停唔到鬧鐘。要真正停燒分鐘：Actions → `iPhone HK Monitor` → Disable workflow。私人倉庫超額之後 GitHub 可能突然跑唔到，或者開始收費。本系統會喺估計用到 **1,800** 同 **2,000** 分鐘各發一次 Telegram 提醒。
+   唔會優雅停。關「真實模式」都停唔到鬧鐘。要真正停：Actions → `iPhone HK Monitor` → Disable workflow。**公開倉**用標準 runner 通常免費，唔會扣呢個額度。私人倉庫超額之後 GitHub 可能突然跑唔到，或者開始收費。本系統**唔會**再發用量 Telegram。
 
 4. **公開倉係咪即使 1 分鐘查一次都唔計 2,000 分鐘？**  
    **標準 GitHub-hosted runner（ubuntu-latest）喺公開倉係免費嘅**，唔會扣私人倉嗰 2,000 分鐘。太密仍然會打爆 Apple（541）。如果之後改成私人倉，一條長駐 loop 可以一醒就用幾百分鐘，千祈唔好喺私人倉開住 1 分鐘 loop。
@@ -198,11 +197,11 @@ python checker.py   # enabled=false 時應印出「真實模式為 OFF」
 
 ---
 
-## 用量與 2,000 分鐘額度（必讀）
+## 用量與 2,000 分鐘額度
 
 監測 loop 按控制台「幾耐查一次」喺 runner 入面 sleep。單條 job 約 5.5 小時換班後會即刻自己開下一條；GitHub `schedule` 只係每 5 分鐘後備 watchdog（唔好再把 cron 改成 1 分鐘）。
 
-GitHub Actions **以整分鐘進位**。**公開倉**用標準 runner 通常唔計入 2,000。**私人倉**即使 `enabled=false`，只要 cron 響就會 checkout，通常仍計 **1 分鐘／次**。控制台「每日監控時段」儲存後會改 cron 小時欄，出咗時段鬧鐘唔響。
+**公開倉**用標準 GitHub-hosted runner 通常免費，唔計入私人倉嗰 2,000 分鐘，所以唔會再發用量 Telegram。**私人倉**即使 `enabled=false`，只要 cron 響就會 checkout，通常仍計 **1 分鐘／次**。控制台「每日監控時段」儲存後會改 cron 小時欄，出咗時段鬧鐘唔響。
 
 粗估（30 天）：
 
@@ -261,7 +260,6 @@ GitHub Actions **以整分鐘進位**。**公開倉**用標準 runner 通常唔�
 .
 ├── index.html                 # Tailwind 控制台（GitHub Pages）
 ├── checker.py                 # 監控、狀態機、聚合通知
-├── usage.py                   # Actions 分鐘累計；1800／2000 Telegram 提醒
 ├── config.json                # 公開設定（真實模式開關 / 模擬貨源 / 優先級）
 ├── catalog.json               # 香港門市與 iPhone Duo SKU
 ├── state.json                 # 倉內快照；即時紀錄喺 monitor-state 分支
