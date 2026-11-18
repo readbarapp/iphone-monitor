@@ -760,11 +760,11 @@
     }
   },
   "last_run": {
-    "status": "disabled",
-    "message": "真實模式為 OFF（enabled=false），安全退出，不查詢 Apple API。",
+    "status": "ok",
+    "message": "真實模式：查詢 63 組，新轉有貨 0",
     "notified": 0,
-    "checked": 0,
-    "at": "2026-11-18T09:13:53+08:00"
+    "checked": 63,
+    "at": "2026-10-28T11:50:24+08:00"
   },
   "simulation": {
     "items": {
@@ -1139,7 +1139,7 @@
       "2026-10-28T11:50:24+08:00"
     ],
     "stopped": "disabled",
-    "stopped_at": "2026-11-18T09:13:53+08:00",
+    "stopped_at": "2026-11-18T09:13:56+08:00",
     "interval_seconds": 30
   }
 }
