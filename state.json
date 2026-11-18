@@ -160,12 +160,11 @@
     }
   },
   "last_run": {
-    "status": "ok",
-    "message": "真實模式：查詢 12 組，新轉有貨 0",
+    "status": "disabled",
+    "message": "真實模式為 OFF（enabled=false），安全退出，不查詢 Apple API。",
     "notified": 0,
-    "telegram_sent": null,
-    "checked": 12,
-    "at": "2026-11-18T09:13:41+08:00"
+    "checked": 0,
+    "at": "2026-11-18T09:13:50+08:00"
   },
   "simulation": {
     "items": {
@@ -521,7 +520,7 @@
     "warned": []
   },
   "loop": {
-    "alive": true,
+    "alive": false,
     "heartbeat_at": "2026-11-18T09:13:41+08:00",
     "interval_minutes": 1,
     "tick_count": 1734,
@@ -539,8 +538,8 @@
       "2026-11-18T09:13:25+08:00",
       "2026-11-18T09:13:41+08:00"
     ],
-    "stopped": null,
-    "stopped_at": "2026-11-18T07:10:31+08:00",
+    "stopped": "disabled",
+    "stopped_at": "2026-11-18T09:13:50+08:00",
     "interval_seconds": 10
   },
   "restocks": [
